@@ -5804,7 +5804,11 @@ body.inlobby { padding-block: 0; }
       var legs = [], arms = [];
       [-1, 1].forEach(function (s) {
         var piv = new T.Group(); piv.position.set(s * 0.17, 0.68, 0);
-        var leg = ink(new T.Mesh(capsuleGeo(0.115, 0.1, 0.3, 32), legM), 0.022); leg.position.y = -0.26; if (pnDef.sc) leg.scale.set(pnDef.sc[0], 1, pnDef.sc[1]); piv.add(leg);
+        // thigh + knee joint + shin, so the leg can really bend (crouching, running, jumping)
+        var thigh = ink(new T.Mesh(capsuleGeo(0.108, 0.116, 0.15, 32), legM), 0.022); thigh.position.y = -0.13; if (pnDef.sc) thigh.scale.set(pnDef.sc[0], 1, pnDef.sc[1]); piv.add(thigh);
+        var knee = new T.Group(); knee.position.y = -0.27; piv.add(knee); piv.userData.knee = knee;
+        var kcap = new T.Mesh(new T.SphereGeometry(0.108, 24, 16), legM); if (pnDef.sc) kcap.scale.set(pnDef.sc[0], 1, pnDef.sc[1]); knee.add(kcap);
+        var shin = ink(new T.Mesh(capsuleGeo(0.114, 0.104, 0.13, 32), legM), 0.022); shin.position.y = -0.1; if (pnDef.sc) shin.scale.set(pnDef.sc[0], 1, pnDef.sc[1]); knee.add(shin);
         if (pnDef.shorts) { var sh2 = ink(new T.Mesh(capsuleGeo(0.128, 0.134, 0.1, 32), pnDef.shortM ? (function () { var m = clam(pnDef.color); m.map = cvTex(128, 96, pnDef.paint); m.needsUpdate = true; return m; })() : pants), 0.02); sh2.position.y = -0.13; piv.add(sh2); }
         var sz = SHOE_DEFS[SZI] || SHOE_DEFS[0];
         if (sz.flip) {
@@ -5821,6 +5825,7 @@ body.inlobby { padding-block: 0; }
             var strip = new T.Mesh(new T.TorusGeometry(0.15, 0.008, 6, 40, Math.PI * 0.7), lam(sz.toe != null ? sz.toe : 0x3a7be0)); strip.rotation.set(0, Math.PI / 2, 0); strip.scale.set(1, 0.42, 1.55); strip.position.set(0.001, -0.545, -0.07); piv.add(strip); }
           if (sz.boot) { var bt = ink(new T.Mesh(new T.CylinderGeometry(0.13, 0.142, 0.2, 28), shM), 0.02); bt.position.set(0, -0.44, 0); piv.add(bt); var rim = new T.Mesh(new T.TorusGeometry(0.133, 0.018, 10, 28), lam(0x4a2d16)); rim.rotation.x = Math.PI / 2; rim.position.y = -0.34; piv.add(rim); }
         }
+        piv.children.slice().forEach(function (ch) { if (ch !== knee && ch.position.y < -0.33) { knee.add(ch); ch.position.y += 0.27; } });   // feet and boots ride on the shin
         root.add(piv); legs.push(piv);
       });
       var torso = ink(new T.Mesh(bodyGeo(), torsoM), 0.028); torso.scale.set(1, 1, 0.78); torso.position.y = 1.0; root.add(torso);
@@ -6294,7 +6299,7 @@ body.inlobby { padding-block: 0; }
         var fwd = ms.f, sid = ms.s, rn = ms.run, air = ms.air, cr = ms.cr, ph = c.phase, sph = Math.sin(ph);
         var landK = Math.max(0, 1 - (t - ms.land) / 220), bob = (Math.abs(Math.sin(ph)) * Math.abs(fwd) + (1 - Math.cos(ph * 2)) * 0.5 * 0.6 * Math.abs(sid)) * (0.035 + 0.05 * rn) * wa * (1 - air);
         root.rotation.order = "YXZ";
-        root.position.set(c.x, c.y + jy - fall * fall * 7 + bob - 0.2 * cr - 0.06 * landK, c.z);
+        root.position.set(c.x, c.y + jy - fall * fall * 7 + bob - 0.234 * cr - 0.06 * landK, c.z);
         ms.lean += ((fwd * (0.015 + 0.06 * rn) * wa) - ms.lean) * kk * 0.6; ms.side += ((-sid * 0.02 * wa) - ms.side) * kk * 0.5;
         root.rotation.y = c.yaw; root.rotation.x = fall * 0.8 - ms.lean - 0.1 * cr; root.rotation.z = ms.side + Math.sin(ph) * 0.012 * Math.abs(sid) * wa;
         root.visible = fall < 0.98;
@@ -6303,7 +6308,13 @@ body.inlobby { padding-block: 0; }
         var amp = (0.62 + 0.38 * rn) * wa, fA = amp * fwd, asd = Math.abs(sid), sA = amp * 0.42 * asd, spr = (1 - Math.cos(ph)) * 0.5, lead = (sid > 0 ? 1 : -1) * Math.sin(ph) * sA * 0.35, lift = Math.cos(ph) * 0.1 * asd * wa;
         av.legs[0].rotation.set(sph * fA + lift, 0, -spr * sA + lead - 0.12 * cr);
         av.legs[1].rotation.set(-sph * fA - lift, 0, spr * sA + lead + 0.12 * cr);
-        av.legs[0].scale.y = av.legs[1].scale.y = 1 - 0.32 * cr;
+        // knees: bend while a leg swings forward, more when running; crouching folds the thigh forward and the shin back so the feet stay under you
+        var kn0 = av.legs[0].userData.knee, kn1 = av.legs[1].userData.knee;
+        if (kn0 && kn1) {
+          var kw = (0.4 + 0.6 * rn) * wa * Math.max(Math.abs(fwd), 0.5 * Math.abs(sid)), cph = Math.cos(ph);
+          av.legs[0].rotation.x += 1.0 * cr + 0.25 * landK; av.legs[1].rotation.x += 1.0 * cr + 0.25 * landK;
+          kn0.rotation.x = -Math.max(0, cph) * kw - 1.9 * cr - 0.5 * landK; kn1.rotation.x = -Math.max(0, -cph) * kw - 1.9 * cr - 0.5 * landK;
+        }
         var carrying = c.carry > 0, emo = c.emo;
         if (carrying) { av.arms[0].rotation.x = 1.35; av.arms[1].rotation.x = 1.35; av.arms[0].rotation.z = 0.5; av.arms[1].rotation.z = -0.5; }
         else if (emo === "cheer") { av.arms[0].rotation.x = -3.0 + Math.sin(t / 90) * 0.25; av.arms[1].rotation.x = -3.0 - Math.sin(t / 90) * 0.25; av.arms[0].rotation.z = 0.2; av.arms[1].rotation.z = -0.2; }
@@ -6323,6 +6334,7 @@ body.inlobby { padding-block: 0; }
           var l0 = 0.6 * up - 0.12 * dn, l1 = -0.2 * up + 0.22 * dn;
           av.legs[0].rotation.x = av.legs[0].rotation.x * la + l0 * air; av.legs[1].rotation.x = av.legs[1].rotation.x * la + l1 * air;
           av.legs[0].rotation.z = av.legs[0].rotation.z * la - 0.12 * dn * air; av.legs[1].rotation.z = av.legs[1].rotation.z * la + 0.12 * dn * air;
+          if (kn0 && kn1) { kn0.rotation.x = kn0.rotation.x * la + (-1.15 * up - 0.12 * dn) * air; kn1.rotation.x = kn1.rotation.x * la + (-0.7 * up - 0.08 * dn) * air; }
           if (!carrying && emo !== "cheer" && emo !== "shock") { av.arms[0].rotation.x = av.arms[0].rotation.x * la + (0.7 * up + 0.25 * dn) * air; av.arms[1].rotation.x = av.arms[1].rotation.x * la + (0.7 * up + 0.25 * dn) * air; av.arms[0].rotation.z -= 0.55 * air; av.arms[1].rotation.z += 0.55 * air; }
         }
         var dead = fall > 0.04;
