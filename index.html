@@ -6425,7 +6425,7 @@ body.inlobby { padding-block: 0; }
         // the hands trail the body: sideways when you sidestep, back when you run, and they float up and down around a jump
         dampTo(cam, "hx", clamp(-latV * 0.0072, -0.07, 0.07), dtf, 11); dampTo(cam, "hz", clamp(fwdV * 0.0032, -0.03, 0.03), dtf, 11); dampTo(cam, "hy", clamp(-cam.vyS * 0.009, -0.07, 0.06), dtf, 11);
         var spp = sipT >= 0 ? clamp((t - sipT) / 1000, 0, 1) : 1; if (spp >= 1) sipT = -1; var sl = sipT >= 0 ? Math.sin(spp * Math.PI) : 0;
-        var pkp = pokeT >= 0 ? clamp((t - pokeT) / 320, 0, 1) : 1; if (pkp >= 1) pokeT = -1; var pa = pokeT >= 0 ? Math.sin(pkp * Math.PI) : 0;
+        var pkp = pokeT >= 0 ? clamp((t - pokeT) / 420, 0, 1) : 1; if (pkp >= 1) pokeT = -1; var pa = pokeT >= 0 ? Math.sin(pkp * Math.PI) : 0;
         // the hands keep their own swing phase: slower than the steps, and slower still when running (no jumps when you speed up)
         var dph = cam.lph == null ? 0 : ph - cam.lph; cam.lph = ph; if (Math.abs(dph) > 2) dph = 0; cam.hph = (cam.hph || 0) + dph * (0.7 - 0.22 * rn);
         vmHands.forEach(function (h) {
@@ -6456,7 +6456,7 @@ body.inlobby { padding-block: 0; }
             var pZ = -0.52 - up * (0.18 + 0.14 * rk) + (1 - fr) * 0.06 * amp + cam.hz;
             var rX = 0.25 + up * (0.42 + 0.38 * rk) - (1 - fr) * 0.12 * amp + h.ax * 0.25, rY = h.s * (0.22 + up * (0.18 + 0.12 * rk)), rZ = -h.s * (1.32 - 0.12 * h.ax);
             if (pz > 0) {   // reach forward with an open hand (take / place money)
-              var e = pz; pX += (h.s * 0.24 - pX) * e; pY += (-0.4 - pY) * e; pZ += (-0.86 - pZ) * e; rX += (0.15 - rX) * e; rY += (h.s * 0.12 - rY) * e; rZ += (-h.s * 0.55 - rZ) * e;
+              var e = pz; pX += (h.s * 0.26 - pX) * e; pY += (-0.46 - pY) * e; pZ += (-0.92 - pZ) * e; rX += (0.72 - rX) * e;   // the forearm angles down out of view, so the sleeve never crosses the camera rY += (h.s * 0.12 - rY) * e; rZ += (-h.s * 0.55 - rZ) * e;
             }
             h.g.position.set(pX, pY, pZ); h.g.rotation.set(rX, rY, rZ);
             var curl = 0.55 + 0.4 * rk + 0.05 * Math.sin(t / 1600 + h.s * 2) - pz * 0.5;   // relaxed curl walking, a loose fist running, opens to reach
