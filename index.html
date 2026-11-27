@@ -6424,7 +6424,7 @@ body.inlobby { padding-block: 0; }
         var spp = sipT >= 0 ? clamp((t - sipT) / 1000, 0, 1) : 1; if (spp >= 1) sipT = -1; var sl = sipT >= 0 ? Math.sin(spp * Math.PI) : 0;
         var pkp = pokeT >= 0 ? clamp((t - pokeT) / 320, 0, 1) : 1; if (pkp >= 1) pokeT = -1; var pa = pokeT >= 0 ? Math.sin(pkp * Math.PI) : 0;
         vmHands.forEach(function (h) {
-          var ph2 = ph + (h.s > 0 ? Math.PI : 0);
+          var ph2 = ph * 0.7 + (h.s > 0 ? Math.PI : 0);   // the hands swing a little slower than the steps feel, so they never look frantic
           var swing = Math.sin(ph2), lift = Math.max(0, Math.cos(ph2));
           var idle = Math.sin(t / 1100 + h.s) * 0.008 * (1 - wa);
           if (me.carry > 0 || heldKind) {
