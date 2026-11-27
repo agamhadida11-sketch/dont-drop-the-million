@@ -6104,7 +6104,7 @@ body.inlobby { padding-block: 0; }
     var vmHands = [];
     [-1, 1].forEach(function (s) {
       var g = new T.Group();
-      var sleeve = ink(new T.Mesh(new T.CylinderGeometry(0.1, 0.125, 1.1, 28), vmJacket), 0.014); sleeve.rotation.x = Math.PI / 2; sleeve.position.set(0, 0, 0.42); g.add(sleeve);
+      var sleeve = ink(new T.Mesh(new T.CylinderGeometry(0.1, 0.125, 1.1, 28), vmJacket), 0.014); sleeve.rotation.x = Math.PI / 2; sleeve.scale.y = 0.82; sleeve.position.set(0, 0, 0.32); g.add(sleeve);   // a slightly shorter forearm
       var cuff = ink(new T.Mesh(new T.CylinderGeometry(0.13, 0.13, 0.11, 28), M.white), 0.012); cuff.rotation.x = Math.PI / 2; cuff.position.set(0, 0, -0.07); g.add(cuff);
       var palm = ink(new T.Mesh(new T.SphereGeometry(0.115, 32, 24), vmSkin), 0.014); palm.scale.set(1.2, 0.48, 1.05); palm.position.set(0, 0, -0.2); g.add(palm);
       var heel = ink(new T.Mesh(new T.SphereGeometry(0.1, 32, 24), vmSkin), 0.012); heel.scale.set(0.95, 0.5, 1.1); heel.position.set(0, 0, -0.1); g.add(heel);
@@ -6427,7 +6427,7 @@ body.inlobby { padding-block: 0; }
         var spp = sipT >= 0 ? clamp((t - sipT) / 1000, 0, 1) : 1; if (spp >= 1) sipT = -1; var sl = sipT >= 0 ? Math.sin(spp * Math.PI) : 0;
         var pkp = pokeT >= 0 ? clamp((t - pokeT) / 420, 0, 1) : 1; if (pkp >= 1) pokeT = -1; var pa = pokeT >= 0 ? Math.sin(pkp * Math.PI) : 0;
         // the hands keep their own swing phase: slower than the steps, and slower still when running (no jumps when you speed up)
-        var dph = cam.lph == null ? 0 : ph - cam.lph; cam.lph = ph; if (Math.abs(dph) > 2) dph = 0; cam.hph = (cam.hph || 0) + dph * (0.7 - 0.22 * rn);
+        var dph = cam.lph == null ? 0 : ph - cam.lph; cam.lph = ph; if (Math.abs(dph) > 2) dph = 0; cam.hph = (cam.hph || 0) + dph * (0.62 - 0.2 * rn);
         vmHands.forEach(function (h) {
           var ph2 = cam.hph + (h.s > 0 ? Math.PI : 0);   // the hands swing a little slower than the steps feel, so they never look frantic
           var swing = Math.sin(ph2), lift = Math.max(0, Math.cos(ph2));
@@ -6451,9 +6451,9 @@ body.inlobby { padding-block: 0; }
             h.ax = (h.ax || 0) + ((air ? 1 : 0) - (h.ax || 0)) * (1 - Math.exp(-dtf * 7));
             var fr = (1 - Math.sin(ph2)) * 0.5, f2 = fr * fr * (3 - 2 * fr), amp = wa * (1 - 0.6 * cr), rk = rn * wa;   // fr: 0 = back of the swing, 1 = front
             var up = f2 * amp, br = Math.sin(t / 1300 + h.s);
-            var pY = -1.02 + up * (0.3 + 0.24 * rk) + h.ax * 0.14 + br * 0.004 + cam.hy * 0.8 + lagY * 0.1;
+            var pY = -1.02 + up * (0.24 + 0.17 * rk) + h.ax * 0.14 + br * 0.004 + cam.hy * 0.8 + lagY * 0.1;
             var pX = h.s * (0.62 - up * (0.05 + 0.07 * rk) + h.ax * 0.05) - lagX * 0.3 + cam.hx;
-            var pZ = -0.52 - up * (0.18 + 0.14 * rk) + (1 - fr) * 0.06 * amp + cam.hz;
+            var pZ = -0.52 - up * (0.14 + 0.1 * rk) + (1 - fr) * 0.06 * amp + cam.hz;
             var rX = 0.25 + up * (0.42 + 0.38 * rk) - (1 - fr) * 0.12 * amp + h.ax * 0.25, rY = h.s * (0.22 + up * (0.18 + 0.12 * rk)), rZ = -h.s * (1.32 - 0.12 * h.ax);
             if (pz > 0) {   // reach forward with an open hand (take / place money)
               var e = pz; pX += (h.s * 0.26 - pX) * e; pY += (-0.46 - pY) * e; pZ += (-0.92 - pZ) * e; rX += (0.72 - rX) * e;   // the forearm angles down out of view, so the sleeve never crosses the camera rY += (h.s * 0.12 - rY) * e; rZ += (-h.s * 0.55 - rZ) * e;
