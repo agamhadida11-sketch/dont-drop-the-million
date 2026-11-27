@@ -4785,11 +4785,13 @@ body.inlobby { padding-block: 0; }
           // ---------- PLINKO machines + MINES tables (the open floor between the blackjack pits and the baccarat salon) ----------
           var plinkoM = vivid(function (x, u, a) {
             tableId++; setBase(x, Zu(u), a, 1); regT("plinko");
-            if (!TEX.plinko) TEX.plinko = ctex(cv(1040, 920, function (g, W, Hh) { plkPaint(g, W, Hh, 1, true); }));
+            if (!TEX.plinko) TEX.plinko = ctex(cv(1040, 920, function (g, W, Hh) { plkPaint(g, W, Hh, 1, "cups"); }));
             if (!TEX.plinkoSign) TEX.plinkoSign = ctex(cv(1024, 240, function (g, W, Hh) { neonSign(g, W, Hh, "PLINKO", "#ff3fb4", "#ffe0f4"); }));
             box(0x0d0718, 0, 1.78, -0.34, 3.0, 3.56, 0.5);                                   // cabinet back
             box(0x1a0d2e, 0, 0.38, 0.12, 3.0, 0.76, 0.9); box(0x2a1648, 0, 0.785, 0.12, 3.06, 0.05, 0.96);   // base + ledge
             quad("plinko", 0, PLK.YC, -0.07, PLK.W, PLK.H, 0);                                // the painted board
+            for (var pr = 0; pr < PLK.R; pr++) for (var pi = 0; pi < pr + 3; pi++) { var ppx = (pi - (pr + 2) / 2) * PLK.SX, ppy = PLK.YT - pr * PLK.SY; prim(G.cyl8, "v", 0xb8bccc, ppx, ppy, -0.02, 0, 0.01, 0.1, 0.01, false, Math.PI / 2); ball(0xf4f2ff, ppx, ppy, 0.032, 0.015, 1, true); }
+            box(0x241238, -1.33, PLK.YC, 0.01, 0.06, PLK.H + 0.12, 0.17); box(0x241238, 1.33, PLK.YC, 0.01, 0.06, PLK.H + 0.12, 0.17); box(0x241238, 0, PLK.YC + PLK.H / 2 + 0.03, 0.01, PLK.W + 0.12, 0.06, 0.17);
             box(0xff3fb4, 0, PLK.YC + PLK.H / 2 + 0.02, -0.06, PLK.W + 0.1, 0.04, 0.04, 0, true); box(0xff3fb4, 0, PLK.YC - PLK.H / 2 - 0.02, -0.06, PLK.W + 0.1, 0.04, 0.04, 0, true);
             [-1, 1].forEach(function (q) {
               box(0xff3fb4, q * (PLK.W / 2 + 0.03), PLK.YC, -0.06, 0.04, PLK.H + 0.08, 0.04, 0, true);
@@ -7041,7 +7043,7 @@ body.inlobby { padding-block: 0; }
     // the drop chute
     g.save(); g.shadowColor = "#ffd23f"; g.shadowBlur = 16; g.fillStyle = "#ffd23f"; g.beginPath(); var cx = X(0), cy = Y(PLK.YT + 0.16); g.moveTo(cx - 22, cy - 18); g.lineTo(cx + 22, cy - 18); g.lineTo(cx, cy + 8); g.closePath(); g.fill(); g.restore();
     if (pegs) {
-      for (var r = 0; r < PLK.R; r++) for (var i = 0; i < r + 3; i++) {
+      if (pegs === true) for (var r = 0; r < PLK.R; r++) for (var i = 0; i < r + 3; i++) {
         var px = X((i - (r + 2) / 2) * PLK.SX), py = Y(PLK.YT - r * PLK.SY), pr = PLK.PEG * S;
         var pg = g.createRadialGradient(px - pr * 0.35, py - pr * 0.35, 1, px, py, pr * 2.4); pg.addColorStop(0, "#ffffff"); pg.addColorStop(0.35, "#e6e0ff"); pg.addColorStop(0.45, "rgba(180,160,255,.35)"); pg.addColorStop(1, "rgba(180,160,255,0)");
         g.fillStyle = pg; g.beginPath(); g.arc(px, py, pr * 2.4, 0, 6.3); g.fill();
@@ -9214,77 +9216,146 @@ body.inlobby { padding-block: 0; }
   function boom(vol) { if (muted || settings.sfx <= 0 || !ensureAudio()) return; var t = audioCtx.currentTime; nburst(t, 900, 0.6, 0.9, 0.5 * vol, 60); nburst(t + 0.02, 180, 0.8, 1.2, 0.6 * vol, 40); tone(70, 0.6, 0, "sine", 0.35 * vol); tone(48, 0.9, 0.05, "sine", 0.3 * vol); }
   function pling(f, vol) { tone(f, 0.09, 0, "triangle", vol || 0.07); tone(f * 2, 0.05, 0, "sine", (vol || 0.07) * 0.4); }
 
-  // ---------- PLINKO: a tall peg board you stand in front of. Pick a chip and a risk, press DROP (or tap the board); every ball is a separate bet ----------
+  // ---------- first-person feel at the new games: the view follows the pointer a little and breathes, like a head ----------
+  function fpLook(S) {
+    var cvEl = document.querySelector("#game canvas"), tx = 0, ty = 0;
+    S.px = 0; S.py = 0;
+    function mv(ev) { var r = cvEl.getBoundingClientRect(); tx = Math.max(-1, Math.min(1, ((ev.clientX - r.left) / r.width) * 2 - 1)); ty = Math.max(-1, Math.min(1, ((ev.clientY - r.top) / r.height) * 2 - 1)); }
+    cvEl.addEventListener("pointermove", mv);
+    S.onFrame = function (cam) {
+      S.px += (tx - S.px) * 0.06; S.py += (ty - S.py) * 0.06; var t = performance.now() / 1000;
+      cam.position.y += Math.sin(t * 1.25) * 0.004; cam.position.x += Math.sin(t * 0.55) * 0.003;
+      cam.rotateY(-S.px * 0.045 + Math.sin(t * 0.5) * 0.002); cam.rotateX(-S.py * 0.03 + Math.sin(t * 0.8) * 0.0015);
+      if (S.shakeT) { var k = (performance.now() - S.shakeT) / 450; if (k < 1) { var a = (1 - k) * 0.012 * (settings.shake == null ? 1 : settings.shake); cam.rotateX((Math.random() - 0.5) * a); cam.rotateY((Math.random() - 0.5) * a); } else S.shakeT = 0; }
+    };
+    return function () { cvEl.removeEventListener("pointermove", mv); S.onFrame = null; };
+  }
+  function phong(c, o) { o = o || {}; return new T.MeshPhongMaterial({ color: c, specular: o.sp == null ? 0x444444 : o.sp, shininess: o.sh == null ? 40 : o.sh, emissive: o.em || 0x000000, flatShading: !!o.flat, transparent: o.op != null, opacity: o.op == null ? 1 : o.op, depthWrite: o.op == null || o.op > 0.6, side: o.ds ? T.DoubleSide : T.FrontSide }); }
+  function rbox(w, h, d, r, bev) {   // a rounded, bevelled block (centred, top face up)
+    var s = new T.Shape(), x = -w / 2, y = -d / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + d - r); s.quadraticCurveTo(x + w, y + d, x + w - r, y + d); s.lineTo(x + r, y + d); s.quadraticCurveTo(x, y + d, x, y + d - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+    var g = new T.ExtrudeGeometry(s, { depth: h - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 3, curveSegments: 6 }); g.rotateX(-Math.PI / 2); g.translate(0, -(h - 2 * bev) / 2, 0); g.computeVertexNormals(); return g;
+  }
+
+  // ---------- PLINKO: a real cabinet in front of you. Chrome pegs stick out of the back board, the ball rolls out of a hopper,
+  // bounces peg to peg behind a glass pane and drops into a cup. Pick a chip and a risk, DROP (or tap / E / Space); every ball is its own bet ----------
   PHYS.plinko = function (S) {
     return guard(S, async function () {
-      var tg = S.tg, R = PLK.R, SX = PLK.SX, SY = PLK.SY, risk = 1, flying = [], last = [], keyH, Z = 0.03;
+      var tg = S.tg, R = PLK.R, SX = PLK.SX, SY = PLK.SY, risk = 1, flying = [], last = [], keyH, ZB = -0.065, ZP = -0.012, BR = 0.032;
       wcHud(S, "plinko"); ["wcUndo", "wcClear"].forEach(function (id) { var e = $(id); if (e) e.style.display = "none"; });
-      // live board: the background (no painted pegs), real pegs, real buckets
+      var lookOff = fpLook(S);
+      // back board (no painted pegs: the pegs are real)
       var bc = document.createElement("canvas"); bc.width = 1040; bc.height = 920; var bg = bc.getContext("2d"), btex = new T.CanvasTexture(bc); btex.anisotropy = 8;
-      var board = new T.Mesh(new T.PlaneGeometry(PLK.W, PLK.H), new T.MeshBasicMaterial({ map: btex })); board.position.set(0, PLK.YC, -0.065); tg.add(board);
+      var board = new T.Mesh(new T.PlaneGeometry(PLK.W, PLK.H), new T.MeshPhongMaterial({ map: btex, specular: 0x222244, shininess: 12, emissive: 0xffffff, emissiveMap: btex, emissiveIntensity: 0.8 })); board.position.set(0, PLK.YC, ZB); tg.add(board);
       function paint() { plkPaint(bg, 1040, 920, risk, false); btex.needsUpdate = true; }
-      var pegGeo = new T.SphereGeometry(PLK.PEG, 14, 10), pegs = [];
-      for (var r = 0; r < R; r++) { var row = []; for (var i = 0; i < r + 3; i++) { var m = new T.Mesh(pegGeo, new T.MeshBasicMaterial({ color: 0xf2eeff })); m.position.set((i - (r + 2) / 2) * SX, PLK.YT - r * SY, Z - 0.03); tg.add(m); var hl = glowSprite("pw", GLOW_W, 0.07, tg); hl.position.copy(m.position); hl.position.z += 0.01; hl.material.opacity = 0.18; row.push({ m: m, g: hl, hit: 0 }); } pegs.push(row); }
-      var BY = PLK.YT - (R - 1) * SY - 0.16, buckets = [];
+      // cabinet depth: side walls, top, glass, bezel with LED strips
+      var frameM = phong(0x241238, { sp: 0x553388, sh: 50 }), chromeM = phong(0xc9cde0, { sp: 0xffffff, sh: 110, em: 0x3a3a4c }), ledP = new T.MeshBasicMaterial({ color: 0xff3fb4 }), ledC = new T.MeshBasicMaterial({ color: 0x3df2ff });
+      function bx(m, x, y, z, w, h, d) { var o = new T.Mesh(new T.BoxGeometry(w, h, d), m); o.position.set(x, y, z); tg.add(o); return o; }
+      var HW = PLK.W / 2, yTop = PLK.YC + PLK.H / 2, yBot = PLK.YC - PLK.H / 2, DEP = 0.17;
+      [-1, 1].forEach(function (q) { bx(frameM, q * (HW + 0.03), PLK.YC, ZB + DEP / 2, 0.06, PLK.H + 0.12, DEP); bx(ledP, q * (HW + 0.062), PLK.YC, ZB + DEP - 0.01, 0.012, PLK.H + 0.1, 0.012); bx(chromeM, q * (HW + 0.03), PLK.YC, ZB + DEP + 0.005, 0.075, PLK.H + 0.14, 0.014); });
+      bx(frameM, 0, yTop + 0.03, ZB + DEP / 2, PLK.W + 0.12, 0.06, DEP); bx(frameM, 0, yBot - 0.03, ZB + DEP / 2, PLK.W + 0.12, 0.06, DEP);
+      bx(chromeM, 0, yTop + 0.03, ZB + DEP + 0.005, PLK.W + 0.14, 0.075, 0.014); bx(chromeM, 0, yBot - 0.03, ZB + DEP + 0.005, PLK.W + 0.14, 0.075, 0.014); bx(ledC, 0, yTop + 0.065, ZB + DEP - 0.01, PLK.W + 0.1, 0.012, 0.012);
+      // glass with a soft reflection streak
+      var gc = document.createElement("canvas"); gc.width = 512; gc.height = 512; var gg = gc.getContext("2d"), gr = gg.createLinearGradient(0, 0, 512, 512);
+      gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.36, "rgba(255,255,255,0)"); gr.addColorStop(0.42, "rgba(255,255,255,.16)"); gr.addColorStop(0.47, "rgba(255,255,255,.04)"); gr.addColorStop(0.55, "rgba(255,255,255,.11)"); gr.addColorStop(0.6, "rgba(255,255,255,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 512, 512);
+      var glass = new T.Mesh(new T.PlaneGeometry(PLK.W, PLK.H), new T.MeshPhongMaterial({ map: new T.CanvasTexture(gc), color: 0xbfd8ff, transparent: true, opacity: 0.55, specular: 0xffffff, shininess: 160, depthWrite: false, blending: T.AdditiveBlending })); glass.position.set(0, PLK.YC, ZB + DEP); glass.renderOrder = 10; tg.add(glass);
+      // chrome pegs (instanced): a shaft out of the board and a round cap, with a soft contact shadow on the board
+      var NP = 0, r, i, j; for (r = 0; r < R; r++) NP += r + 3;
+      var shaftG = new T.CylinderGeometry(0.0105, 0.0105, DEP * 0.62, 12); shaftG.rotateX(Math.PI / 2);
+      var shafts = new T.InstancedMesh(shaftG, chromeM, NP), caps = new T.InstancedMesh(new T.SphereGeometry(0.0165, 16, 12), phong(0xffffff, { sp: 0xffffff, sh: 140, em: 0x8a86a8 }), NP);
+      var shM = new T.MeshBasicMaterial({ map: glowTex("psh", [[0, "rgba(0,0,0,.75)"], [0.5, "rgba(0,0,0,.3)"], [1, "rgba(0,0,0,0)"]]), transparent: true, depthWrite: false }), shadows = new T.InstancedMesh(new T.PlaneGeometry(0.075, 0.075), shM, NP);
+      var pegs = [], dm = new T.Object3D(), ci = new T.Color();
+      for (r = 0, j = 0; r < R; r++) { var row = []; for (i = 0; i < r + 3; i++, j++) {
+        var px = (i - (r + 2) / 2) * SX, py = PLK.YT - r * SY; row.push({ x: px, y: py, n: j, hit: 0 });
+        dm.position.set(px, py, ZB + DEP * 0.31); dm.scale.setScalar(1); dm.updateMatrix(); shafts.setMatrixAt(j, dm.matrix);
+        dm.position.set(px, py, ZB + DEP * 0.62); dm.updateMatrix(); caps.setMatrixAt(j, dm.matrix); caps.setColorAt(j, ci.setRGB(1, 1, 1));
+        dm.position.set(px - 0.012, py - 0.018, ZB + 0.002); dm.updateMatrix(); shadows.setMatrixAt(j, dm.matrix);
+      } pegs.push(row); }
+      tg.add(shafts); tg.add(caps); tg.add(shadows);
+      var pegGlow = []; for (i = 0; i < 6; i++) { var s0 = glowSprite("pw", GLOW_W, 0.12, tg); s0.material.opacity = 0; pegGlow.push(s0); } var pgI = 0;
+      // the cups: dividers, a floor and a lit label plate in front
+      var BY = PLK.YT - (R - 1) * SY - 0.17, buckets = [], divM = phong(0xe8e4ff, { sp: 0xffffff, sh: 90 });
+      for (j = 0; j <= 13; j++) { var dv = bx(divM, (j - 6.5) * SX, BY + 0.02, ZB + DEP * 0.45, 0.012, 0.15, DEP * 0.9); dv.scale.y = 1; }
       function bucketTex(j) {
-        var c = document.createElement("canvas"); c.width = 128; c.height = 80; var g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, 0, 80), col = plkCol(j);
-        gr.addColorStop(0, "#ffffff"); gr.addColorStop(0.12, col); gr.addColorStop(1, col); g.fillStyle = gr; rrect(g, 2, 2, 124, 76, 14); g.fill();
-        g.fillStyle = "rgba(0,0,0,.18)"; g.fillRect(2, 58, 124, 20); g.fillStyle = "#2a0a12"; var t = plkFmt(PLK.RISK[risk].m[j]); g.font = "800 " + (t.length > 4 ? 34 : 40) + "px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(t, 64, 38);
-        return new T.CanvasTexture(c);
+        var c = document.createElement("canvas"); c.width = 160; c.height = 96; var g = c.getContext("2d"), col = plkCol(j), gr = g.createLinearGradient(0, 0, 0, 96);
+        gr.addColorStop(0, "#ffffff"); gr.addColorStop(0.1, col); gr.addColorStop(0.85, col); gr.addColorStop(1, "rgba(0,0,0,.4)"); g.fillStyle = gr; rrect(g, 3, 3, 154, 90, 16); g.fill();
+        g.fillStyle = "rgba(255,255,255,.3)"; rrect(g, 10, 8, 140, 22, 10); g.fill(); var t = plkFmt(PLK.RISK[risk].m[j]);
+        g.fillStyle = "#2a0a12"; g.font = "800 " + (t.length > 4 ? 44 : 52) + "px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(t, 80, 52); return new T.CanvasTexture(c);
       }
-      for (var j = 0; j < 13; j++) {
-        var bm = new T.Mesh(new T.BoxGeometry(SX * 0.9, 0.12, 0.06), [0, 1, 2, 3, 4, 5].map(function (f) { return f === 4 ? new T.MeshBasicMaterial({ map: bucketTex(j) }) : new T.MeshBasicMaterial({ color: new T.Color(plkCol(j)).multiplyScalar(f === 2 ? 1 : 0.6) }); }));
-        bm.position.set((j - 6) * SX, BY, Z); tg.add(bm); var bgw = glowSprite("bp", GLOW_P, 0.3, tg); bgw.position.set((j - 6) * SX, BY, Z + 0.04); bgw.material.opacity = 0; buckets.push({ m: bm, g: bgw, t: 0 });
+      for (j = 0; j < 13; j++) {
+        var cx = (j - 6) * SX, col = new T.Color(plkCol(j));
+        var floor = bx(phong(col.clone().multiplyScalar(0.55), { sh: 30 }), cx, BY - 0.055, ZB + DEP * 0.45, SX - 0.014, 0.012, DEP * 0.9);
+        var back = bx(new T.MeshBasicMaterial({ color: col.clone().multiplyScalar(0.35) }), cx, BY + 0.01, ZB + 0.004, SX - 0.014, 0.12, 0.004);
+        var plate = new T.Mesh(new T.BoxGeometry(SX - 0.01, 0.1, 0.022), [0, 1, 2, 3, 4, 5].map(function (f) { return f === 4 ? new T.MeshBasicMaterial({ map: bucketTex(j), color: 0xdddddd }) : phong(col, { sh: 60, em: col.clone().multiplyScalar(0.3) }); }));
+        plate.position.set(cx, BY - 0.035, ZB + DEP * 0.92); tg.add(plate);
+        var bgw = glowSprite("bp", GLOW_P, 0.34, tg); bgw.position.set(cx, BY + 0.01, ZB + 0.03); bgw.material.opacity = 0; buckets.push({ plate: plate, g: bgw, t: 0, back: back, base: col.clone().multiplyScalar(0.35) });
       }
-      function relabel() { buckets.forEach(function (b, j) { var mt = b.m.material[4]; mt.map.dispose(); mt.map = bucketTex(j); mt.needsUpdate = true; }); }
+      function relabel() { buckets.forEach(function (b, j) { var mt = b.plate.material[4]; mt.map.dispose(); mt.map = bucketTex(j); mt.needsUpdate = true; }); }
+      // the hopper: a chrome tray on top, sloping to the drop chute, with balls waiting in it
+      var ballCols = [0xffc83a, 0xff4fb8, 0x46e0ff, 0x7dffb0], ballGeo = new T.SphereGeometry(BR, 28, 20);
+      function ballMat(c) { return new T.MeshPhongMaterial({ color: c, specular: 0xffffff, shininess: 120, emissive: new T.Color(c).multiplyScalar(0.28) }); }
+      var trayY = PLK.YT + 0.2, tray = bx(chromeM, 0.5, trayY - BR - 0.008, ZP, 0.95, 0.012, 0.09); tray.rotation.z = 0.07; bx(chromeM, 0.5, trayY - BR + 0.02, ZP + 0.05, 0.95, 0.05, 0.008).rotation.z = 0.07;
+      var queue = []; for (i = 0; i < 5; i++) { var qb = new T.Mesh(ballGeo, ballMat(ballCols[i % 4])); qb.position.set(0.24 + i * (BR * 2 + 0.006), trayY + 0.006 + (0.24 + i * 0.07) * 0.07 - 0.02, ZP); tg.add(qb); queue.push(qb); }
       paint();
-      // camera: stand in front of the machine, the whole board on screen above the HUD
-      S.refit = function () { frameCam(S, [0, PLK.YC + 0.05, 0], [[-1.36, 1.0, 0], [1.36, 1.0, 0], [-1.36, 3.08, 0], [1.36, 3.08, 0]], 0.08, 0, 0.99); }; S.refit();
+      S.refit = function () { frameCam(S, [0, PLK.YC + 0.06, 0], [[-1.3, 1.07, 0.1], [1.3, 1.07, 0.1], [-1.3, 3.04, 0], [1.3, 3.04, 0]], -0.05, 0, 1.0); }; S.refit();
       function info() { S.setInfo("RISK " + PLK.RISK[risk].n, S.msg || "", last.length ? "LAST " + last.slice(0, 5).map(plkFmt).join("  ") : ""); S.setBet(DEN[S.ci]); }
       function setRisk() { S.setX("RISK: " + PLK.RISK[risk].n, !flying.length); }
       S.onX = function () { if (flying.length) { S.pop("WAIT", "BALLS STILL FALLING", "lose"); return; } risk = (risk + 1) % 3; setRisk(); paint(); relabel(); sfx("chip"); info(); };
       setRisk(); S.setGo("DROP", true);
-      // per-frame: pegs and buckets ease back after a hit
       var alive = true;
-      (function fx() { if (!alive) return; var now = performance.now(); pegs.forEach(function (row) { row.forEach(function (p) { var k = Math.max(0, 1 - (now - p.hit) / 380); p.m.scale.setScalar(1 + k * 0.6); p.m.material.color.setRGB(0.95 + k * 0.05, 0.93 - k * 0.2, 1 - k * 0.3); p.g.material.opacity = 0.18 + k * 0.8; p.g.scale.setScalar(0.07 + k * 0.12); }); });
-        buckets.forEach(function (b) { var k = Math.max(0, 1 - (now - b.t) / 600); b.m.position.y = BY - Math.sin(Math.min(1, (now - b.t) / 260) * Math.PI) * 0.035 * (k > 0 ? 1 : 0); b.g.material.opacity = k * 0.9; }); requestAnimationFrame(fx); })();
+      (function fx() {
+        if (!alive) return; var now = performance.now(), dirty = false;
+        pegs.forEach(function (row) { row.forEach(function (p) { if (!p.hit) return; var k = Math.max(0, 1 - (now - p.hit) / 420); dm.position.set(p.x, p.y, ZB + DEP * 0.62); dm.scale.setScalar(1 + k * 0.7); dm.updateMatrix(); caps.setMatrixAt(p.n, dm.matrix); caps.setColorAt(p.n, ci.setRGB(1, 1 - k * 0.25, 1 - k * 0.05).lerp(new T.Color(0xff6ad0), k * 0.7)); if (k <= 0) p.hit = 0; dirty = true; }); });
+        if (dirty) { caps.instanceMatrix.needsUpdate = true; if (caps.instanceColor) caps.instanceColor.needsUpdate = true; }
+        pegGlow.forEach(function (s) { if (s.userData.t) { var k = (now - s.userData.t) / 380; s.material.opacity = Math.max(0, 0.9 * (1 - k)); s.scale.setScalar(0.08 + k * 0.1); if (k >= 1) s.userData.t = 0; } });
+        buckets.forEach(function (b) { var k = Math.max(0, 1 - (now - b.t) / 700); b.plate.position.y = BY - 0.035 - Math.sin(Math.min(1, (now - b.t) / 240) * Math.PI) * 0.02 * (k > 0 ? 1 : 0); b.g.material.opacity = k * 0.95; b.back.material.color.copy(b.base).lerp(new T.Color(0xffffff), k * 0.6); b.plate.material[4].color.setScalar(0.86 + k * 0.14); });
+        var t = now / 1000; ledP.color.setHSL((0.9 + Math.sin(t * 0.7) * 0.05) % 1, 1, 0.6); ledC.color.setHSL(0.5 + Math.sin(t * 0.9) * 0.04, 1, 0.55);
+        requestAnimationFrame(fx);
+      })();
+      function hitPeg(rr, k) { var p = pegs[rr][k + 1]; if (!p) return; p.hit = performance.now(); var s = pegGlow[pgI++ % pegGlow.length]; s.position.set(p.x, p.y, ZB + DEP * 0.65); s.userData.t = performance.now(); }
       function settle(b) {
         if (b.done) return; b.done = true; flying.splice(flying.indexOf(b), 1); if (S.alive) setRisk();
         var pay = Math.round(b.bet * b.mult); if (pay > 0) casApply(pay); var net = pay - b.bet;
         if (!S.alive) return;
         last.unshift(b.mult); last.length = Math.min(last.length, 8);
-        var bk = buckets[b.k]; bk.t = performance.now(); sparks(tg, (b.k - 6) * SX, BY + 0.05, Z + 0.05, net > 0 ? 14 : 6, "pw", net > 0 ? "p" : "o", net > 0 ? 0.9 : 0.4, 700, 2.2, 0.06);
-        floatText(tg, plkFmt(b.mult), (b.k - 6) * SX, BY + 0.14, Z + 0.06, net > 0 ? "#ffd23f" : "#ff9aa8", 0.1);
+        var bk = buckets[b.k]; bk.t = performance.now(); sparks(tg, (b.k - 6) * SX, BY + 0.04, ZP + 0.02, net > 0 ? 16 : 6, "pw", net > 0 ? "p" : "o", net > 0 ? 0.8 : 0.35, 700, 2.2, 0.05);
+        floatText(tg, plkFmt(b.mult), (b.k - 6) * SX, BY + 0.16, ZB + DEP + 0.02, net > 0 ? "#ffd23f" : "#ff9aa8", 0.11);
         if (net > 0) { S.pop("+" + net.toLocaleString(), plkFmt(b.mult) + " WIN", "win"); if (b.mult >= 3) winFx(net, b.bet, "plinko"); else pling(1320, 0.1); }
         else if (net < 0) { S.pop(net.toLocaleString(), plkFmt(b.mult), "lose"); tone(260, 0.12, 0, "triangle", 0.06); }
         else S.pop("0", "1x · BET BACK");
         info();
       }
       async function runBall(b) {
-        var ball = b.o, x = 0, y = PLK.YT + 0.22, k = 0, i;
-        // drop into the first peg
-        var y0 = PLK.YT + PLK.PEG + PLK.BALL;
-        await tween(260, function (t) { ball.position.set(x, y + (y0 - y) * t * t, Z); });
+        var ball = b.o, sh = b.sh;
+        function place(x, y) { ball.position.set(x, y, ZP); sh.position.set(x - 0.03, y - 0.04, ZB + 0.003); }
+        // roll down the hopper into the chute
+        var x0 = 0.24 + 4 * (BR * 2 + 0.006), y0 = trayY + 0.006 + (0.24 + 4 * 0.07) * 0.07 - 0.02;
+        await tween(380, function (t) { var e = t * t; place(x0 + (0.02 - x0) * e, y0 + (trayY - 0.03 - y0) * e); ball.rotation.z += 0.18; });
+        tone(180, 0.06, 0, "sine", 0.05);
+        var cy = PLK.YT + 0.0105 + BR, startY = ball.position.y;
+        await tween(230, function (t) { place(0.02 * (1 - t), startY + (cy - startY) * t * t); });
+        var k = 0;
         for (var rr = 0; rr < R; rr++) {
           if (!S.alive) break;
-          var px = (k - rr / 2) * SX; if (pegs[rr][k + 1]) pegs[rr][k + 1].hit = performance.now();
-          pling(620 + rr * 70 + Math.random() * 30, 0.045);
+          hitPeg(rr, k); pling(620 + rr * 70 + Math.random() * 30, 0.045);
           var right = b.path[rr]; if (right) k++;
-          var nx = (k - (rr + 1) / 2) * SX + (Math.random() - 0.5) * 0.008, ny = rr + 1 < R ? PLK.YT - (rr + 1) * SY + PLK.PEG + PLK.BALL : BY + 0.075, sx0 = ball.position.x, sy0 = ball.position.y, hop = 0.035 + Math.random() * 0.02, dur = rr + 1 < R ? 150 + Math.random() * 30 : 220;
-          await tween(dur, function (t) { ball.position.x = sx0 + (nx - sx0) * t; ball.position.y = sy0 + (ny - sy0) * t * t + hop * Math.sin(t * Math.PI) * (1 - t * 0.5); ball.position.z = Z; ball.rotation.z -= (right ? 1 : -1) * 0.25; });
+          var nx = (k - (rr + 1) / 2) * SX + (Math.random() - 0.5) * 0.006, last1 = rr + 1 >= R, ny = !last1 ? PLK.YT - (rr + 1) * SY + 0.0105 + BR : BY - 0.03, sx0 = ball.position.x, sy0 = ball.position.y;
+          var hop = 0.03 + Math.random() * 0.022, dur = !last1 ? 150 + Math.random() * 35 : 260;
+          await tween(dur, function (t) { place(sx0 + (nx - sx0) * (1 - Math.pow(1 - t, 1.6)), sy0 + (ny - sy0) * t * t + hop * Math.sin(t * Math.PI) * (1 - t * 0.5)); ball.rotation.z -= (right ? 1 : -1) * 0.3; });
         }
-        if (S.alive) await tween(140, function (t) { ball.position.y = BY + 0.075 - t * 0.07; ball.scale.setScalar(1 - t * 0.6); });
-        tg.remove(ball); b.k = k; b.mult = PLK.RISK[b.risk].m[k]; settle(b);
+        if (S.alive) { tone(140, 0.08, 0, "sine", 0.08); await tween(160, function (t) { place(ball.position.x, BY - 0.03 + Math.sin(t * Math.PI) * 0.015); }); }
+        b.k = k; b.mult = PLK.RISK[b.risk].m[k]; settle(b);
+        await sleep(500); tg.remove(ball); tg.remove(sh);
       }
-      var ballGeo = new T.SphereGeometry(PLK.BALL, 24, 16), ballCols = [0xff3fb4, 0xffd23f, 0x3df2ff, 0x7dffb0];
       function drop() {
         var bet = DEN[S.ci]; if (casBal < bet) { S.pop("NO CHIPS", "NOT ENOUGH CHIPS", "lose"); sfx("lose"); return; }
         if (flying.length >= 15) { S.pop("WAIT", "MAX 15 BALLS", "lose"); return; }
         casApply(-bet); sfx("chip");
         var path = [], k = 0; for (var i = 0; i < R; i++) { var rt = Math.random() < 0.5; path.push(rt); if (rt) k++; }
-        var o = faceted(new T.IcosahedronGeometry(PLK.BALL, 2), ballCols[flying.length % 4], { smooth: true, amb: 0.45, shine: 30 });
-        var gl = glowSprite("pp", GLOW_P, PLK.BALL * 5, o); gl.material.opacity = 0.55; o.position.set(0, PLK.YT + 0.22, Z); tg.add(o);
-        var b = { bet: bet, risk: risk, path: path, o: o, done: false, k: k, mult: PLK.RISK[risk].m[k] }; flying.push(b); setRisk();
+        var colr = ballCols[Math.floor(Math.random() * 4)], o = new T.Mesh(ballGeo, ballMat(colr)); tg.add(o);
+        var gl = glowSprite("pp", GLOW_P, BR * 4.5, o); gl.material.opacity = 0.35;
+        var sh = new T.Mesh(new T.PlaneGeometry(0.11, 0.11), shM); tg.add(sh);
+        queue.forEach(function (q, qi) { var y0 = q.position.y; tween(300, function (t) { q.rotation.z -= 0.08; }); });
+        var b = { bet: bet, risk: risk, path: path, o: o, sh: sh, done: false, k: k, mult: PLK.RISK[risk].m[k] }; flying.push(b); setRisk();
         S.msg = ""; info(); runBall(b).catch(function () { settle(b); });
       }
       S.onGo = drop;
@@ -9292,44 +9363,59 @@ body.inlobby { padding-block: 0; }
       keyH = function (e) { if ((e.key === " " || e.key === "e" || e.key === "E" || e.key === "Enter") && !e.repeat) { e.preventDefault(); drop(); } };
       document.addEventListener("keydown", keyH);
       var prevClean = S.cleanup;
-      S.cleanup = function () { alive = false; document.removeEventListener("keydown", keyH); flying.slice().forEach(settle); prevClean && prevClean(); };
+      S.cleanup = function () { alive = false; lookOff(); document.removeEventListener("keydown", keyH); flying.slice().forEach(settle); prevClean && prevClean(); };
       S.msg = "PICK A CHIP · DROP"; info();
       while (S.alive) { await sleep(400); chk(); info(); }
     });
   };
 
-  // ---------- MINES: 25 tiles on the felt. Pick how many mines, bet, then flip tiles: every gem raises the multiplier. Hit a mine and the bet is gone; cash out any time ----------
+  // ---------- MINES: you sit at the table, 25 bevelled tiles in front of you. Pick how many mines, BET (your chips go on the felt),
+  // then flip tiles: a cut gem raises the multiplier, a bomb burns its fuse and blows the tile apart. CASH OUT any time ----------
   var MNS_OPT = [1, 2, 3, 5, 8, 10, 15, 20, 24];
   function mnsMult(m, k) { var v = 0.99; for (var i = 0; i < k; i++) v *= (25 - i) / (25 - m - i); return v; }
   PHYS.mines = function (S) {
     return guard(S, async function () {
-      var tg = S.tg, mi = 2, phase = "bet", bet = 0, bombs = {}, opened = 0, hover = -1, tiles = [], keyH, busy = false, Y = 0.985;
+      var tg = S.tg, mi = 2, phase = "bet", bet = 0, bombs = {}, opened = 0, hover = -1, tiles = [], keyH, busy = false, TH = 0.05, Y = 0.953 + TH / 2 + 0.004;
       wcHud(S, "mines"); ["wcUndo", "wcClear"].forEach(function (id) { var e = $(id); if (e) e.style.display = "none"; });
-      function faceTex(kind) {
-        var c = document.createElement("canvas"); c.width = c.height = 128; var g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, 128, 128);
-        if (kind === "top") { gr.addColorStop(0, "#5a6cff"); gr.addColorStop(1, "#2b2f9a"); } else if (kind === "safe") { gr.addColorStop(0, "#1fd98a"); gr.addColorStop(1, "#0a6a44"); } else { gr.addColorStop(0, "#ff4a5e"); gr.addColorStop(1, "#7a0a1a"); }
-        g.fillStyle = gr; rrect(g, 0, 0, 128, 128, 22); g.fill(); g.fillStyle = "rgba(255,255,255,.22)"; rrect(g, 8, 8, 112, 40, 16); g.fill();
-        g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = 4; rrect(g, 4, 4, 120, 120, 20); g.stroke();
-        if (kind === "top") { g.fillStyle = "rgba(255,255,255,.55)"; g.font = "700 64px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("?", 64, 70); }
+      var lookOff = fpLook(S);
+      function emb(kind) {
+        var c = document.createElement("canvas"); c.width = c.height = 256; var g = c.getContext("2d"); g.clearRect(0, 0, 256, 256); g.textAlign = "center"; g.textBaseline = "middle";
+        if (kind === "top") { g.save(); g.shadowColor = "#9fb0ff"; g.shadowBlur = 26; g.fillStyle = "rgba(225,232,255,.92)"; g.font = "700 150px Fredoka, Arial, sans-serif"; g.fillText("?", 128, 140); g.restore(); }
+        else { var gr = g.createRadialGradient(128, 128, 10, 128, 128, 128); gr.addColorStop(0, kind === "safe" ? "rgba(140,255,200,.55)" : "rgba(255,150,120,.6)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); }
         return new T.CanvasTexture(c);
       }
-      var TOP = faceTex("top"), SAFE = faceTex("safe"), BAD = faceTex("bad"), SIDE = new T.MeshBasicMaterial({ color: 0x1d2170 });
-      var tileGeo = new T.BoxGeometry(MNS.T * 0.98, 0.03, MNS.T * 0.98);
+      var EMB = { top: emb("top"), safe: emb("safe"), bad: emb("bad") };
+      var tileG = rbox(MNS.T * 0.97, TH, MNS.T * 0.97, 0.03, 0.01), embG = new T.PlaneGeometry(MNS.T * 0.8, MNS.T * 0.8); embG.rotateX(-Math.PI / 2);
+      var shM = new T.MeshBasicMaterial({ map: glowTex("tsh", [[0, "rgba(0,0,0,.7)"], [0.55, "rgba(0,0,0,.35)"], [1, "rgba(0,0,0,0)"]]), transparent: true, depthWrite: false });
       for (var n = 0; n < 25; n++) {
         var i = n % 5, j = Math.floor(n / 5), grp = new T.Group(); grp.position.set(mnsAt(i), Y, MNS.CZ + mnsAt(j));
-        var mats = [SIDE, SIDE, new T.MeshBasicMaterial({ map: TOP, color: 0xffffff }), new T.MeshBasicMaterial({ map: SAFE }), SIDE, SIDE], tm = new T.Mesh(tileGeo, mats); grp.add(tm); tg.add(grp);
-        var gw = glowSprite("tg", GLOW_G, 0.34, tg); gw.position.set(grp.position.x, Y + 0.03, grp.position.z); gw.material.opacity = 0;
-        tiles.push({ n: n, g: grp, m: tm, mats: mats, gw: gw, open: false, item: null, lift: 0 });
+        var mat = phong(0x4252e8, { sp: 0x9aa6ff, sh: 70, em: 0x0c1250 }), tm = new T.Mesh(tileG, mat); grp.add(tm);
+        var top = new T.Mesh(embG, new T.MeshBasicMaterial({ map: EMB.top, transparent: true, depthWrite: false })); top.position.y = TH / 2 + 0.0015; grp.add(top);
+        var under = new T.Mesh(embG, new T.MeshBasicMaterial({ map: EMB.safe, transparent: true, depthWrite: false })); under.rotation.x = Math.PI; under.position.y = -TH / 2 - 0.0015; grp.add(under);
+        tg.add(grp);
+        var sh = new T.Mesh(new T.PlaneGeometry(MNS.T * 1.35, MNS.T * 1.35), shM); sh.rotation.x = -Math.PI / 2; sh.position.set(grp.position.x + 0.006, 0.9555, grp.position.z + 0.01); tg.add(sh);
+        var gw = glowSprite("tg", GLOW_G, 0.34, tg); gw.position.set(grp.position.x, Y + 0.04, grp.position.z); gw.material.opacity = 0;
+        tiles.push({ n: n, g: grp, mat: mat, top: top, under: under, sh: sh, gw: gw, open: false, item: null, lift: 0 });
       }
-      function gemMesh() { var o = faceted(new T.OctahedronGeometry(0.075, 0), 0x2dffa0, { amb: 0.4, shine: 10 }); o.scale.set(1, 1.25, 1); var s = glowSprite("gg", GLOW_G, 0.28, o); s.material.opacity = 0.7; return o; }
+      function gemMesh() {
+        var o = new T.Group(), gm = new T.MeshPhongMaterial({ color: 0x19e68c, emissive: 0x0a5a32, specular: 0xffffff, shininess: 150, flatShading: true, transparent: true, opacity: 0.94 });
+        var pav = new T.Mesh(new T.CylinderGeometry(0.07, 0.001, 0.095, 10), gm); pav.position.y = -0.0475; o.add(pav);
+        var crown = new T.Mesh(new T.CylinderGeometry(0.042, 0.07, 0.034, 10), gm); crown.position.y = 0.017; o.add(crown);
+        var tbl = new T.Mesh(new T.CircleGeometry(0.04, 10), new T.MeshPhongMaterial({ color: 0x8dffc8, emissive: 0x1a8a52, specular: 0xffffff, shininess: 200, flatShading: true })); tbl.rotation.x = -Math.PI / 2; tbl.position.y = 0.0345; o.add(tbl);
+        var g1 = glowSprite("gg", GLOW_G, 0.3, o); g1.material.opacity = 0.55; o.userData.tw = [];
+        for (var q = 0; q < 3; q++) { var st = glowSprite("gw", GLOW_W, 0.05, o); st.position.set((Math.random() - 0.5) * 0.1, (Math.random() - 0.2) * 0.08, (Math.random() - 0.5) * 0.1); o.userData.tw.push(st); }
+        return o;
+      }
       function bombMesh() {
-        var o = new T.Group(), body = faceted(new T.IcosahedronGeometry(0.065, 2), 0x2a2a36, { smooth: true, amb: 0.35, shine: 40 }); o.add(body);
-        var cap = faceted(new T.CylinderGeometry(0.02, 0.025, 0.03, 10), 0x8a8a96, {}); cap.position.y = 0.068; o.add(cap);
-        var fuse = faceted(new T.CylinderGeometry(0.005, 0.005, 0.05, 6), 0xc8a060, {}); fuse.position.set(0.01, 0.095, 0); fuse.rotation.z = -0.4; o.add(fuse);
-        var sp = glowSprite("bo", GLOW_O, 0.09, o); sp.position.set(0.022, 0.12, 0); o.userData.spark = sp; return o;
+        var o = new T.Group(), body = new T.Mesh(new T.SphereGeometry(0.062, 28, 20), new T.MeshPhongMaterial({ color: 0x23232c, specular: 0xbbbbcc, shininess: 90 })); o.add(body);
+        var band = new T.Mesh(new T.TorusGeometry(0.062, 0.006, 8, 32), phong(0x8a6a2a, { sp: 0xffe0a0, sh: 80 })); band.rotation.x = Math.PI / 2; o.add(band);
+        var cap = new T.Mesh(new T.CylinderGeometry(0.02, 0.026, 0.026, 16), phong(0x9a9aa8, { sp: 0xffffff, sh: 100 })); cap.position.y = 0.066; o.add(cap);
+        var curve = new T.QuadraticBezierCurve3(new V3(0, 0.078, 0), new V3(0.005, 0.11, 0), new V3(0.03, 0.12, 0)), fuse = new T.Mesh(new T.TubeGeometry(curve, 12, 0.0045, 6), phong(0xd8b070, { sh: 10 })); o.add(fuse);
+        var sp = glowSprite("bo", GLOW_O, 0.07, o); sp.position.set(0.03, 0.12, 0); o.userData.spark = sp; o.userData.curve = curve; return o;
       }
-      function setTop(t, kind) { if (kind === "top") return; t.mats[3].map = kind === "safe" ? SAFE : BAD; t.mats[3].needsUpdate = true; }   // the face that shows after the flip is the underside
-      S.refit = function () { frameCam(S, [0, 0.96, MNS.CZ], [[-0.72, 0.98, MNS.CZ - 0.66], [0.72, 0.98, MNS.CZ - 0.66], [-0.72, 0.98, MNS.CZ + 0.66], [0.72, 0.98, MNS.CZ + 0.66]], 0.95, 0, 0.9); }; S.refit();
+      // the chips you bet sit on the felt in front of you
+      var spot = newSpot(tg, 0.82, 0.42, 0.956); spot.sc = 1.6;
+      S.refit = function () { frameCam(S, [0, 0.95, MNS.CZ + 0.12], [[-0.66, 0.97, MNS.CZ - 0.62], [0.66, 0.97, MNS.CZ - 0.62], [-0.72, 0.97, 0.62], [0.72, 0.97, 0.62]], 0.78, 0, 0.97); }; S.refit();
       function mult() { return mnsMult(MNS_OPT[mi], opened); }
       function nextMult() { return mnsMult(MNS_OPT[mi], opened + 1); }
       function info() {
@@ -9340,42 +9426,63 @@ body.inlobby { padding-block: 0; }
       S.onX = function () { if (phase !== "bet") return; mi = (mi + 1) % MNS_OPT.length; sfx("chip"); info(); };
       async function resetBoard() {
         var open = tiles.filter(function (t) { return t.open || t.item; });
-        await tween(380, function (k) { open.forEach(function (t) { t.g.rotation.x = Math.PI * (1 - k); t.g.position.y = Y + Math.sin(k * Math.PI) * 0.06; if (t.item) t.item.scale.setScalar(Math.max(0.001, 1 - k)); }); });
-        tiles.forEach(function (t) { t.gw.material.map = glowTex("tg", GLOW_G); t.gw.scale.setScalar(0.34); t.g.rotation.x = 0; t.g.position.y = Y; t.open = false; t.mats[3].color.setRGB(1, 1, 1); if (t.item) { tg.remove(t.item); t.item = null; } t.gw.material.opacity = 0; });
+        await tween(420, function (k) { open.forEach(function (t) { t.g.rotation.x = Math.PI * (1 - k); t.g.position.y = Y + Math.sin(k * Math.PI) * 0.07; if (t.item) t.item.scale.setScalar(Math.max(0.001, 1 - k)); }); });
+        tiles.forEach(function (t) { t.g.rotation.x = 0; t.g.position.y = Y; t.g.scale.setScalar(1); t.g.visible = true; t.open = false; t.mat.color.setHex(0x4252e8); t.mat.emissive.setHex(0x0c1250); t.gw.material.map = glowTex("tg", GLOW_G); t.gw.scale.setScalar(0.34); t.gw.material.opacity = 0; t.sh.visible = true; if (t.item) { tg.remove(t.item); t.item = null; } });
       }
       async function start() {
         if (phase !== "bet") return; var v = DEN[S.ci]; if (casBal < v) { S.pop("NO CHIPS", "NOT ENOUGH CHIPS", "lose"); sfx("lose"); return; }
-        casApply(-v); bet = v; sfx("chip"); bombs = {}; opened = 0; var m = MNS_OPT[mi], all = []; for (var q = 0; q < 25; q++) all.push(q);
+        casApply(-v); bet = v; setSpot(spot, v); sfx("chip"); bombs = {}; opened = 0; var m = MNS_OPT[mi], all = []; for (var q = 0; q < 25; q++) all.push(q);
         for (q = 0; q < m; q++) { var r = q + Math.floor(Math.random() * (25 - q)), t = all[q]; all[q] = all[r]; all[r] = t; bombs[all[q]] = 1; }
-        phase = "play"; S.msg = ""; dSwing(S, { x: 0, z: MNS.CZ }); S.pop("-" + v.toLocaleString(), m + " MINES · GOOD LUCK"); info();
+        phase = "play"; S.msg = ""; S.pop("-" + v.toLocaleString(), m + " MINES · GOOD LUCK"); info();
+        tiles.forEach(function (t, q) { setTimeout(function () { if (!t.open) { t.gw.material.opacity = 0.5; tween(300, function (k) { t.gw.material.opacity = 0.5 * (1 - k); }); } }, (q % 5 + Math.floor(q / 5)) * 45); });
       }
       function reveal(t, bomb, dim) {
-        t.open = true; setTop(t, bomb ? "bad" : "safe"); t.mats[3].color.setRGB(dim ? 0.5 : 1, dim ? 0.5 : 1, dim ? 0.55 : 1);
+        t.open = true; t.under.material.map = bomb ? EMB.bad : EMB.safe; t.under.material.needsUpdate = true;
+        t.mat.color.setHex(bomb ? (dim ? 0x5a2430 : 0xd8283c) : (dim ? 0x1f5a44 : 0x19c27a)); t.mat.emissive.setHex(bomb ? 0x2a0408 : 0x063a22);
         var it = bomb ? bombMesh() : gemMesh(); it.position.set(t.g.position.x, Y + 0.03, t.g.position.z); it.scale.setScalar(0.001); tg.add(it); t.item = it;
-        return tween(dim ? 260 : 360, function (k) {
-          t.g.rotation.x = Math.PI * Math.min(1, k * 1.3); t.g.position.y = Y + Math.sin(Math.min(1, k * 1.3) * Math.PI) * 0.08;
-          var e = k < 0.5 ? 0 : (k - 0.5) / 0.5, s = e < 1 ? e * 1.25 - Math.sin(e * Math.PI) * 0.0 : 1; it.scale.setScalar(Math.max(0.001, (dim ? 0.75 : 1) * Math.min(1.15, s) * (e >= 1 ? 1 : 1)));
-          it.position.y = Y + 0.03 + e * (bomb ? 0.06 : 0.09);
+        var tgt = dim ? 0.72 : 1;
+        return tween(dim ? 300 : 430, function (k) {
+          var f = Math.min(1, k * 1.35), e = f < 1 ? 1 - Math.pow(1 - f, 3) : 1; t.g.rotation.x = Math.PI * e; t.g.position.y = Y + Math.sin(f * Math.PI) * 0.1;
+          var g = k < 0.45 ? 0 : (k - 0.45) / 0.55, over = g < 1 ? 1 + Math.sin(g * Math.PI) * 0.25 : 1; it.scale.setScalar(Math.max(0.001, tgt * g * over));
+          it.position.y = Y + TH / 2 + (bomb ? 0.065 : 0.12) * g;
         });
+      }
+      async function explode(t) {
+        var x = t.g.position.x, z = t.g.position.z, b = t.item;
+        // the fuse burns down
+        var spk = b.userData.spark, cv = b.userData.curve; tone(2400, 0.4, 0, "sawtooth", 0.015); nburst && ensureAudio() && !muted && settings.sfx > 0 && nburst(audioCtx.currentTime, 5000, 2, 0.45, 0.05);
+        await tween(420, function (k) { var p = cv.getPoint(1 - k); spk.position.copy(p); spk.scale.setScalar(0.06 + Math.random() * 0.05); b.scale.setScalar(1 + k * 0.18 + Math.sin(k * 40) * 0.02); });
+        chk(); boom(1); S.shakeT = performance.now(); b.visible = false;
+        // fireball, shockwave on the felt, flying tile pieces, smoke
+        var fb = glowSprite("bo", GLOW_O, 0.2, tg); fb.position.set(x, Y + 0.1, z); fb.renderOrder = 20;
+        tween(750, function (k) { fb.scale.setScalar(0.2 + k * 1.3); fb.material.opacity = 1 - k * k; if (k >= 1) tg.remove(fb); });
+        var ring = new T.Mesh(new T.RingGeometry(0.8, 1, 48), new T.MeshBasicMaterial({ color: 0xffb040, transparent: true, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.set(x, 0.96, z); ring.scale.setScalar(0.05); tg.add(ring);
+        tween(600, function (k) { ring.scale.setScalar(0.05 + k * 0.6); ring.material.opacity = 0.9 * (1 - k); if (k >= 1) tg.remove(ring); });
+        var flash = new T.Mesh(new T.PlaneGeometry(2.2, 1.6), new T.MeshBasicMaterial({ color: 0xff8a30, transparent: true, opacity: 0.5, blending: T.AdditiveBlending, depthWrite: false })); flash.rotation.x = -Math.PI / 2; flash.position.set(0, 0.957, 0); tg.add(flash);
+        tween(380, function (k) { flash.material.opacity = 0.55 * (1 - k); if (k >= 1) tg.remove(flash); });
+        sparks(tg, x, Y + 0.08, z, 30, "bw", "o", 1.5, 950, 3.2, 0.07);
+        var pieces = [], pm = phong(0xd8283c, { sh: 40, em: 0x2a0408 }); t.g.visible = false; t.sh.visible = false;
+        for (var q = 0; q < 12; q++) { var pc = new T.Mesh(new T.BoxGeometry(0.03 + Math.random() * 0.04, 0.02, 0.03 + Math.random() * 0.04), pm); pc.position.set(x, Y, z); tg.add(pc); var a = Math.random() * 6.28, v = 0.6 + Math.random() * 0.9; pieces.push({ m: pc, vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 1.2 + Math.random() * 1.4, rx: (Math.random() - 0.5) * 20, rz: (Math.random() - 0.5) * 20 }); }
+        var t0 = performance.now(), lastT = t0;
+        tween(1500, function (k) { var now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; pieces.forEach(function (p) { p.vy -= 6 * dt; p.m.position.x += p.vx * dt; p.m.position.y += p.vy * dt; p.m.position.z += p.vz * dt; if (p.m.position.y < 0.965) { p.m.position.y = 0.965; p.vy *= -0.35; p.vx *= 0.6; p.vz *= 0.6; p.rx *= 0.5; p.rz *= 0.5; } p.m.rotation.x += p.rx * dt; p.m.rotation.z += p.rz * dt; if (k > 0.7) p.m.scale.setScalar(Math.max(0.001, (1 - k) / 0.3)); }); if (k >= 1) pieces.forEach(function (p) { tg.remove(p.m); }); });
+        for (q = 0; q < 4; q++) (function (q) { var sm = glowSprite("sm", GLOW_S, 0.25, tg); sm.position.set(x + (Math.random() - 0.5) * 0.08, Y + 0.1, z + (Math.random() - 0.5) * 0.08); tween(1800 + q * 200, function (k) { sm.position.y = Y + 0.1 + k * (0.5 + q * 0.1); sm.scale.setScalar(0.25 + k * (0.8 + q * 0.2)); sm.material.opacity = 0.75 * (1 - k); if (k >= 1) tg.remove(sm); }); })(q);
+        // a scorch mark where the tile was
+        var sc = new T.Mesh(new T.PlaneGeometry(0.34, 0.34), new T.MeshBasicMaterial({ map: glowTex("scorch", [[0, "rgba(10,5,0,.9)"], [0.5, "rgba(40,15,0,.5)"], [1, "rgba(0,0,0,0)"]]), transparent: true, depthWrite: false })); sc.rotation.x = -Math.PI / 2; sc.position.set(x, 0.9565, z); tg.add(sc); t.scorch = sc;
       }
       async function pick(n) {
         if (phase !== "play" || busy) return; var t = tiles[n]; if (t.open) return; busy = true; info();
         if (bombs[n]) {
-          await reveal(t, true); chk(); boom(1); t.gw.material.map = glowTex("bo", GLOW_O); t.gw.scale.setScalar(0.8); tween(1200, function (k) { t.gw.material.opacity = 1 - k * 0.65; });
-          var fl = glowSprite("bo", GLOW_O, 0.2, tg); fl.position.set(t.g.position.x, Y + 0.1, t.g.position.z); fl.renderOrder = 20;
-          tween(700, function (k) { fl.scale.setScalar(0.2 + k * 1.6); fl.material.opacity = 1 - k; if (k >= 1) tg.remove(fl); });
-          sparks(tg, t.g.position.x, Y + 0.08, t.g.position.z, 26, "bw", "o", 1.4, 900, 3.0, 0.07);
-          var sm = glowSprite("sm", GLOW_S, 0.3, tg); sm.position.set(t.g.position.x, Y + 0.12, t.g.position.z); tween(1600, function (k) { sm.position.y = Y + 0.12 + k * 0.5; sm.scale.setScalar(0.3 + k * 0.9); sm.material.opacity = 0.8 * (1 - k); if (k >= 1) tg.remove(sm); });
-          if (t.item) tween(500, function (k) { t.item.scale.setScalar(Math.max(0.001, 1 - k)); });
-          var cam0 = tcPos.clone(); tween(450, function (k) { var a = (1 - k) * 0.025 * (settings.shake == null ? 1 : settings.shake); tcPos.set(cam0.x + (Math.random() - 0.5) * a, cam0.y + (Math.random() - 0.5) * a, cam0.z + (Math.random() - 0.5) * a); if (k >= 1) tcPos.copy(cam0); });
+          await reveal(t, true); chk(); await explode(t); chk();
           S.pop("-" + bet.toLocaleString(), "BOOM! MINE HIT", "lose"); S.msg = "MINE! TRY AGAIN"; phase = "over"; busy = false; info();
-          await sleep(500); chk(); for (var q = 0; q < 25; q++) if (!tiles[q].open) { reveal(tiles[q], !!bombs[q], true); await sleep(35); }
-          await sleep(1900); chk(); await resetBoard(); phase = "bet"; S.msg = "PICK MINES · BET"; info(); return;
+          flyChips(spot, 0, -0.75, 650);
+          await sleep(650); chk(); for (var q = 0; q < 25; q++) if (!tiles[q].open) { reveal(tiles[q], !!bombs[q], true); await sleep(40); }
+          await sleep(2000); chk(); tiles.forEach(function (tt) { if (tt.scorch) { tg.remove(tt.scorch); tt.scorch = null; } }); await resetBoard(); phase = "bet"; S.msg = "PICK MINES · BET"; info(); return;
         }
         await reveal(t, false); chk(); opened++; var m = MNS_OPT[mi];
-        pling(700 * Math.pow(1.06, opened), 0.09); tone(1400 * Math.pow(1.05, opened), 0.12, 0.05, "sine", 0.04);
-        sparks(tg, t.g.position.x, Y + 0.1, t.g.position.z, 10, "gw", "g", 0.5, 650, 1.0, 0.05); t.gw.material.opacity = 0.8; tween(500, function (k) { t.gw.material.opacity = 0.8 * (1 - k) + 0.25 * k; });
-        floatText(tg, mult().toFixed(2) + "x", t.g.position.x, Y + 0.24, t.g.position.z, "#3dff9a", 0.11);
+        pling(700 * Math.pow(1.06, opened), 0.09); tone(1400 * Math.pow(1.05, opened), 0.14, 0.05, "sine", 0.045);
+        sparks(tg, t.g.position.x, Y + 0.12, t.g.position.z, 12, "gw", "g", 0.55, 650, 1.0, 0.045); t.gw.material.opacity = 0.9; tween(600, function (k) { t.gw.material.opacity = 0.9 * (1 - k) + 0.22 * k; });
+        floatText(tg, mult().toFixed(2) + "x", t.g.position.x, Y + 0.27, t.g.position.z, "#3dff9a", 0.11);
+        setSpot(spot, Math.floor(bet * mult()));
         busy = false;
         if (opened >= 25 - m) { await cashOut(); return; }
         info();
@@ -9383,24 +9490,32 @@ body.inlobby { padding-block: 0; }
       async function cashOut() {
         if (phase !== "play" || !opened || busy) return; busy = true; var pay = Math.floor(bet * mult()), net = pay - bet; casApply(pay); phase = "over";
         S.pop("+" + net.toLocaleString(), mult().toFixed(2) + "x CASHED OUT", "win"); if (net > 0) winFx(net, bet, "mines"); else sfx("win");
-        S.msg = "CASHED OUT " + pay.toLocaleString(); busy = false; info();
-        for (var q = 0; q < 25; q++) if (!tiles[q].open) { reveal(tiles[q], !!bombs[q], true); await sleep(30); }
-        await sleep(2000); chk(); await resetBoard(); phase = "bet"; S.msg = "PICK MINES · BET"; info();
+        S.msg = "CASHED OUT " + pay.toLocaleString(); busy = false; info(); setSpot(spot, pay);
+        for (var q = 0; q < 25; q++) if (!tiles[q].open) { reveal(tiles[q], !!bombs[q], true); await sleep(35); }
+        await sleep(900); chk(); flyChips(spot, 0, 1.25, 600); await sleep(1300); chk(); await resetBoard(); phase = "bet"; S.msg = "PICK MINES · BET"; info();
       }
       S.onGo = function () { if (phase === "bet") start(); else if (phase === "play") cashOut(); };
-      function tileAt(ev) { var p = tablePick(S, ev, Y + 0.015); if (!p) return -1; var best = -1; tiles.forEach(function (t, q) { if (Math.abs(p.x - t.g.position.x) < MNS.T / 2 + 0.01 && Math.abs(p.z - t.g.position.z) < MNS.T / 2 + 0.01) best = q; }); return best; }
+      function tileAt(ev) { var p = tablePick(S, ev, Y + TH / 2); if (!p) return -1; var best = -1; tiles.forEach(function (t, q) { if (Math.abs(p.x - t.g.position.x) < MNS.T / 2 + 0.012 && Math.abs(p.z - t.g.position.z) < MNS.T / 2 + 0.012) best = q; }); return best; }
       wcInput(S, function (ev) { var q = tileAt(ev); if (q < 0) return; if (phase === "bet") { S.pop("BET FIRST", "PRESS BET", "lose"); return; } pick(q); });
       var cvEl = document.querySelector("#game canvas");
-      function onMove(ev) { if (!S.alive) return; hover = phase === "play" ? tileAt(ev) : -1; $("game").classList.toggle("hot", hover >= 0 && !tiles[hover].open); }
+      function onMove(ev) { if (!S.alive) return; var h = phase === "play" ? tileAt(ev) : -1; if (h !== hover && h >= 0 && !tiles[h].open) tone(1800, 0.02, 0, "sine", 0.015); hover = h; $("game").classList.toggle("hot", hover >= 0 && !tiles[hover].open); }
       cvEl.addEventListener("pointermove", onMove);
       var alive = true;
-      (function fx() { if (!alive) return; var now = performance.now(); tiles.forEach(function (t, q) { if (t.open) return; var want = q === hover ? 1 : 0; t.lift += (want - t.lift) * 0.25; t.g.position.y = Y + t.lift * 0.018 + (phase === "play" ? Math.sin(now / 300 + q) * 0.0015 : 0); t.gw.material.opacity = t.lift * 0.5; });
-        tiles.forEach(function (t) { if (t.item) { t.item.rotation.y += 0.025; var sp = t.item.userData.spark; if (sp) sp.material.opacity = 0.6 + Math.random() * 0.4; } }); requestAnimationFrame(fx); })();
+      (function fx() {
+        if (!alive) return; var now = performance.now();
+        tiles.forEach(function (t, q) {
+          if (t.open) return; var want = q === hover ? 1 : 0; t.lift += (want - t.lift) * 0.22;
+          var bob = phase === "play" ? Math.sin(now / 420 + q * 0.7) * 0.0018 : 0; t.g.position.y = Y + t.lift * 0.03 + bob; t.g.rotation.z = t.lift * Math.sin(now / 160) * 0.03;
+          t.sh.scale.setScalar(1 + t.lift * 0.25); t.sh.material.opacity = 1; t.gw.material.opacity = Math.max(t.gw.material.opacity * 0.96, t.lift * 0.55); t.mat.emissive.setHex(0x0c1250).lerp(new T.Color(0x3a4cff), t.lift * 0.6);
+        });
+        tiles.forEach(function (t) { if (!t.item || !t.item.visible) return; t.item.rotation.y += 0.022; var it = t.item, sp = it.userData.spark; it.position.y += Math.sin(now / 500 + t.n) * 0.0002; if (sp) sp.material.opacity = 0.5 + Math.random() * 0.5; if (it.userData.tw) it.userData.tw.forEach(function (s, i) { s.material.opacity = Math.max(0, Math.sin(now / 260 + i * 2.1 + t.n)); }); });
+        requestAnimationFrame(fx);
+      })();
       keyH = function (e) { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); S.onGo(); } };
       document.addEventListener("keydown", keyH);
       var prevClean = S.cleanup;
       S.cleanup = function () {
-        alive = false; document.removeEventListener("keydown", keyH); cvEl.removeEventListener("pointermove", onMove); $("game").classList.remove("hot");
+        alive = false; lookOff(); document.removeEventListener("keydown", keyH); cvEl.removeEventListener("pointermove", onMove); $("game").classList.remove("hot");
         if (phase === "play") { if (opened > 0) { var pay = Math.floor(bet * mult()); casApply(pay); btoast("💎 Mines: " + money(pay), true); } else casApply(bet); }   // leaving mid-round cashes out (or returns an untouched bet)
         prevClean && prevClean();
       };
