@@ -6305,7 +6305,7 @@ body.inlobby { padding-block: 0; }
         ms.lean += ((fwd * (0.015 + 0.06 * rn) * wa) - ms.lean) * kk * 0.6; ms.side += ((-sid * 0.02 * wa) - ms.side) * kk * 0.5;
         root.rotation.y = c.yaw; root.rotation.x = fall * 0.8 - ms.lean - 0.1 * cr; root.rotation.z = ms.side + Math.sin(ph) * 0.012 * Math.abs(sid) * wa;
         root.visible = fall < 0.98;
-        if (fp) { root.position.x += Math.sin(c.yaw) * 0.26; root.position.z += Math.cos(c.yaw) * 0.26; root.position.y -= 0.26 * cr; }   // the eyes sit in front of the chest, and the chest stays under the eyes when crouching
+        if (fp) { root.position.x += Math.sin(c.yaw) * 0.26; root.position.z += Math.cos(c.yaw) * 0.26; root.position.y -= 0.26 * cr + 0.14 + bob; root.rotation.x = fall * 0.8; root.rotation.z = 0; }   // seen from your own eyes the body stays upright and a bit lower, so the camera never ends up inside it (running, crouching, looking down)   // the eyes sit in front of the chest, and the chest stays under the eyes when crouching
         // legs: swing along the direction of travel (forward/back for walking, apart/together for side steps), longer strides when running
         // side steps: the legs open and close smoothly (no snapping), the leading leg reaches a little further, both lift a touch
         var amp = (0.62 + 0.38 * rn) * wa, fA = amp * fwd, asd = Math.abs(sid), sA = amp * 0.42 * asd, spr = (1 - Math.cos(ph)) * 0.5, lead = (sid > 0 ? 1 : -1) * Math.sin(ph) * sA * 0.35, lift = Math.cos(ph) * 0.1 * asd * wa;
