@@ -785,8 +785,8 @@ input[type=text], input:not([type]), textarea { cursor: text; }
 .xhair { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 5; pointer-events: none; }
 .xhair::before { content: ""; position: absolute; left: -2.5px; top: -2.5px; width: 5px; height: 5px; border-radius: 50%; background: rgba(255, 244, 205, .92); box-shadow: 0 0 0 1px rgba(20, 10, 0, .55), 0 0 9px rgba(243, 210, 127, .75); transition: transform .2s; }
 .xhair::after { content: ""; position: absolute; left: -14px; top: -14px; width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid rgba(243, 210, 127, 0); transform: scale(.45); transition: transform .24s cubic-bezier(.2, .9, .3, 1.3), border-color .2s, box-shadow .2s; }
-.xhair.act::after { border-color: rgba(243, 210, 127, .95); transform: scale(1); box-shadow: 0 0 12px rgba(243, 210, 127, .55), inset 0 0 7px rgba(243, 210, 127, .28); }
-.xhair.act::before { transform: scale(1.4); }
+.xhair.hot::after { border-color: rgba(243, 210, 127, .95); transform: scale(1); box-shadow: 0 0 12px rgba(243, 210, 127, .55), inset 0 0 7px rgba(243, 210, 127, .28); }
+.xhair.hot::before { transform: scale(1.4); }
 .xhair[hidden], #game.seated .xhair { display: none !important; }
 
 /* ============================================================
@@ -6831,8 +6831,8 @@ body.inlobby { padding-block: 0; }
       var pr = $("prompt"), fine = window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches, ph = "";
       if (ta) ph += '<div class="pr"><b>' + (fine ? keyLabel(settings.keys.act) : "👆") + "</b></div>";
       if (da) ph += '<div class="pr d"><b>' + (fine ? keyLabel(settings.keys.drop) : "👆") + "</b></div>";
-      pr.innerHTML = ""; pr.hidden = true;   // no floating bubble by the crosshair (it showed up as a stretched gold pill); the action button and the crosshair glow are enough
-      var xh = $("xhair"); if (xh) xh.classList.toggle("act", !!(ta || da));
+      pr.innerHTML = ph; pr.hidden = !ph;
+      var xh = $("xhair"); if (xh) xh.classList.toggle("hot", !!(ta || da));   // not "act": that class is the big gold action button style
     }
     // screen flash: falling to black, result tint
     var fl = 0, flc = "#000";
