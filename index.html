@@ -3085,6 +3085,7 @@ body.inlobby { padding-block: 0; }
   function takeAction() {
     var dra = doorAction(); if (dra) return dra;
     var cas = casinoAction(); if (cas) return cas;
+    if (SLV && SLV.alive && !casOpen) return { k: "casino", g: "slots", label: "🎰 SPIN", m: SLV.mk };   // a live slot machine you stepped back from
     if (!canAct()) return null;
     if (readyGate || gateNeeded(doc)) { if (!nearLock(me.x, me.z)) return null; var gm = role === "host" ? doc.gh : doc.gg; return { k: "start", label: gm ? "ממתינים לשחקן השני" : "התחילו" }; }
     var la = lockAction(); if (la) return la;
@@ -3115,6 +3116,7 @@ body.inlobby { padding-block: 0; }
   function currentAction() { return takeAction() || dropAction(); }
   function takeHere() {
     var a = takeAction();
+    if (!a && SLV && SLV.alive && !casOpen) { SLV.press("spin"); return; }   // stepped back from a live slot machine: E / the action button still spins it
     if (a && world && world.poke) world.poke(1);   // the hands only reach out when there is really something to take or press
     if (!a) { if (canAct()) setHint(me.carry > 0 ? "יש לכם כסף בידיים. הניחו אותו עם " + keyLabel(settings.keys.drop) + " או כפתור ההנחה." : "התקרבו לקופה כדי לקחת כסף, או עמדו על פודיום שהנחתם עליו כדי לקחת בחזרה."); return; }
     if (a.k === "casino") { if (a.g === "juke") jukePress(); else if (a.g === "slots" && a.m) { if (SLV) SLV.press("spin"); } else if (KIOS[a.g] && a.m) { if (KIO && KIO.mk === a.m) KIO.press(KIOS[a.g].act); } else if (a.tbl != null && PHYS[a.g]) sitDown(a); else btoast("המשחק הזה עוד לא פתוח.", false); } else if (a.k === "door") openKeypad(a.s); else if (a.k === "start") startGo(); else if (a.k === "lock") onLockClick(); else if (a.k === "bank") pickUp(); else takeBack(a.i);
@@ -8534,24 +8536,56 @@ body.inlobby { padding-block: 0; }
     S.coins = []; S.pile = {}; S.bet = Math.min(1000, Math.max(100, casBet || 100)); S.free = 0; S.last = 0; S.win = 0; S.flash = 0; S.busy = false; S.ty = ty;
     if (!slxEl) { slxEl = cge("div", "", ""); slxEl.id = "slx"; $("game").appendChild(slxEl); } slxEl.style.display = "block";
     hudMsg("לחצו על הכפתורים של המכונה (או E לסיבוב)");
-    function drawInfo() { var g = S.ig, w = S.ic.width, h = S.ic.height; g.fillStyle = "#04120a"; g.fillRect(0, 0, w, h); g.strokeStyle = "#1aff7a"; g.lineWidth = 5; g.strokeRect(3, 3, w - 6, h - 6); g.textBaseline = "middle"; g.textAlign = "center";
-      g.fillStyle = "#6bd89a"; g.font = "700 " + Math.round(h * 0.14) + "px Fredoka, Arial, sans-serif"; g.fillText(S.free > 0 ? "FREE SPINS" : "NEXT SPIN", w / 2, h * 0.12);
-      g.fillStyle = "#6bd89a"; g.font = "700 " + Math.round(h * 0.13) + "px Fredoka, Arial, sans-serif"; g.fillText("BET", w * 0.27, h * 0.34); g.fillText(S.free > 0 ? "LEFT" : "LAST WIN", w * 0.74, h * 0.34);
-      g.fillStyle = "#fff"; g.font = "900 " + Math.round(h * 0.34) + "px Fredoka, Arial, sans-serif"; g.fillText(S.bet.toLocaleString(), w * 0.27, h * 0.62); g.fillStyle = S.win > 0 ? "#ffe27a" : "#fff"; g.fillText(S.free > 0 ? String(S.free) : Math.round(S.win).toLocaleString(), w * 0.74, h * 0.62);
-      g.fillStyle = "#ffd23f"; g.font = "800 " + Math.round(h * 0.13) + "px Fredoka, Arial, sans-serif"; g.fillText("BONUS " + (S.bet * 21).toLocaleString(), w / 2, h * 0.9); S.itex.needsUpdate = true; }
+    function drawInfo() {   // neon LED panel: BET, LAST WIN / FREE SPINS LEFT, bonus price
+      var g = S.ig, w = S.ic.width, h = S.ic.height, gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#0d0820"); gr.addColorStop(1, "#05030c"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.save(); g.shadowColor = "#3df2ff"; g.shadowBlur = 14; g.strokeStyle = "#3df2ff"; g.lineWidth = 4; rrect(g, 5, 5, w - 10, h - 10, 14); g.stroke(); g.restore();
+      g.textBaseline = "middle"; g.textAlign = "center";
+      g.fillStyle = "#9fe9ff"; g.font = "700 " + Math.round(h * 0.13) + "px Fredoka, Arial, sans-serif"; g.fillText(S.free > 0 ? "★ FREE SPINS ★" : "NEXT SPIN", w / 2, h * 0.14);
+      [["BET", S.bet.toLocaleString(), w * 0.27, "#ffffff"], [S.free > 0 ? "LEFT" : "LAST WIN", S.free > 0 ? String(S.free) : Math.round(S.win).toLocaleString(), w * 0.74, S.win > 0 ? "#ffe27a" : "#ffffff"]].forEach(function (c) {
+        g.fillStyle = "rgba(61,242,255,.08)"; rrect(g, c[2] - w * 0.2, h * 0.27, w * 0.4, h * 0.52, 10); g.fill();
+        g.fillStyle = "#7fd8ff"; g.font = "700 " + Math.round(h * 0.11) + "px Fredoka, Arial, sans-serif"; g.fillText(c[0], c[2], h * 0.36);
+        g.save(); g.shadowColor = c[3]; g.shadowBlur = 12; g.fillStyle = c[3]; g.font = "700 " + Math.round(h * 0.3) + "px Fredoka, Arial, sans-serif"; g.fillText(c[1], c[2], h * 0.61); g.restore();
+      });
+      g.save(); g.shadowColor = "#ffd23f"; g.shadowBlur = 10; g.fillStyle = "#ffd23f"; g.font = "700 " + Math.round(h * 0.12) + "px Fredoka, Arial, sans-serif"; g.fillText("BONUS " + (S.bet * 21).toLocaleString(), w / 2, h * 0.9); g.restore();
+      S.itex.needsUpdate = true;
+    }
     S.drawInfo = drawInfo;
-    function drawScreen() {
-      var g = S.g, W2 = S.cv.width, H2 = S.cv.height, cw = W2 / n, ch = H2 / 3; g.fillStyle = "#120a1c"; g.fillRect(0, 0, W2, H2);
+    function drawScreen() {   // glossy video-slot screen: rounded reel windows on a deep background, gold reel dividers, a glowing payline, win boxes and a WIN banner
+      var g = S.g, W2 = S.cv.width, H2 = S.cv.height, pad = Math.round(W2 * 0.025), top = Math.round(H2 * 0.04), cw = (W2 - pad * 2) / n, ch = (H2 - top * 2) / 3, now = performance.now();
+      var bg = g.createRadialGradient(W2 / 2, H2 / 2, 10, W2 / 2, H2 / 2, W2 * 0.75); bg.addColorStop(0, "#2a1458"); bg.addColorStop(1, "#07031a"); g.fillStyle = bg; g.fillRect(0, 0, W2, H2);
       for (var i = 0; i < n; i++) {
-        var r = S.reels[i], x = i * cw; g.save(); g.beginPath(); g.rect(x + 3, 3, cw - 6, H2 - 6); g.clip();
-        var gr = g.createLinearGradient(0, 0, 0, H2); gr.addColorStop(0, "#cfc5a2"); gr.addColorStop(0.5, "#fffaf0"); gr.addColorStop(1, "#cfc5a2"); g.fillStyle = gr; g.fillRect(x, 0, cw, H2);
-        var fl = Math.floor(r.p), fr2 = r.p - fl; g.font = Math.round(ch * 0.62) + "px 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
-        for (var k = -1; k <= 3; k++) { var sym = r.strip[(((fl + k) % S.L) + S.L) % S.L], y = (k - fr2 + 0.5) * ch, hi = S.winLine && !r.spin && k === 1; if (r.spin) { g.globalAlpha = 0.5; drawSym(g, sym, x + cw / 2, y - ch * 0.16, ch * 0.62); drawSym(g, sym, x + cw / 2, y + ch * 0.16, ch * 0.62); g.globalAlpha = 1; } else { if (hi) { g.save(); g.translate(x + cw / 2, y); var sc = 1 + 0.12 * Math.sin(performance.now() / 90); g.scale(sc, sc); drawSym(g, sym, 0, 0, ch * 0.62); g.restore(); } else drawSym(g, sym, x + cw / 2, y, ch * 0.62); } }
-        var sh = g.createLinearGradient(0, 0, 0, H2); sh.addColorStop(0, "rgba(0,0,0,.55)"); sh.addColorStop(0.3, "rgba(0,0,0,0)"); sh.addColorStop(0.7, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(0,0,0,.55)"); g.fillStyle = sh; g.fillRect(x, 0, cw, H2); g.restore();
-        g.fillStyle = "#2a1a3a"; g.fillRect(x - 2, 0, 5, H2);
+        var r = S.reels[i], x = pad + i * cw;
+        g.save(); rrect(g, x + 3, top, cw - 6, H2 - top * 2, 12); g.clip();
+        var gr = g.createLinearGradient(0, top, 0, H2 - top); gr.addColorStop(0, "#b9b0d6"); gr.addColorStop(0.18, "#f4f0ff"); gr.addColorStop(0.5, "#ffffff"); gr.addColorStop(0.82, "#f4f0ff"); gr.addColorStop(1, "#b9b0d6"); g.fillStyle = gr; g.fillRect(x, 0, cw, H2);
+        var fl = Math.floor(r.p), fr2 = r.p - fl; g.textAlign = "center"; g.textBaseline = "middle";
+        for (var k = -1; k <= 3; k++) {
+          var sym = r.strip[(((fl + k) % S.L) + S.L) % S.L], y = top + (k - fr2 + 0.5) * ch, hi = S.winLine && !r.spin && k === 1;
+          if (r.spin) { for (var q = -2; q <= 2; q++) { g.globalAlpha = 0.28 - Math.abs(q) * 0.07; drawSym(g, sym, x + cw / 2, y + q * ch * 0.11, ch * 0.6); } g.globalAlpha = 1; }
+          else if (hi) {
+            var pulse = 0.5 + 0.5 * Math.sin(now / 110);
+            g.save(); g.shadowColor = "#ffd23f"; g.shadowBlur = 18 + pulse * 14; g.fillStyle = "rgba(255,210,63," + (0.25 + pulse * 0.25) + ")"; rrect(g, x + 8, y - ch * 0.46, cw - 16, ch * 0.92, 12); g.fill(); g.restore();
+            g.save(); g.translate(x + cw / 2, y); var sc = 1 + 0.1 * Math.sin(now / 90); g.scale(sc, sc); drawSym(g, sym, 0, 0, ch * 0.64); g.restore();
+          } else drawSym(g, sym, x + cw / 2, y, ch * 0.6);
+        }
+        var sh = g.createLinearGradient(0, top, 0, H2 - top); sh.addColorStop(0, "rgba(20,8,50,.6)"); sh.addColorStop(0.24, "rgba(0,0,0,0)"); sh.addColorStop(0.76, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(20,8,50,.6)"); g.fillStyle = sh; g.fillRect(x, 0, cw, H2);
+        var gl = g.createLinearGradient(x, 0, x + cw, 0); gl.addColorStop(0, "rgba(255,255,255,0)"); gl.addColorStop(0.15, "rgba(255,255,255,.35)"); gl.addColorStop(0.3, "rgba(255,255,255,0)"); g.fillStyle = gl; g.fillRect(x, top, cw, (H2 - top * 2) * 0.45);   // glass sheen
+        g.restore();
+        g.save(); g.strokeStyle = "rgba(255,210,63,.9)"; g.lineWidth = 3; rrect(g, x + 3, top, cw - 6, H2 - top * 2, 12); g.stroke(); g.restore();
       }
-      g.strokeStyle = S.winLine ? (Math.floor(performance.now() / 120) % 2 ? "#ffe27a" : "#ff3f3f") : "rgba(255,40,40,.85)"; g.lineWidth = S.winLine ? 6 : 3; g.beginPath(); g.moveTo(0, H2 / 2); g.lineTo(W2, H2 / 2); g.stroke();
-      if (S.flash > 0) { g.strokeStyle = "rgba(255,226,122," + Math.min(1, S.flash) + ")"; g.lineWidth = 12; g.strokeRect(6, 6, W2 - 12, H2 - 12); }
+      // payline with glow and arrows at both ends
+      var py = H2 / 2, lc = S.winLine ? (Math.floor(now / 120) % 2 ? "#ffe27a" : "#ff3f6a") : "#ff3f6a";
+      g.save(); g.shadowColor = lc; g.shadowBlur = S.winLine ? 22 : 10; g.strokeStyle = lc; g.lineWidth = S.winLine ? 6 : 3; g.globalAlpha = S.winLine ? 1 : 0.8; g.beginPath(); g.moveTo(pad, py); g.lineTo(W2 - pad, py); g.stroke();
+      g.fillStyle = lc; [[2, 1], [W2 - 2, -1]].forEach(function (a) { g.beginPath(); g.moveTo(a[0], py - 12); g.lineTo(a[0] + a[1] * 14, py); g.lineTo(a[0], py + 12); g.closePath(); g.fill(); }); g.restore();
+      if (S.flash > 0) { g.save(); g.shadowColor = "#ffd23f"; g.shadowBlur = 30; g.strokeStyle = "rgba(255,226,122," + Math.min(1, S.flash) + ")"; g.lineWidth = 10; rrect(g, 6, 6, W2 - 12, H2 - 12, 18); g.stroke(); g.restore(); }
+      if (S.winLine && S.win > 0) {   // WIN banner over the bottom row
+        var bw = W2 * 0.56, bh = H2 * 0.2, bx = (W2 - bw) / 2, by = H2 - top - bh - 6, pl = 0.5 + 0.5 * Math.sin(now / 140);
+        g.save(); g.shadowColor = "#ff3fb4"; g.shadowBlur = 20 + pl * 10; var bgr = g.createLinearGradient(0, by, 0, by + bh); bgr.addColorStop(0, "#ff5fc4"); bgr.addColorStop(1, "#9a1a7a"); g.fillStyle = bgr; rrect(g, bx, by, bw, bh, bh / 2); g.fill(); g.restore();
+        g.strokeStyle = "#ffe27a"; g.lineWidth = 3; rrect(g, bx, by, bw, bh, bh / 2); g.stroke();
+        g.save(); g.fillStyle = "#fffbe6"; g.shadowColor = "#ffd23f"; g.shadowBlur = 12; g.font = "700 " + Math.round(bh * 0.62) + "px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("WIN " + Math.round(S.win).toLocaleString(), W2 / 2, by + bh / 2 + 2); g.restore();
+      }
+      if (!S.busy && !S.winLine) {   // idle: a light sweep runs across the glass now and then
+        var sw = ((now / 2600) % 1) * (W2 + 300) - 150; var sg = g.createLinearGradient(sw - 60, 0, sw + 60, 0); sg.addColorStop(0, "rgba(255,255,255,0)"); sg.addColorStop(0.5, "rgba(255,255,255,.18)"); sg.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = sg; g.fillRect(0, 0, W2, H2);
+      }
       S.tex.needsUpdate = true;
     }
     S.drawScreen = drawScreen; drawInfo(); drawScreen();
@@ -8581,7 +8615,7 @@ body.inlobby { padding-block: 0; }
     }
     // input: real clicks on the 3D buttons + keyboard
     var cvs = document.querySelector("#game canvas"), rc = new T.Raycaster(), hov = null;
-    function pick(ev) { var nd; if (document.pointerLockElement) nd = new T.Vector2(0, 0); else { var rect = cvs.getBoundingClientRect(); nd = new T.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1); } rc.setFromCamera(nd, world.cam()); rc.far = 4; var hit = rc.intersectObjects(S.spots, false)[0]; return hit ? hit.object : null; }
+    function pick(ev) { var nd; if (document.pointerLockElement) nd = new T.Vector2(0, 0); else { var rect = cvs.getBoundingClientRect(); nd = new T.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1); } rc.setFromCamera(nd, world.cam()); rc.far = 8; var hit = rc.intersectObjects(S.spots, false)[0]; return hit ? hit.object : null; }
     S.onDown = function (ev) { var b = pick(ev); if (b) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); press(b.userData.act); } };
     S.hovT = setInterval(function () { if (!S.alive) return; var b = document.pointerLockElement ? pick({}) : null; if (hov && hov !== b && !hov.userData.hold) glow(hov, 0); if (b && !b.userData.hold) glow(b, 0.35); hov = b; }, 70);
     cvs.addEventListener("pointerdown", S.onDown, true);
@@ -8606,14 +8640,19 @@ body.inlobby { padding-block: 0; }
         var gy = 0.372 + 0.0095 * (S.pile[Math.round(cp.x / 0.045) + "_" + Math.round(cp.z / 0.045)] || 0);   // the coins heap up in the tray
         if (cp.y <= gy) { cp.y = gy; if (Math.abs(c.vy) > 0.35) { c.vy = -c.vy * 0.3; c.vx *= 0.6; c.vz *= 0.5; tone(2200 + Math.random() * 1500, 0.04, 0, "triangle", 0.05); } else { c.rest = true; c.m.rotation.x = 0; c.m.rotation.z = 0; var pk = Math.round(cp.x / 0.045) + "_" + Math.round(cp.z / 0.045); S.pile[pk] = Math.min(6, (S.pile[pk] || 0) + 1); } }
       }
-      if (S.busy || S.winLine || S.flash > 0 || !S.lastDraw || now - S.lastDraw > 140) { S.lastDraw = now; drawScreen(); }
+      if (S.busy || S.winLine || S.flash > 0 || !S.lastDraw || now - S.lastDraw > 60) { S.lastDraw = now; drawScreen(); }
       requestAnimationFrame(loop);
     })(performance.now());
     function spawnCoin() { var m2 = new T.Mesh(COIN_GEO, COIN_MAT); m2.position.set(rnd(-0.1, 0.1), 0.6, 0.43); lg.add(m2); S.coins.push({ m: m2, vx: rnd(-0.14, 0.14), vy: rnd(0.05, 0.3), vz: rnd(0.08, 0.3), rx: rnd(-8, 8), rz: rnd(-8, 8), rest: false }); tone(1800 + Math.random() * 1800, 0.05, 0, "triangle", 0.05); if (S.coins.length > 150) { var o = S.coins.shift(); lg.remove(o.m); } }
     sfx("chip");
   }
   function slotStop() { var S = SLV; if (!S) return; S.alive = false; if (S.cleanup) S.cleanup(); if (S.tg.parent) S.tg.parent.remove(S.tg); if (slxEl) slxEl.style.display = "none"; if (slmEl) slmEl.style.opacity = 0; SLV = null; }
-  setInterval(function () { try { if (!world || !me) return; var a = casOpen ? null : casinoAction(); if (a && a.g === "slots" && a.m) { if (!SLV || SLV.mk !== a.m) { slotStop(); slotUse(a); } } else if (SLV) slotStop(); } catch (e) { } }, 140);
+  function slotDist(m) { var lx = EXIT_Z - me.z, uu = -me.x - XEND; return Math.hypot(lx - m.x, uu - (-30 - m.z)); }   // hall z0 = -30 (ROOMD)
+  setInterval(function () { try {
+    if (!world || !me) return; var a = casOpen ? null : casinoAction(), near = a && a.g === "slots" && a.m;
+    if (near && (!SLV || SLV.mk !== a.m)) { if (SLV && (SLV.busy || SLV.free > 0)) return; slotStop(); slotUse(a); return; }
+    if (SLV && !near) { var far = casOpen || slotDist(SLV.mk) > 6 || -me.x < XEND; if (far && !SLV.busy && !(SLV.free > 0)) slotStop(); }   // step back and it keeps going; the spin (and free spins) always finish and pay
+  } catch (e) { } }, 140);
   PHYS.slots = true;
 
   // =====================================================================
