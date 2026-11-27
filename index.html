@@ -6295,8 +6295,8 @@ body.inlobby { padding-block: 0; }
         var landK = Math.max(0, 1 - (t - ms.land) / 220), bob = (Math.abs(Math.sin(ph)) * Math.abs(fwd) + (1 - Math.cos(ph * 2)) * 0.5 * 0.6 * Math.abs(sid)) * (0.035 + 0.05 * rn) * wa * (1 - air);
         root.rotation.order = "YXZ";
         root.position.set(c.x, c.y + jy - fall * fall * 7 + bob - 0.2 * cr - 0.06 * landK, c.z);
-        ms.lean += ((fwd * (0.06 + 0.2 * rn) * wa) - ms.lean) * kk; ms.side += ((-sid * 0.07 * wa) - ms.side) * kk * 0.6;
-        root.rotation.y = c.yaw; root.rotation.x = fall * 0.8 - ms.lean - 0.2 * cr; root.rotation.z = ms.side + Math.sin(ph) * 0.035 * Math.abs(sid) * wa;
+        ms.lean += ((fwd * (0.015 + 0.06 * rn) * wa) - ms.lean) * kk * 0.6; ms.side += ((-sid * 0.02 * wa) - ms.side) * kk * 0.5;
+        root.rotation.y = c.yaw; root.rotation.x = fall * 0.8 - ms.lean - 0.1 * cr; root.rotation.z = ms.side + Math.sin(ph) * 0.012 * Math.abs(sid) * wa;
         root.visible = fall < 0.98;
         // legs: swing along the direction of travel (forward/back for walking, apart/together for side steps), longer strides when running
         // side steps: the legs open and close smoothly (no snapping), the leading leg reaches a little further, both lift a touch
