@@ -6324,7 +6324,8 @@ body.inlobby { padding-block: 0; }
         else if (emo === "shock") { av.arms[0].rotation.x = 2.2; av.arms[1].rotation.x = 2.2; av.arms[0].rotation.z = 0.5; av.arms[1].rotation.z = -0.5; }
         else { var aa = (0.45 + 0.55 * rn) * wa * (0.35 + 0.65 * Math.abs(fwd)); av.arms[0].rotation.x = -sph * aa + 0.35 * rn * wa + 0.5 * cr; av.arms[1].rotation.x = sph * aa + 0.35 * rn * wa + 0.5 * cr; av.arms[0].rotation.z = -0.1 - 0.2 * Math.abs(sid) * wa; av.arms[1].rotation.z = 0.1 + 0.2 * Math.abs(sid) * wa; }
         av.bundle.visible = carrying && !fp;
-        if (fp) { av.arms[0].visible = av.arms[1].visible = false; } else { av.arms[0].visible = av.arms[1].visible = true; if (fp && emo !== "cheer" && emo !== "shock") { av.arms[0].rotation.x += 0.38; av.arms[1].rotation.x += 0.38; av.arms[0].rotation.z -= 0.16; av.arms[1].rotation.z += 0.16; } }   // the first-person hands hold it; your own arms hang a touch forward and out, so you see them when you look down
+        var fpDown = fp && -(c.pitch || 0) > 0.5 && !carrying && !heldKind;
+        if (fp && !fpDown) { av.arms[0].visible = av.arms[1].visible = false; } else { av.arms[0].visible = av.arms[1].visible = true; if (fp && emo !== "cheer" && emo !== "shock") { av.arms[0].rotation.x += 0.38; av.arms[1].rotation.x += 0.38; av.arms[0].rotation.z -= 0.16; av.arms[1].rotation.z += 0.16; } }   // the first-person hands hold it; your own arms hang a touch forward and out, so you see them when you look down
         if (carrying) { var cnt = clamp(Math.ceil(c.carry / UNIT), 1, 6); if (av.bundleCount !== cnt) { av.bundleCount = cnt; avatarSetCount(av, cnt); } }
         av.head.rotation.z = emo === "sad" ? 0.18 : (emo === "cheer" ? Math.sin(t / 120) * 0.08 : 0);
         av.head.rotation.x = emo === "sad" ? 0.2 : 0;
@@ -6434,23 +6435,26 @@ body.inlobby { padding-block: 0; }
             // the hands hang at your sides like real arms: out of view when you stand still and look ahead. Walking swings them forward
             // (opposite the legs) so they peek in at the bottom corners, running swings them higher, looking down brings them into view,
             // a jump lifts them out to the sides, and pressing E (take / place) reaches one hand forward
-            // first-person hands like in most first-person games: relaxed, low in the bottom corners, forearms angled in, wrists soft and
-            // fingers loosely curled (never stiff and straight). They bob with your steps a beat behind the head, swing a little opposite
-            // each other, pump harder and close into loose fists when you run, breathe when you stand, trail when you turn or strafe
-            h.g.visible = true;
-            var pz = h.s === pokeS ? pa : 0, air = me.jy > 0.03 ? 1 : 0, cr = me.cr || 0, br = Math.sin(t / 1200 + h.s * 0.6), br2 = Math.sin(t / 1750 + h.s * 1.9);
-            h.ax = (h.ax || 0) + ((air ? 1 : 0) - (h.ax || 0)) * (1 - Math.exp(-dtf * 8));
-            var stepA = wa * (1 + 0.8 * rn), lagPh = ph - 0.45, alt = Math.sin(ph2), still = 1 - wa;
-            var bobH = -Math.cos(2 * lagPh) * 0.02 * bobA, swayH = Math.sin(lagPh) * 0.022 * wa;
-            h.g.position.set(
-              h.s * (0.46 - 0.04 * rn * wa) - lagX * 0.35 + swayH + cam.hx + h.s * h.ax * 0.05 - h.s * pz * 0.12 + br2 * 0.003 * still,
-              -0.52 + bobH + br * 0.007 * still + 0.03 * rn * wa + lagY * 0.18 + cam.hy + h.ax * 0.05 - cr * 0.04 + pz * 0.1 - Math.max(0, alt) * 0.012 * stepA,
-              -0.72 - alt * (0.03 + 0.05 * rn) * wa + cam.hz - pz * 0.26);
-            h.g.rotation.set(
-              0.05 + alt * (0.06 + 0.12 * rn) * wa + 0.18 * rn * wa + br * 0.02 * still - pz * 0.45 + h.ax * 0.12,
-              h.s * (0.32 + 0.05 * Math.sin(lagPh) * wa),
-              h.s * (0.55 + 0.05 * alt * wa) + cam.hx * 1.6 + br2 * 0.015 * still);
-            var curl = 0.32 + 0.45 * rn * wa + 0.05 * Math.sin(t / 1600 + h.s * 2) - pz * 0.25;   // relaxed curl, tighter when running, opens a bit to reach
+            // First-person arms the way first-person games with this look do it (Evade, Nico's Nextbots and friends): the arms are part of
+            // the body, so standing still they hang at your sides out of view. Moving swings them: each hand travels a natural arc
+            // (forward, up and in on the front swing; back, down and out on the back swing), opposite the legs. Walking only lets the
+            // knuckles peek in at the front of the swing; running pumps the hands clearly into the bottom corners as loose fists.
+            // Angles are anatomical: palm facing in, thumb on top, wrist straight with the forearm, the forearm rising from below the
+            // screen toward the hand. Looking down hands over to your real body (arms at your sides).
+            var pz = h.s === pokeS ? pa : 0, air = me.jy > 0.03 ? 1 : 0, cr = me.cr || 0, lookDn = -(me.pitch || 0);
+            h.g.visible = lookDn < 0.55 || pz > 0.02;
+            h.ax = (h.ax || 0) + ((air ? 1 : 0) - (h.ax || 0)) * (1 - Math.exp(-dtf * 7));
+            var fr = (1 - Math.sin(ph2)) * 0.5, f2 = fr * fr * (3 - 2 * fr), amp = wa * (1 - 0.6 * cr), rk = rn * wa;   // fr: 0 = back of the swing, 1 = front
+            var up = f2 * amp, br = Math.sin(t / 1300 + h.s);
+            var pY = -1.02 + up * (0.3 + 0.24 * rk) + h.ax * 0.14 + br * 0.004 + cam.hy * 0.8 + lagY * 0.1;
+            var pX = h.s * (0.62 - up * (0.05 + 0.07 * rk) + h.ax * 0.05) - lagX * 0.3 + cam.hx;
+            var pZ = -0.52 - up * (0.18 + 0.14 * rk) + (1 - fr) * 0.06 * amp + cam.hz;
+            var rX = 0.25 + up * (0.42 + 0.38 * rk) - (1 - fr) * 0.12 * amp + h.ax * 0.25, rY = h.s * (0.22 + up * (0.18 + 0.12 * rk)), rZ = -h.s * (1.32 - 0.12 * h.ax);
+            if (pz > 0) {   // reach forward with an open hand (take / place money)
+              var e = pz; pX += (h.s * 0.24 - pX) * e; pY += (-0.4 - pY) * e; pZ += (-0.86 - pZ) * e; rX += (0.15 - rX) * e; rY += (h.s * 0.12 - rY) * e; rZ += (-h.s * 0.55 - rZ) * e;
+            }
+            h.g.position.set(pX, pY, pZ); h.g.rotation.set(rX, rY, rZ);
+            var curl = 0.55 + 0.4 * rk + 0.05 * Math.sin(t / 1600 + h.s * 2) - pz * 0.5;   // relaxed curl walking, a loose fist running, opens to reach
             h.f.forEach(function (f, k) { f.rotation.x = f.userData.rx - curl * (0.75 + k * 0.15); }); h.tg.rotation.x = h.tr.x - curl * 0.45;
           }
         });
