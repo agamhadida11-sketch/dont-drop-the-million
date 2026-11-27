@@ -6292,16 +6292,17 @@ body.inlobby { padding-block: 0; }
         if (jy > 0.02) ms.air = Math.min(1, ms.air + dtm * 8); else { if (ms.air > 0.5) ms.land = t; ms.air = Math.max(0, ms.air - dtm * 10); }
         ms.cr += ((c.cr || 0) - ms.cr) * kk; ms.x = c.x; ms.z = c.z; ms.t = t; ms.jy = jy;
         var fwd = ms.f, sid = ms.s, rn = ms.run, air = ms.air, cr = ms.cr, ph = c.phase, sph = Math.sin(ph);
-        var landK = Math.max(0, 1 - (t - ms.land) / 220), bob = Math.abs(Math.sin(ph)) * (0.035 + 0.05 * rn) * wa * (1 - air);
+        var landK = Math.max(0, 1 - (t - ms.land) / 220), bob = (Math.abs(Math.sin(ph)) * Math.abs(fwd) + (1 - Math.cos(ph * 2)) * 0.5 * 0.6 * Math.abs(sid)) * (0.035 + 0.05 * rn) * wa * (1 - air);
         root.rotation.order = "YXZ";
         root.position.set(c.x, c.y + jy - fall * fall * 7 + bob - 0.2 * cr - 0.06 * landK, c.z);
-        ms.lean += ((fwd * (0.06 + 0.2 * rn) * wa) - ms.lean) * kk; ms.side += ((-sid * 0.12 * wa) - ms.side) * kk;
-        root.rotation.y = c.yaw; root.rotation.x = fall * 0.8 - ms.lean - 0.2 * cr; root.rotation.z = ms.side;
+        ms.lean += ((fwd * (0.06 + 0.2 * rn) * wa) - ms.lean) * kk; ms.side += ((-sid * 0.07 * wa) - ms.side) * kk * 0.6;
+        root.rotation.y = c.yaw; root.rotation.x = fall * 0.8 - ms.lean - 0.2 * cr; root.rotation.z = ms.side + Math.sin(ph) * 0.035 * Math.abs(sid) * wa;
         root.visible = fall < 0.98;
         // legs: swing along the direction of travel (forward/back for walking, apart/together for side steps), longer strides when running
-        var amp = (0.62 + 0.38 * rn) * wa, fA = amp * fwd, sA = amp * 0.75 * Math.abs(sid);
-        av.legs[0].rotation.set(sph * fA, 0, Math.max(0, sph) * sA * (sid > 0 ? 1 : -1) - 0.12 * cr);
-        av.legs[1].rotation.set(-sph * fA, 0, Math.max(0, -sph) * sA * (sid > 0 ? 1 : -1) + 0.12 * cr);
+        // side steps: the legs open and close smoothly (no snapping), the leading leg reaches a little further, both lift a touch
+        var amp = (0.62 + 0.38 * rn) * wa, fA = amp * fwd, asd = Math.abs(sid), sA = amp * 0.42 * asd, spr = (1 - Math.cos(ph)) * 0.5, lead = (sid > 0 ? 1 : -1) * Math.sin(ph) * sA * 0.35, lift = Math.cos(ph) * 0.1 * asd * wa;
+        av.legs[0].rotation.set(sph * fA + lift, 0, -spr * sA + lead - 0.12 * cr);
+        av.legs[1].rotation.set(-sph * fA - lift, 0, spr * sA + lead + 0.12 * cr);
         av.legs[0].scale.y = av.legs[1].scale.y = 1 - 0.32 * cr;
         var carrying = c.carry > 0, emo = c.emo;
         if (carrying) { av.arms[0].rotation.x = 1.35; av.arms[1].rotation.x = 1.35; av.arms[0].rotation.z = 0.5; av.arms[1].rotation.z = -0.5; }
