@@ -6105,15 +6105,15 @@ body.inlobby { padding-block: 0; }
       var cuff = ink(new T.Mesh(new T.CylinderGeometry(0.13, 0.13, 0.11, 28), M.white), 0.012); cuff.rotation.x = Math.PI / 2; cuff.position.set(0, 0, -0.07); g.add(cuff);
       var palm = ink(new T.Mesh(new T.SphereGeometry(0.115, 32, 24), vmSkin), 0.014); palm.scale.set(1.2, 0.48, 1.05); palm.position.set(0, 0, -0.2); g.add(palm);
       var heel = ink(new T.Mesh(new T.SphereGeometry(0.1, 32, 24), vmSkin), 0.012); heel.scale.set(0.95, 0.5, 1.1); heel.position.set(0, 0, -0.1); g.add(heel);
-      var fh = [0.115, 0.14, 0.13, 0.1];
+      var fh = [0.115, 0.14, 0.13, 0.1], fgs = [];
       for (var k = 0; k < 4; k++) {
         var fg = new T.Group(); fg.position.set(s * (k - 1.5) * 0.068, 0.004, -0.255); fg.rotation.set(0.02, s * (1.5 - k) * 0.06, 0);
-        var fm = ink(new T.Mesh(fingerGeo(fh[k] + 0.03, 0.032 - k * 0.0012, 0.022, 1), vmSkin), 0.006); fg.add(fm);
+        var fm = ink(new T.Mesh(fingerGeo(fh[k] + 0.03, 0.032 - k * 0.0012, 0.022, 1), vmSkin), 0.006); fg.add(fm); fg.userData.rx = fg.rotation.x; fgs.push(fg);
         g.add(fg);
       }
       var tg = new T.Group(); tg.position.set(-s * 0.1, -0.02, -0.14); tg.rotation.set(0.1, s * 0.65, 0);
       var th = ink(new T.Mesh(capsuleGeo(0.04, 0.03, 0.08, 24), vmSkin), 0.008); th.rotation.x = -Math.PI / 2; th.position.z = -0.07; tg.add(th); g.add(tg);
-      g.scale.setScalar(0.82); g.position.set(s * 0.55, -0.62, -0.8); vm.add(g); vmHands.push({ g: g, sleeve: sleeve, s: s });
+      g.scale.setScalar(0.82); g.position.set(s * 0.55, -0.62, -0.8); vm.add(g); vmHands.push({ g: g, sleeve: sleeve, s: s, f: fgs, tg: tg, tr: tg.rotation.clone() });
     });
     var cam = { wa: 0, yaw: 0, pitch: 0, turn: 0, pitchd: 0, roll: 0, rollV: 0, ba: 0, ls: 0, lsV: 0, vyS: 0, hx: 0, hxV: 0, hy: 0, hyV: 0, hz: 0, hzV: 0, tf: 0, landSeen: null };
     var vmBundle = new T.Group(); vmBundle.position.set(0, -0.42, -0.95); vmBundle.scale.setScalar(0.36); vmBundle.visible = false; vm.add(vmBundle);
@@ -6426,8 +6426,21 @@ body.inlobby { padding-block: 0; }
             h.g.position.set(h.s * 0.36 - lagX * 0.5 + Math.sin(ph) * 0.012 * wa + cam.hx * 0.6, -0.5 - bobY * 0.4 + lagY * 0.3 + idle + sl * 0.26 + cam.hy * 0.6 - me.cr * 0.02, -0.88 + sl * 0.38 + cam.hz * 0.6);
             h.g.rotation.set(0.35, -h.s * 0.12, -h.s * 1.35);
           } else {
-            var pz = h.s === pokeS ? pa : 0; h.g.position.set(h.s * 0.52 - lagX * 0.3 - h.s * pz * 0.1 + cam.hx, -0.6 + idle - Math.abs(swing) * 0.004 * wa + lagY * 0.15 + pz * 0.1 + cam.hy - me.cr * 0.03, -0.68 - swing * 0.02 * wa - pz * 0.26 + cam.hz);
-            h.g.rotation.set(0.95 + swing * 0.06 * wa - pz * 0.4, h.s * 0.2, h.s * 0.05 + swing * 0.01 * wa + cam.hx * 1.6);
+            // natural arm swing: each hand pumps forward and back opposite the legs, rises a little as it comes forward and moves in toward the middle;
+            // running pumps harder with loose fists, the hands breathe when you stand still, spread in a jump and drop when you crouch
+            var pz = h.s === pokeS ? pa : 0, air = me.jy > 0.03 ? 1 : 0, cr = me.cr || 0, amp = wa * (1 + 0.55 * rn), fw = Math.max(0, -swing);
+            var br = Math.sin(t / 1250 + h.s * 0.7), br2 = Math.sin(t / 1900 + h.s * 2.1);
+            h.ax = (h.ax || 0) + ((air ? 1 : 0) - (h.ax || 0)) * (1 - Math.exp(-dtf * 8));
+            h.g.position.set(
+              h.s * 0.52 - lagX * 0.3 - h.s * pz * 0.1 + cam.hx - h.s * fw * 0.05 * amp + h.s * h.ax * 0.05 + br2 * 0.004 * (1 - wa),
+              -0.6 + idle + br * 0.006 * (1 - wa) + lift * 0.035 * amp - Math.abs(swing) * 0.01 * amp + 0.01 * rn * wa + lagY * 0.15 + pz * 0.1 + cam.hy - cr * 0.06 + h.ax * 0.04,
+              -0.68 - swing * 0.075 * amp - pz * 0.26 + cam.hz - cr * 0.04);
+            h.g.rotation.set(
+              0.95 + swing * 0.2 * amp - pz * 0.4 - 0.12 * rn * wa + br * 0.015 * (1 - wa) - h.ax * 0.15,
+              h.s * 0.2 - h.s * swing * 0.12 * amp,
+              h.s * 0.05 + h.s * swing * 0.09 * amp + cam.hx * 1.6 + h.s * h.ax * 0.25 + br2 * 0.012 * (1 - wa));
+            var curl = 0.5 * rn * wa + 0.15 * h.ax + 0.08 * (1 + Math.sin(t / 1700 + h.s)) * (1 - wa);   // relaxed fingers at rest, a loose fist when running
+            h.f.forEach(function (f, k) { f.rotation.x = f.userData.rx - curl * (0.8 + k * 0.12); }); h.tg.rotation.x = h.tr.x - curl * 0.5;
           }
         });
         vmBundle.position.y = -0.42 - bobY * 0.4 + Math.sin(t / 1100) * 0.008 * (1 - wa);
