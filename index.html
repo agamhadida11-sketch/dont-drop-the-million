@@ -5403,7 +5403,7 @@ body.inlobby { padding-block: 0; }
             list.forEach(function (g) { var pos = g.attributes.position, nor = g.attributes.normal, uv = g.attributes.uv, idx = g.index; for (var i = 0; i < pos.count; i++) { P.push(pos.getX(i), pos.getY(i), pos.getZ(i)); N.push(nor.getX(i), nor.getY(i), nor.getZ(i)); U.push(uv ? uv.getX(i) : 0, uv ? uv.getY(i) : 0); } var cnt = idx ? idx.count : pos.count; for (var k = 0; k < cnt; k++) I.push((idx ? idx.getX(k) : k) + n); n += pos.count; });
             var cl = cluster(P, N, null, U, I), bg = new T.BufferGeometry(); bg.setAttribute("position", new T.Float32BufferAttribute(cl.P, 3)); bg.setAttribute("normal", new T.Float32BufferAttribute(cl.N, 3)); bg.setAttribute("uv", new T.Float32BufferAttribute(cl.U, 2)); bg.setIndex(cl.P.length / 3 > 65000 ? new T.Uint32BufferAttribute(cl.I, 1) : new T.Uint16BufferAttribute(cl.I, 1)); bg.computeBoundingSphere(); return bg;
           }
-          function styleOf(L) { if (L.bw == null) L.bw = [0, 1, 1, 1, 2, 2, 3, 0, 1, 4][Math.floor(R() * 10)]; return { skin: LOOK_OPTS.sk[L.sk], hair: LOOK_OPTS.hr[L.hr], jacket: L.jacket, hs: L.hs, gl: L.gl, sh: L.sh, pn: L.pn, sz: L.sz, bw: L.bw, pants: L.pants, band: 0 }; }
+          function styleOf(L) { if (L.bw == null) L.bw = [0, 1, 1, 1, 2, 2, 3, 0, 1, 4][Math.floor(R() * 10)]; return { skin: LOOK_OPTS.sk[L.sk], hair: LOOK_OPTS.hr[L.hr], jacket: L.jacket, hs: L.hs, gl: L.gl, sh: L.sh, pn: L.pn, sz: L.sz, bw: L.bw, pants: L.pants, band: 0, plain: true }; }
           function addExtras(L, av) {
             var r = av.root, tm;
             function add(m, x, y, z) { m.position.set(x, y, z); r.add(m); return m; }
@@ -5615,6 +5615,24 @@ body.inlobby { padding-block: 0; }
               var ud = ob.userData; if (ud.legs1) { ud.legs1[0].rotation.x = ud.legs[0].rotation.x; ud.legs1[1].rotation.x = ud.legs[1].rotation.x; } if (ud.arm1) ud.arm1.rotation.copy(ud.arm.rotation); if (ud.armL1) ud.armL1.rotation.copy(ud.armL.rotation); if (ud.legs2) { ud.legs2[0].rotation.x = ud.legs[0].rotation.x; ud.legs2[1].rotation.x = ud.legs[1].rotation.x; } if (ud.arm2) ud.arm2.rotation.copy(ud.arm.rotation); if (ud.armL2) ud.armL2.rotation.copy(ud.armL.rotation);
             }
           }
+          // warm-up: push the whole hall (geometry, textures, shaders) to the GPU once in the background, so walking up to the casino
+          // door never stalls. It runs in a tiny off-screen render with culling off, once now and once more when the crowd is baked.
+          function warmHall() {
+            try {
+              var rt = new T.WebGLRenderTarget(8, 8), cam = new T.PerspectiveCamera(90, 1, 0.1, 500), keep = [], vis = hall.visible;
+              cam.position.set(0, 40, z0 - cd / 2); cam.lookAt(0, 0, z0 - cd / 2);
+              hall.traverse(function (o) { if (o.isMesh || o.isSprite || o.isPoints || o.isLine) { keep.push([o, o.frustumCulled]); o.frustumCulled = false; } });
+              hall.visible = true; renderer.setRenderTarget(rt); renderer.render(scene, cam); renderer.setRenderTarget(null);
+              keep.forEach(function (k) { k[0].frustumCulled = k[1]; }); hall.visible = vis; rt.dispose();
+            } catch (e) { /* only a warm-up */ }
+          }
+          setTimeout(warmHall, 1200);
+          // the casino crowd is baked a little at a time while you are still in the menu or on the stage (not all at once at the door)
+          (function bgBake() {
+            if (!PEND.length) { setTimeout(warmHall, 300); return; }
+            var go = function () { try { npcStep(); } catch (e) { /* retried at the door */ } setTimeout(bgBake, 140); };
+            if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 2000 }); else setTimeout(go, 80);
+          })();
           casHall = {
             cols: COLS, hall: hall, update: update, collide: collide, cue: cue,
             near: function (lx, u) { var best = null, bd = 1e9; for (var i = 0; i < STS.length; i++) { var s = STS[i], d = Math.hypot(s.x - lx, s.u - u); if (d < s.r && d < bd) { bd = d; best = s; } } return best; },
@@ -5725,6 +5743,7 @@ body.inlobby { padding-block: 0; }
       var k = g.createLinearGradient(0, h * 0.4, 0, h * 0.6); k.addColorStop(0, "rgba(0,0,0,0)"); k.addColorStop(0.5, "rgba(0,0,0,.08)"); k.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = k; g.fillRect(0, h * 0.4, w, h * 0.2);
       g.fillStyle = "rgba(0,0,0,.18)"; g.fillRect(0, h - 22, w, 6);
     }
+    var TXC = {};
     var SHIRT_DEFS = [
       { },
       { base: 0xe0299f, collar: 0x86e01a, sleeve: "short", paint: function (g, w, h) {
@@ -5788,22 +5807,23 @@ body.inlobby { padding-block: 0; }
     ];
     function makeAvatar(st) {
       var root = new T.Group();
-      var skin = clam(st.skin), hairM = clam(st.hair);
-      hairM.map = cvTex(256, 256, function (g, w, h) {   // fine strands: light and dark streaks running from the crown, a soft sheen band
+      var skin = clam(st.skin), hairM = clam(st.hair), FAB = !st.plain;   // plain: the baked casino crowd keeps flat colours (cheap to bake, one draw call per person)
+      function cachedTex(key, w, h, fn) { var t = TXC[key]; if (!t) { t = TXC[key] = cvTex(w, h, fn); t.userData = {}; } return t; }   // shared, never disposed
+      if (FAB) hairM.map = cachedTex("hair", 256, 256, function (g, w, h) {   // fine strands: light and dark streaks running from the crown, a soft sheen band
         g.fillStyle = "#e6e6e6"; g.fillRect(0, 0, w, h);
         for (var i = 0; i < 520; i++) { var x = Math.random() * w, l = 40 + Math.random() * 160, y = Math.random() * h; g.strokeStyle = Math.random() < 0.55 ? "rgba(0,0,0," + (0.03 + Math.random() * 0.06) + ")" : "rgba(255,255,255," + (0.04 + Math.random() * 0.07) + ")"; g.lineWidth = 0.8 + Math.random() * 1.6; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + (Math.random() - 0.5) * 10, y + l / 2, x + (Math.random() - 0.5) * 14, y + l); g.stroke(); }
         var sh = g.createLinearGradient(0, 0, 0, h); sh.addColorStop(0, "rgba(255,255,255,0)"); sh.addColorStop(0.3, "rgba(255,255,255,.22)"); sh.addColorStop(0.42, "rgba(255,255,255,0)"); g.fillStyle = sh; g.fillRect(0, 0, w, h);
-      }); hairM.needsUpdate = true;
+      }); if (FAB) hairM.needsUpdate = true;
       var SHI = st.sh | 0, PNI = st.pn | 0, SZI = st.sz | 0, BWI = st.bw == null ? 1 : Math.max(0, Math.min(4, +st.bw || 0));
       function bwAt(a) { var i = Math.min(3, Math.floor(BWI)), f = BWI - i; return a[i] + (a[i + 1] - a[i]) * f; }
       var BW_W = bwAt([0.76, 1, 1.16, 1.32, 1.5]), BW_D = bwAt([0.78, 1, 1.18, 1.36, 1.56]), BW_L = bwAt([0.88, 1, 1.1, 1.2, 1.32]), BW_A = bwAt([0.9, 1, 1.08, 1.16, 1.25]);   // body shape: slim .. very big
       var shDef = SHIRT_DEFS[SHI] || SHIRT_DEFS[0], pnDef = PANT_DEFS[PNI] || PANT_DEFS[0];
       var jacket = clam(shDef.base != null ? shDef.base : st.jacket), torsoM = jacket;
-      if (shDef.paint) { torsoM = clam(shDef.base != null ? shDef.base : st.jacket); torsoM.map = cvTex(512, 192, function (g, w, h) { shDef.paint(g, w, h); shirtFinish(g, w, h); }); torsoM.needsUpdate = true; }
-      else { torsoM = clam(shDef.base != null ? shDef.base : st.jacket); torsoM.map = cvTex(512, 192, function (g, w, h) { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); shirtFinish(g, w, h, SHI === 0 ? "polo" : "crew"); }); torsoM.needsUpdate = true; }
+      if (shDef.paint) { torsoM = clam(shDef.base != null ? shDef.base : st.jacket); torsoM.map = FAB ? cachedTex("sh" + SHI, 512, 192, function (g, w, h) { shDef.paint(g, w, h); shirtFinish(g, w, h); }) : cvTex(512, 192, shDef.paint); torsoM.needsUpdate = true; }
+      else if (FAB) { torsoM = clam(shDef.base != null ? shDef.base : st.jacket); torsoM.map = cachedTex(SHI === 0 ? "polo" : "crew", 512, 192, function (g, w, h) { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); shirtFinish(g, w, h, SHI === 0 ? "polo" : "crew"); }); torsoM.needsUpdate = true; }
       var pantsHex = pnDef.color != null ? pnDef.color : st.pants, pants = clam(pantsHex), legM = pants;
-      if (pnDef.paint) { legM = clam(pantsHex); legM.map = cvTex(256, 256, function (g, w, h) { g.save(); g.scale(w / 128, h / 128); pnDef.paint(g, 128, 128); g.restore(); pantsFinish(g, w, h); }); legM.needsUpdate = true; }
-      else { legM = clam(pantsHex); legM.map = cvTex(256, 256, function (g, w, h) { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); pantsFinish(g, w, h); }); legM.needsUpdate = true; }
+      if (pnDef.paint) { legM = clam(pantsHex); legM.map = FAB ? cachedTex("pn" + PNI, 256, 256, function (g, w, h) { g.save(); g.scale(w / 128, h / 128); pnDef.paint(g, 128, 128); g.restore(); pantsFinish(g, w, h); }) : cvTex(128, 128, pnDef.paint); legM.needsUpdate = true; }
+      else if (FAB) { legM = clam(pantsHex); legM.map = cachedTex("pnw", 256, 256, function (g, w, h) { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); pantsFinish(g, w, h); }); legM.needsUpdate = true; }
       if (pnDef.shorts) legM = skin;
       var legs = [], arms = [];
       [-1, 1].forEach(function (s) {
