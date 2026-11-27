@@ -6831,7 +6831,7 @@ body.inlobby { padding-block: 0; }
       var pr = $("prompt"), fine = window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches, ph = "";
       if (ta) ph += '<div class="pr"><b>' + (fine ? keyLabel(settings.keys.act) : "👆") + "</b></div>";
       if (da) ph += '<div class="pr d"><b>' + (fine ? keyLabel(settings.keys.drop) : "👆") + "</b></div>";
-      pr.innerHTML = ph; pr.hidden = !ph;
+      pr.innerHTML = ""; pr.hidden = true;   // no floating bubble by the crosshair (it showed up as a stretched gold pill); the action button and the crosshair glow are enough
       var xh = $("xhair"); if (xh) xh.classList.toggle("act", !!(ta || da));
     }
     // screen flash: falling to black, result tint
