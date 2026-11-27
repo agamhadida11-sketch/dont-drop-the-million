@@ -825,6 +825,98 @@ input[type=text], input:not([type]), textarea { cursor: text; }
 /* v124 · win celebration */
 .wfx { position: absolute; inset: 0; z-index: 24; pointer-events: none; overflow: hidden; }
 .wfx canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ============================================================
+   v125 · main menu (big logo + vertical menu + leaderboard panel), pause menu, menu sounds
+   ============================================================ */
+body.inlobby > #app > .top { display: none; }
+body.inlobby { padding-block: 0; }
+#lobby:not([hidden]) { display: block; position: relative; }
+#mmBg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+.mm { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 380px); gap: 40px; align-items: center; min-height: 100vh; min-height: 100dvh; padding-block: 28px; }
+.mm-main { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding: 30px 34px 26px; border-radius: 28px; background: linear-gradient(to left, rgba(9, 6, 15, .92), rgba(9, 6, 15, .72) 70%, rgba(9, 6, 15, .35)); border: 1px solid rgba(243, 210, 127, .14); box-shadow: 0 30px 80px rgba(0, 0, 0, .45); max-width: 560px; }
+.mm-logo { position: relative; display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 2px; }
+.mm-stack { width: 112px; height: auto; margin: 0 6px -10px 0; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .55)); animation: mmBob 4.5s ease-in-out infinite; }
+@keyframes mmBob { 50% { transform: translateY(-6px) rotate(3deg); } }
+.mm-logo h1 { margin: 0; display: flex; flex-direction: column; font-family: var(--font-display); font-weight: 400; line-height: .92; transform: rotate(-3deg); transform-origin: right center; }
+.mm-logo h1 span { display: block; background: linear-gradient(180deg, #fffbe6 0%, #ffe27a 42%, #f3b93a 70%, #c98a1c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 1.5px rgba(60, 30, 0, .55); filter: drop-shadow(0 4px 0 #3b2105) drop-shadow(0 10px 22px rgba(0, 0, 0, .6)); }
+.mm-logo h1 span:first-child { font-size: clamp(2.6rem, 7vw, 4rem); }
+.mm-logo h1 span:last-child { font-size: clamp(3.2rem, 9vw, 5.4rem); margin-inline-start: .35em; }
+.mm-badge { display: inline-flex; align-items: baseline; gap: .6em; padding: 6px 18px; border-radius: 999px; background: linear-gradient(180deg, #ffe48a, #f3c24f); color: #2b1b00; font-weight: 800; box-shadow: 0 4px 0 #9b7424, 0 0 22px rgba(243, 194, 79, .3); }
+.mm-badge span { font-size: .85rem; }
+.mm-badge b { font-family: var(--font-luxe); font-weight: 900; font-size: 1.35rem; direction: ltr; unicode-bidi: isolate; }
+.mm-main .gate { max-width: none; margin: 0; }
+.mm-main .acct { width: 100%; }
+.mm-main .acct-card { max-width: 480px; }
+.mm-menu { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; }
+.mm-menu[hidden] { display: none !important; }
+.mm-play { margin: 4px 0 12px; display: inline-flex; align-items: center; gap: .45em; padding: 12px 36px 14px; border: 0; border-radius: 20px; background: linear-gradient(180deg, #ffe89a, #f3c24f 60%, #e3a92c); color: #2b1b00; font-family: var(--font-display); font-size: clamp(1.7rem, 4.4vw, 2.4rem); line-height: 1.1; box-shadow: 0 6px 0 #9b7424, 0 0 34px rgba(243, 194, 79, .35); transition: transform .15s, box-shadow .15s, filter .15s; }
+.mm-play::before { content: "▶"; font-size: .55em; transform: scaleX(-1); }
+.mm-play:hover:not(:disabled), .mm-play:focus-visible { transform: translateY(-2px) scale(1.03); filter: brightness(1.07); box-shadow: 0 8px 0 #9b7424, 0 0 46px rgba(243, 194, 79, .6); }
+.mm-play:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 #9b7424, 0 0 30px rgba(243, 194, 79, .4); }
+.mm-play:disabled { filter: grayscale(.6) brightness(.7); box-shadow: 0 6px 0 #5a4820; }
+.mmi { position: relative; display: inline-flex; align-items: center; gap: .3em; padding: 3px 4px; border: 0; background: none; color: var(--cash); font-family: var(--font-display); font-size: clamp(1.35rem, 3.4vw, 1.9rem); line-height: 1.25; text-shadow: 0 3px 0 rgba(0, 0, 0, .55); transition: color .14s, transform .18s cubic-bezier(.2, .9, .3, 1.3); }
+.mmi::before { content: ""; position: absolute; inset-inline-start: -18px; top: 50%; width: 0; height: 6px; margin-top: -3px; border-radius: 3px; background: var(--gold-2); box-shadow: 0 0 12px rgba(243, 210, 127, .8); transition: width .18s; }
+.mmi:hover, .mmi:focus-visible, .mmi[aria-expanded="true"] { color: #ffe27a; transform: translateX(-10px); }
+.mmi:hover::before, .mmi:focus-visible::before, .mmi[aria-expanded="true"]::before { width: 12px; }
+.mmi:focus-visible { outline: 0; }
+.mmi.small { font-size: 1.05rem; color: var(--mute); margin-top: 8px; font-family: var(--font-body); font-weight: 700; }
+.mm-room { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin: 4px 0 8px; }
+.mm-room[hidden] { display: none; }
+.mm-rcard { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, .05); border: 1px solid var(--hair); min-width: 0; }
+.mm-rcard b { font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; color: var(--gold-2); }
+.mm-rcard small { color: var(--mute); font-size: .85rem; line-height: 1.4; }
+.mm-rcard .primary { margin-top: auto; padding: 10px 14px; font-size: 1rem; }
+.mm-rcard .field.code input { font-size: 1.3rem; padding: 6px 8px; }
+.mm-keys { margin: 6px 0 0; color: var(--mute); font-size: .85rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.mm-keys kbd, .pz-keys kbd { display: inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .18); color: var(--cash); font: 700 .78rem var(--font-body); direction: ltr; }
+.mm-side { display: flex; flex-direction: column; gap: 14px; align-self: center; }
+.mm-panel { padding: 18px 18px 14px; border-radius: 20px; background: linear-gradient(180deg, rgba(30, 24, 42, .94), rgba(14, 10, 20, .95)); border: 1px solid var(--hair-2); box-shadow: 0 24px 60px rgba(0, 0, 0, .55), 0 0 30px rgba(243, 210, 127, .1); }
+.mm-ptitle { font-family: var(--font-display); font-size: 1.3rem; color: var(--gold-1); margin-bottom: 10px; letter-spacing: .02em; }
+.mm-top { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.mm-top li { display: grid; grid-template-columns: 1.8em minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; font-weight: 800; }
+.mm-top li:nth-child(odd) { background: rgba(255, 255, 255, .035); }
+.mm-top li.me { background: rgba(243, 210, 127, .14); outline: 1px solid rgba(243, 210, 127, .6); }
+.mm-top .rk { color: var(--gold-2); text-align: center; }
+.mm-top .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm-top .am { color: var(--gold-1); direction: ltr; font-variant-numeric: tabular-nums; }
+.mm-top li.mm-empty { display: block; color: var(--mute); font-weight: 600; text-align: center; padding: 14px 6px; background: none; }
+.mm-me { margin-top: 10px; padding: 9px 10px; border-radius: 12px; border: 1px dashed var(--hair-2); color: #ffe27a; font-weight: 800; display: flex; justify-content: space-between; gap: 10px; }
+.mm-me:empty { display: none; }
+.mm-me span:last-child { direction: ltr; }
+.mm-side .priv { background: rgba(14, 10, 20, .82); }
+.rulesbox { width: min(560px, 100%); }
+.rulesbox .rules { margin: 12px 0 4px; max-width: none; }
+.rules-lead { margin: 0; color: var(--mute); line-height: 1.6; }
+@media (max-width: 859px) {
+  .mm { grid-template-columns: 1fr; align-items: start; gap: 18px; min-height: 0; padding-block: 18px 28px; }
+  .mm-main { max-width: none; padding: 22px 18px; background: rgba(9, 6, 15, .82); }
+  .mm-room { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .mm-stack { animation: none; } .mmi, .mm-play { transition: none; } }
+
+/* pause menu (lives inside the settings modal, so the game ignores keys while it is open) */
+.pz { width: min(880px, 100%); display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.pz[hidden], #sheet[hidden] { display: none; }
+.pz-card, .pz-side { position: relative; border-radius: 20px; background: linear-gradient(180deg, #221b31, #15111f); border: 2px solid rgba(243, 210, 127, .32); box-shadow: 0 30px 70px rgba(0, 0, 0, .65); }
+.pz-card { width: min(360px, 100%); padding: 34px 22px 18px; display: flex; flex-direction: column; gap: 9px; text-align: center; }
+.pz-tag { position: absolute; top: -17px; left: 50%; transform: translateX(-50%); padding: 3px 20px; border-radius: 999px; background: linear-gradient(180deg, #ffe48a, #f3c24f); color: #2b1b00; font-family: var(--font-display); font-size: 1.1rem; box-shadow: 0 3px 0 #9b7424; white-space: nowrap; }
+.pz-card h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 2.3rem; color: #fff; line-height: 1.1; }
+.pz-sub { margin: 0 0 8px; color: var(--mute); font-weight: 700; font-size: .92rem; }
+.pz-go { padding: 12px 16px; border: 0; border-radius: 12px; background: linear-gradient(180deg, #ffe48a, #f3c24f); color: #2b1b00; font-weight: 900; font-size: 1.1rem; box-shadow: 0 5px 0 #9b7424; transition: transform .12s, filter .12s; }
+.pz-go:hover, .pz-go:focus-visible { filter: brightness(1.08); transform: translateY(-1px); }
+.pz-go:active { transform: translateY(4px); box-shadow: 0 1px 0 #9b7424; }
+.pzb { padding: 11px 14px; border: 0; border-radius: 10px; background: #2c2540; color: var(--cash); font-weight: 800; font-size: 1rem; box-shadow: 0 4px 0 #17121f; transition: background .12s, color .12s, transform .12s; }
+.pzb:hover, .pzb:focus-visible { background: #3a3155; color: #ffe27a; transform: translateY(-1px); }
+.pzb:active { transform: translateY(3px); box-shadow: 0 1px 0 #17121f; }
+.pzb.gap { margin-top: 10px; }
+.pzb.armed { background: #5a1e2c; color: #ffb3bd; }
+.pz-keys { margin: 6px 0 0; color: var(--mute); font-size: .85rem; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 6px; }
+.pz-side { width: min(320px, 100%); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.pz-side > b { font-family: var(--font-display); font-weight: 400; font-size: 1.7rem; color: #fff; }
+#pzRoom { color: var(--mute); line-height: 1.55; font-weight: 600; }
+#pzRoom .code { display: block; font-family: var(--font-display); font-size: 2.2rem; letter-spacing: .25em; color: var(--gold-1); direction: ltr; text-align: center; }
+@media (max-width: 720px) { .pz { flex-direction: column; justify-content: center; gap: 30px; } .pz-side { width: min(360px, 100%); } }
 </style>
 
 <div id="app" dir="rtl" lang="he">
@@ -838,6 +930,25 @@ input[type=text], input:not([type]), textarea { cursor: text; }
   </header>
 
   <div class="modal" id="settings" hidden role="dialog" aria-modal="true" aria-label="הגדרות">
+    <div class="pz" id="pz" hidden>
+      <div class="pz-card">
+        <span class="pz-tag">השהיה</span>
+        <h2>תפריט</h2>
+        <p class="pz-sub">הטיימר ממשיך לרוץ ברקע.</p>
+        <button id="pzResume" class="pz-go" type="button">המשך משחק</button>
+        <button id="pzSet" class="pzb" type="button">⚙ הגדרות</button>
+        <button id="pzChar" class="pzb" type="button">🎨 התאמת דמות</button>
+        <button id="pzLb" class="pzb" type="button">🏆 טבלת מובילים</button>
+        <button id="pzRules" class="pzb" type="button">❔ איך משחקים</button>
+        <button id="pzMenu" class="pzb gap" type="button">תפריט ראשי</button>
+        <p class="pz-keys"><kbd>Esc</kbd> המשך</p>
+      </div>
+      <div class="pz-side">
+        <b>משחק עם חבר</b>
+        <div id="pzRoom"></div>
+        <button id="pzFr" class="pz-go" type="button">👥 החברים שלי</button>
+      </div>
+    </div>
     <div class="sheet" id="sheet">
       <div class="sheet-head"><h2 id="sheetTitle">הגדרות</h2><div class="tools"><button id="setLeave" class="ghost" type="button" hidden>יציאה מהמשחק</button><button id="setClose" class="ghost" type="button">סגירה</button></div></div>
       <div class="tabs" role="tablist" id="tabsBar">
@@ -896,19 +1007,89 @@ input[type=text], input:not([type]), textarea { cursor: text; }
   <p class="note" id="note" role="alert"></p>
 
   <section id="lobby">
-    <div class="hero">
-      <div class="eyebrow"><i>♠</i> משחק טריוויה בקזינו · לבד או עם חבר <i>♦</i></div>
-      <h1>אל תפיל את המיליון</h1>
-      <p>מיליון שקלים בקופה ו-12 שאלות. אפשר לשחק לבד, או עם חבר משני מכשירים. אתם רואים את הבמה מהעיניים של הדמות שלכם: הולכים לקופה, לוקחים חבילות כסף ומניחים אותן על הפודיומים של התשובות.</p>
-      <div class="jackpot"><small>הקופה בכל משחק</small><b class="money">₪1,000,000</b></div>
-      <div class="hero-art" aria-hidden="true">
-        <div class="hc c1"><b>A</b><i>♠</i></div>
-        <div class="hc c2 red"><b>K</b><i>♥</i></div>
-        <div class="hchip h1"><span>1M</span></div>
-        <div class="hchip h2"><span>500K</span></div>
-        <div class="hchip h3"><span>100K</span></div>
+    <canvas id="mmBg" aria-hidden="true"></canvas>
+    <div class="mm">
+      <div class="mm-main">
+        <div class="mm-logo" aria-label="אל תפיל את המיליון">
+          <svg class="mm-stack" viewBox="0 0 120 74" aria-hidden="true">
+            <g transform="rotate(-8 60 40)">
+              <rect x="14" y="40" width="92" height="22" rx="4" fill="#1f7a45" stroke="#0b3d22" stroke-width="3"/>
+              <rect x="14" y="26" width="92" height="22" rx="4" fill="#2a9a58" stroke="#0b3d22" stroke-width="3"/>
+              <rect x="14" y="12" width="92" height="22" rx="4" fill="#38b86b" stroke="#0b3d22" stroke-width="3"/>
+              <rect x="52" y="10" width="16" height="54" rx="2" fill="#f3d27f" stroke="#8a5f14" stroke-width="2"/>
+              <circle cx="32" cy="23" r="5" fill="none" stroke="#0b3d22" stroke-width="2.5"/>
+              <circle cx="88" cy="23" r="5" fill="none" stroke="#0b3d22" stroke-width="2.5"/>
+            </g>
+          </svg>
+          <h1><span>אל תפיל</span><span>את המיליון</span></h1>
+        </div>
+        <div class="mm-badge"><span>הקופה בכל משחק</span><b class="money">₪1,000,000</b></div>
+        <div class="gate" id="gate">טוענים את המשחק המשותף...</div>
+        <div class="acct" id="acct">
+          <div class="acct-card" id="acctNew">
+            <h3>👤 יצירת משתמש</h3>
+            <p>כדי להיכנס למשחק בוחרים שם משתמש. זה הכול: בלי אימייל ובלי סיסמה.</p>
+            <div class="field"><label for="myName">שם משתמש</label><input id="myName" name="nickname" type="text" maxlength="14" value="" placeholder="למשל: דנה" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"></div>
+            <p class="acct-hint" id="acctHint" role="status" aria-live="polite"></p>
+            <button id="acctGo" class="primary" type="button">יצירת משתמש וכניסה</button>
+          </div>
+          <div class="acct-card ready" id="acctReady" hidden>
+            <div class="acct-row">
+              <span class="acct-ava" aria-hidden="true">♠</span>
+              <div class="acct-who"><b id="acctName"></b><small id="acctBadge" role="status"></small></div>
+              <button id="acctEdit" class="ghost" type="button">שינוי שם</button>
+            </div>
+          </div>
+        </div>
+        <nav class="mm-menu" id="paths" aria-label="תפריט ראשי">
+          <button id="solo" class="mm-play" type="button" disabled>משחקים לבד</button>
+          <button id="mmFriends" class="mmi" type="button" aria-expanded="false" aria-controls="mmRoom">משחק עם חברים</button>
+          <div class="mm-room" id="mmRoom" hidden>
+            <div class="mm-rcard">
+              <b>פותחים חדר חדש</b>
+              <small>מקבלים קוד בן ארבע ספרות ושולחים אותו לחבר.</small>
+              <button id="create" class="primary" type="button" disabled>פתיחת חדר</button>
+            </div>
+            <div class="mm-rcard">
+              <b>מצטרפים לחדר</b>
+              <div class="field code"><label for="codeIn">קוד החדר</label><input id="codeIn" type="text" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off"></div>
+              <button id="join" class="primary" type="button" disabled>הצטרפות</button>
+            </div>
+          </div>
+          <button id="charBtn" class="mmi" type="button">התאמת דמות</button>
+          <button id="frBtn" class="mmi" type="button">חברים<span class="frbadge" id="frBadge" hidden>0</span></button>
+          <button id="lbBtn" class="mmi" type="button">טבלת מובילים</button>
+          <button id="mmRules" class="mmi" type="button">איך משחקים</button>
+          <button id="mmSet" class="mmi" type="button">הגדרות</button>
+          <button id="mmMute" class="mmi small" type="button" aria-pressed="false">צליל: פעיל</button>
+        </nav>
+        <p class="mm-keys" aria-hidden="true"><kbd>Enter</kbd> בחירה <kbd>Esc</kbd> הגדרות</p>
       </div>
+      <aside class="mm-side">
+        <div class="mm-panel">
+          <div class="mm-ptitle">🏆 מי הכי עשיר?</div>
+          <ol class="mm-top" id="mmTop"><li class="mm-empty">טוענים…</li></ol>
+          <div class="mm-me" id="mmMe"></div>
+        </div>
+        <details class="priv" id="priv">
+          <summary>🔒 פרטיות ונתונים</summary>
+          <div class="priv-body">
+            <p><b>מה נשמר:</b> שם המשתמש שבחרתם, מזהה אנונימי של החשבון, כסף וירטואלי ותוצאות. הם נשמרים במכשיר שלכם, ובטבלה המשותפת כשהדף נפתח מתוך Claude. השם מוצג לשחקנים אחרים בחדר ובטבלת המובילים.</p>
+            <p><b>מה לא נשמר:</b> אימייל, סיסמה, טלפון, מיקום או פרטי תשלום. ההתחברות נעשית בחשבון ה-Claude שלכם והמשחק לא רואה אותה, ולכן אין כאן סיסמה שאפשר לגנוב.</p>
+            <p><b>משחק עם חבר:</b> שמות המשתתפים נשמרים בחדר המשותף (קוד בן ארבע ספרות) עד שנפתח חדר חדש עם אותו קוד. מחיקת הנתונים לא מוחקת חדרים ישנים.</p>
+            <p><b>חברים:</b> אם הוספתם חברים, נשמרים בטבלה המשותפת גם קוד החבר שלכם והקשרים בין המשתמשים (מזהים אנונימיים ושמות תצוגה). "מחיקת הנתונים שלי" מוחקת גם אותם.</p>
+            <p>מומלץ לא לשים בשם המשתמש את השם המלא או פרטים אישיים.</p>
+            <button id="wipeBtn" class="ghost danger" type="button">מחיקת הנתונים שלי</button>
+            <p class="priv-msg" id="wipeMsg" role="status" aria-live="polite"></p>
+          </div>
+        </details>
+      </aside>
     </div>
+  </section>
+  <div class="lbov" id="rulesov" hidden>
+    <div class="lbbox rulesbox" role="dialog" aria-modal="true" aria-label="איך משחקים">
+      <div class="lbhead"><b>איך משחקים</b><button id="rulesClose" type="button" aria-label="סגירה">✕</button></div>
+      <p class="rules-lead">מיליון שקלים בקופה ו-12 שאלות. אפשר לשחק לבד, או עם חבר משני מכשירים. אתם רואים את הבמה מהעיניים של הדמות שלכם: הולכים לקופה, לוקחים חבילות כסף ומניחים אותן על הפודיומים של התשובות.</p>
     <ul class="rules">
       <li>בכל שאלה מחלקים את <b>כל הקופה</b> בין ארבע התשובות. אפשר לפזר, למשל 700 אלף על תשובה אחת ו-300 אלף על אחרת.</li>
       <li>חייבים להשאיר <b>לפחות תשובה אחת בלי כסף</b>.</li>
@@ -916,66 +1097,8 @@ input[type=text], input:not([type]), textarea { cursor: text; }
       <li>אחרי האישור (במשחק זוגי, אחרי ששניכם מאשרים) הדלתות של התשובות השגויות נפתחות. הכסף נופל, ומי שעומד עליהן נופל איתו.</li>
       <li>בכל משחק מקבלים <b>12 שאלות חדשות</b> מתוך מאגר גדול, מקלות לקשות. בסוף מתחלקים בכסף שנשאר.</li>
     </ul>
-    <div class="gate" id="gate">טוענים את המשחק המשותף...</div>
-    <div class="entry">
-      <div class="acct" id="acct">
-        <div class="acct-card" id="acctNew">
-          <h3>👤 יצירת משתמש</h3>
-          <p>כדי להיכנס למשחק בוחרים שם משתמש. זה הכול: בלי אימייל ובלי סיסמה.</p>
-          <div class="field"><label for="myName">שם משתמש</label><input id="myName" name="nickname" type="text" maxlength="14" value="" placeholder="למשל: דנה" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"></div>
-          <p class="acct-hint" id="acctHint" role="status" aria-live="polite"></p>
-          <button id="acctGo" class="primary" type="button">יצירת משתמש וכניסה</button>
-        </div>
-        <div class="acct-card ready" id="acctReady" hidden>
-          <div class="acct-row">
-            <span class="acct-ava" aria-hidden="true">♠</span>
-            <div class="acct-who"><b id="acctName"></b><small id="acctBadge" role="status"></small></div>
-            <button id="acctEdit" class="ghost" type="button">שינוי שם</button>
-          </div>
-        </div>
-      </div>
-      <div class="paths" id="paths">
-        <div class="path wide solo">
-          <h3>משחק לבד</h3>
-          <p>בלי שחקן נוסף ובלי קוד. מחלקים את כל הקופה לבד, ובסוף לוקחים הביתה את מה שנשאר. עובד גם בלי להתחבר.</p>
-          <div class="row"><button id="solo" class="primary" type="button" disabled style="flex:1 1 220px">מתחילים לשחק לבד</button><button id="lbBtn" class="ghost" type="button">🏆 טבלת מובילים</button></div>
-        </div>
-        <div class="path">
-          <h3>פותחים חדר חדש</h3>
-          <p>תקבלו קוד בן ארבע ספרות ותשלחו אותו לשחקן השני.</p>
-          <button id="create" class="primary" type="button" disabled>פתיחת חדר</button>
-        </div>
-        <div class="path">
-          <h3>מצטרפים לחדר</h3>
-          <div class="field code"><label for="codeIn">קוד החדר</label><input id="codeIn" type="text" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off"></div>
-          <button id="join" class="primary" type="button" disabled>הצטרפות</button>
-        </div>
-        <div class="path wide charcard">
-          <h3>🎨 התאמת הדמות שלי</h3>
-          <p>בוחרים צבע עור, תסרוקת, צבע שיער, בגדים ומשקפיים. השחקן השני יראה אתכם בדיוק כך.</p>
-          <button id="charBtn" class="ghost big" type="button">להתאמת הדמות</button>
-        </div>
-        <div class="path wide frcard">
-          <h3>👥 חברים</h3>
-          <p>מקבלים קוד חבר אישי, מוסיפים חברים לפי הקוד שלהם, רואים מי מחובר ומזמינים אותם לחדר.</p>
-          <button id="frBtn" class="ghost big" type="button">החברים שלי<span class="frbadge" id="frBadge" hidden>0</span></button>
-        </div>
-      </div>
-      <details class="priv" id="priv">
-        <summary>🔒 פרטיות ונתונים</summary>
-        <div class="priv-body">
-          <p><b>מה נשמר:</b> שם המשתמש שבחרתם, מזהה אנונימי של החשבון, כסף וירטואלי ותוצאות. הם נשמרים במכשיר שלכם, ובטבלה המשותפת כשהדף נפתח מתוך Claude. השם מוצג לשחקנים אחרים בחדר ובטבלת המובילים.</p>
-          <p><b>מה לא נשמר:</b> אימייל, סיסמה, טלפון, מיקום או פרטי תשלום. ההתחברות נעשית בחשבון ה-Claude שלכם והמשחק לא רואה אותה, ולכן אין כאן סיסמה שאפשר לגנוב.</p>
-          <p><b>משחק עם חבר:</b> שמות המשתתפים נשמרים בחדר המשותף (קוד בן ארבע ספרות) עד שנפתח חדר חדש עם אותו קוד. מחיקת הנתונים לא מוחקת חדרים ישנים.</p>
-          <p><b>חברים:</b> אם הוספתם חברים, נשמרים בטבלה המשותפת גם קוד החבר שלכם והקשרים בין המשתמשים (מזהים אנונימיים ושמות תצוגה). "מחיקת הנתונים שלי" מוחקת גם אותם.</p>
-          <p>מומלץ לא לשים בשם המשתמש את השם המלא או פרטים אישיים.</p>
-          <button id="wipeBtn" class="ghost danger" type="button">מחיקת הנתונים שלי</button>
-          <p class="priv-msg" id="wipeMsg" role="status" aria-live="polite"></p>
-        </div>
-      </details>
     </div>
-  </section>
-
+  </div>
   <section id="wait" hidden>
     <div class="hero">
       <p style="margin-bottom:0">קוד החדר</p>
@@ -1984,7 +2107,9 @@ input[type=text], input:not([type]), textarea { cursor: text; }
     ["lobby", "wait", "game", "end"].forEach(function (k) { els[k].hidden = k !== which; });
     els.leave.hidden = which === "lobby";
     document.body.classList.toggle("ingame", which === "game");
+    document.body.classList.toggle("inlobby", which === "lobby");
     if (which !== "game") stopLoop();
+    if (window.MM) MM.onShow(which === "lobby");
   }
 
   // ---------- write queue ----------
@@ -8873,7 +8998,27 @@ input[type=text], input:not([type]), textarea { cursor: text; }
     $("kbReset").addEventListener("click", function () { settings.keys = JSON.parse(JSON.stringify(KB_DEF)); saveSettings(); refreshKeyUi(); });
     $("settings").addEventListener("click", function (e) { if (e.target === $("settings")) closeSettings(); });
   }
+  var pzFrom = false;   // the settings sheet was opened from the pause menu, so closing it goes back there
+  function inPlay() { return !els.game.hidden && !!role; }
+  function openPause() {
+    if (world && world.previewStop) world.previewStop();
+    pzFrom = false; keys = {};
+    $("sheet").hidden = true; $("pz").hidden = false; $("settings").hidden = false;
+    $("settings").setAttribute("aria-label", "תפריט השהיה");
+    var room = $("pzRoom"), pm = $("pzMenu");
+    room.textContent = "";
+    if (code && code !== "solo" && doc) {
+      var c = document.createElement("span"); c.className = "code"; c.textContent = code;
+      var t = document.createElement("span"); t.textContent = "משחקים עכשיו: " + nameOf(doc, "host") + (doc.guestName ? " ו" + nameOf(doc, "guest") : "") + ".";
+      room.appendChild(c); room.appendChild(t);
+    } else room.textContent = "אתם משחקים לבד. במשחק הבא אפשר לפתוח חדר מהתפריט הראשי ולהזמין חבר.";
+    pm.classList.remove("armed"); pm.textContent = "תפריט ראשי"; clearTimeout(pm._t);
+    kickAudio(); $("pzResume").focus();
+  }
   function openSettings(mode) {
+    if (!mode && inPlay()) { openPause(); return; }
+    if (mode === "pause") { openPause(); return; }
+    $("pz").hidden = true; $("sheet").hidden = false; $("settings").setAttribute("aria-label", "הגדרות");
     buildSettings(); refreshKeyUi(); refreshLookUi(); refreshViewUi(); refreshSongUi();
     var charMode = mode === "char";
     $("sheetTitle").textContent = charMode ? "התאמת דמות" : "הגדרות";
@@ -8891,14 +9036,151 @@ input[type=text], input:not([type]), textarea { cursor: text; }
     if (charMode) setCtab(curTab);
     if (charMode && world && world.previewStart) world.previewStart($("prev"), role || "host", curLook()); else if (world && world.previewStop) world.previewStop();
   }
-  function closeSettings() { $("settings").hidden = true; if (world && world.previewStop) world.previewStop(); if (els.game.hidden) $("settingsBtn").focus(); }
+  function closeSettings(force) {
+    if (force !== true && pzFrom && inPlay() && !$("sheet").hidden) { openPause(); return; }
+    pzFrom = false; $("settings").hidden = true; $("pz").hidden = true; $("sheet").hidden = false;
+    if (world && world.previewStop) world.previewStop();
+    if (els.game.hidden) { var f = !els.lobby.hidden ? $("mmSet") : $("settingsBtn"); if (f) f.focus(); }
+  }
   $("settingsBtn").addEventListener("click", function () { openSettings(); });
   $("charBtn").addEventListener("click", function () { openSettings("char"); });
   window.addEventListener("keydown", function (e) {
     if (e.key !== "Escape" || e.repeat) return;
+    if (!$("lbov").hidden || !$("frov").hidden || !$("rulesov").hidden) return;   // the overlay closes itself first
     if ($("settings").hidden) openSettings(); else closeSettings();
   });
-  $("setLeave").addEventListener("click", function () { closeSettings(); leaveRoom(""); });
+  $("setLeave").addEventListener("click", function () { closeSettings(true); leaveRoom(""); });
+  // pause menu buttons
+  $("pzResume").addEventListener("click", function () { closeSettings(true); });
+  $("pzSet").addEventListener("click", function () { openSettings("full"); pzFrom = true; });
+  $("pzChar").addEventListener("click", function () { openSettings("char"); pzFrom = true; });
+  $("pzLb").addEventListener("click", function () { openLeaderboard(); });
+  $("pzRules").addEventListener("click", function () { $("rulesov").hidden = false; $("rulesClose").focus(); });
+  $("pzFr").addEventListener("click", function () { frOpen(); });
+  $("pzMenu").addEventListener("click", function () {
+    var b = $("pzMenu");
+    if (!b.classList.contains("armed")) {
+      b.classList.add("armed"); b.textContent = "לחצו שוב כדי לצאת מהמשחק";
+      clearTimeout(b._t); b._t = setTimeout(function () { b.classList.remove("armed"); b.textContent = "תפריט ראשי"; }, 4000);
+      return;
+    }
+    clearTimeout(b._t); closeSettings(true); leaveRoom("");
+  });
+
+  // ---------- v125: main menu ----------
+  window.MM = (function () {
+    var bg = $("mmBg"), ctx = bg ? bg.getContext("2d") : null, bills = [], anim = 0, lastF = 0, on = false, W = 0, H = 0, dpr = 1;
+    var still = false; try { still = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { /* motion ok */ }
+    var canHover = true; try { canHover = window.matchMedia("(hover: hover)").matches; } catch (e) { /* assume a mouse */ }
+
+    // --- sounds: a soft tick when the pointer (or keyboard focus) lands on something, a bright two-note "chink" when you pick it
+    var lastHov = 0, lastPtr = 0;
+    function uiHover() { var n = performance.now(); if (n - lastHov < 45) return; lastHov = n; tone(1500, 0.045, 0, "sine", 0.05); tone(2250, 0.035, 0.012, "sine", 0.022); }
+    function uiSelect(big) { if (big) { tone(784, 0.09, 0, "triangle", 0.12); tone(1175, 0.12, 0.06, "triangle", 0.11); tone(1568, 0.18, 0.12, "sine", 0.08); } else { tone(880, 0.06, 0, "triangle", 0.09); tone(1320, 0.09, 0.045, "sine", 0.07); } }
+    var SCOPE = "#lobby, #settings, .lbov, #wait, #end, .top, .invbar";
+    var ITEM = "button, summary, [role=tab], input[type=checkbox], .sw button";
+    function itemOf(t) { var el = t && t.closest ? t.closest(ITEM) : null; return el && !el.disabled && el.closest(SCOPE) ? el : null; }
+    document.addEventListener("pointerover", function (e) {
+      if (!canHover || e.pointerType === "touch") return;
+      var el = itemOf(e.target); if (!el || (e.relatedTarget && el.contains(e.relatedTarget))) return;
+      uiHover();
+    });
+    document.addEventListener("pointerdown", function () { lastPtr = performance.now(); }, true);
+    document.addEventListener("focusin", function (e) { if (performance.now() - lastPtr < 400) return; if (itemOf(e.target)) uiHover(); });
+    document.addEventListener("click", function (e) { var el = itemOf(e.target); if (el) uiSelect(el.classList.contains("mm-play") || el.classList.contains("pz-go") || el.id === "create" || el.id === "join"); }, true);
+
+    // --- menu actions
+    var fr = $("mmFriends"), room = $("mmRoom");
+    fr.addEventListener("click", function () { var open = room.hidden; room.hidden = !open; fr.setAttribute("aria-expanded", String(open)); if (open) { try { $("create").focus(); } catch (e) { /* no focus */ } } });
+    $("mmRules").addEventListener("click", function () { $("rulesov").hidden = false; $("rulesClose").focus(); });
+    $("rulesClose").addEventListener("click", function () { $("rulesov").hidden = true; });
+    $("rulesov").addEventListener("click", function (e) { if (e.target === $("rulesov")) $("rulesov").hidden = true; });
+    $("mmSet").addEventListener("click", function () { openSettings(); });
+    var mm = $("mmMute");
+    function syncMute() { mm.textContent = els.mute.textContent; mm.setAttribute("aria-pressed", els.mute.getAttribute("aria-pressed") || "false"); }
+    mm.addEventListener("click", function () { els.mute.click(); syncMute(); });
+    syncMute();
+    // Esc closes the topmost small overlay (rules, friends, leaderboard) before anything else
+    window.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape" || e.repeat) return;
+      var o = ["rulesov", "frov", "lbov"].filter(function (id) { return !$(id).hidden; })[0];
+      if (o) { $(o).hidden = true; e.stopImmediatePropagation(); }
+    }, true);
+    // arrow keys walk the menu
+    $("lobby").addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      var list = Array.prototype.filter.call(document.querySelectorAll("#paths > button"), function (b) { return !b.disabled && b.offsetParent; });
+      var i = list.indexOf(document.activeElement); if (i < 0 && !document.activeElement.closest("#paths")) return;
+      e.preventDefault(); var n = list[(i + (e.key === "ArrowDown" ? 1 : -1) + list.length) % list.length]; if (n) n.focus();
+    });
+
+    // --- the leaderboard panel on the side of the menu
+    async function board() {
+      var top = $("mmTop"), meRow = $("mmMe");
+      function myLine(txt, amt) { meRow.textContent = ""; var a = document.createElement("span"), b = document.createElement("span"); a.textContent = txt; b.textContent = amt; meRow.appendChild(a); meRow.appendChild(b); }
+      myLine("הכסף שלך", money(localTotal()));
+      if (!db) { top.innerHTML = '<li class="mm-empty">הטבלה המשותפת זמינה כשהמשחק נפתח מתוך Claude.</li>'; return; }
+      try {
+        var uid = await getUid(), qs = await db.collection("scores").orderBy("total", "desc").limit(10).get(), rows = qs.docs || [], mineAt = -1;
+        top.innerHTML = "";
+        if (!rows.length) { top.innerHTML = '<li class="mm-empty">עוד אין אף אחד בטבלה. נצחו ראשונים!</li>'; return; }
+        rows.forEach(function (sn, i) {
+          var o = sn.data() || {};
+          if (sn.id === uid) { mineAt = i; myLine("#" + (i + 1) + " · " + (o.name || "את/ה"), money(o.total || 0)); }
+          if (i >= 5) return;
+          var li = document.createElement("li"), a = document.createElement("span"), b = document.createElement("span"), c = document.createElement("span");
+          if (sn.id === uid) li.className = "me";
+          a.className = "rk"; a.textContent = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : String(i + 1);
+          b.className = "nm"; b.textContent = o.name || "שחקן"; c.className = "am"; c.textContent = money(o.total || 0);
+          li.appendChild(a); li.appendChild(b); li.appendChild(c); top.appendChild(li);
+        });
+        if (mineAt < 0) myLine((acctName() || "את/ה") + " · מחוץ לעשירייה", money(localTotal()));
+      } catch (e) { top.innerHTML = '<li class="mm-empty">לא הצלחנו לטעון את הטבלה.</li>'; }
+    }
+
+    // --- background: bills of money tumbling down under two soft stage lights
+    function resize() { if (!bg) return; dpr = Math.min(2, window.devicePixelRatio || 1); W = window.innerWidth; H = window.innerHeight; bg.width = Math.round(W * dpr); bg.height = Math.round(H * dpr); }
+    function seed() { bills = []; var n = Math.round(Math.min(34, Math.max(14, W * H / 52000))); for (var i = 0; i < n; i++) bills.push(newBill(true)); }
+    function newBill(any) { var s = 0.6 + Math.random() * 0.9; return { x: Math.random() * W, y: any ? Math.random() * H : -60 - Math.random() * 200, s: s, vy: 22 + 40 * s, vx: -10 + Math.random() * 20, r: Math.random() * 6.28, vr: -1 + Math.random() * 2, f: Math.random() * 6.28, vf: 1.5 + Math.random() * 2.5, sw: Math.random() * 6.28 }; }
+    function drawBill(b) {
+      var w = 64 * b.s, h = 30 * b.s, fl = Math.cos(b.f);
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.r); ctx.scale(1, Math.max(0.08, Math.abs(fl)));
+      ctx.globalAlpha = 0.28 + 0.5 * (b.s - 0.6) / 0.9;
+      ctx.fillStyle = fl > 0 ? "#2f9e5c" : "#237a47"; ctx.strokeStyle = "#0d4527"; ctx.lineWidth = 2;
+      ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(-w / 2, -h / 2, w, h, 4); else ctx.rect(-w / 2, -h / 2, w, h); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#f3d27f"; ctx.fillRect(-w * 0.09, -h / 2, w * 0.18, h);
+      ctx.strokeStyle = "rgba(13,69,39,.8)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(-w * 0.3, 0, h * 0.22, 0, 6.28); ctx.stroke(); ctx.beginPath(); ctx.arc(w * 0.3, 0, h * 0.22, 0, 6.28); ctx.stroke();
+      ctx.restore();
+    }
+    function frame(t) {
+      anim = 0; if (!on || !ctx) return;
+      var dt = Math.min(0.05, lastF ? (t - lastF) / 1000 : 0.016); lastF = t;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+      [[0.22, -0.05], [0.8, -0.08]].forEach(function (L, k) {   // stage lights
+        var x = W * L[0], g = ctx.createLinearGradient(x, 0, x, H);
+        g.addColorStop(0, "rgba(255,226,140," + (0.13 + 0.03 * Math.sin(t / 1400 + k)) + ")"); g.addColorStop(1, "rgba(255,226,140,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x - 30, 0); ctx.lineTo(x + 30, 0); ctx.lineTo(x + W * 0.22, H); ctx.lineTo(x - W * 0.22, H); ctx.closePath(); ctx.fill();
+      });
+      bills.forEach(function (b, i) {
+        if (!still) { b.sw += dt; b.y += b.vy * dt; b.x += (b.vx + Math.sin(b.sw * 1.3) * 18) * dt; b.r += b.vr * dt * 0.6; b.f += b.vf * dt; }
+        if (b.y > H + 60 || b.x < -80 || b.x > W + 80) bills[i] = newBill(false);
+        drawBill(b);
+      });
+      if (!still && !document.hidden) anim = requestAnimationFrame(frame);
+    }
+    function start() { if (!ctx) return; resize(); if (!bills.length) seed(); lastF = 0; if (!anim) anim = requestAnimationFrame(frame); }
+    function stop() { if (anim) cancelAnimationFrame(anim); anim = 0; }
+    window.addEventListener("resize", function () { if (!on) return; var w0 = W; resize(); if (Math.abs(W - w0) > 200) seed(); if (still) { stop(); start(); } });
+    document.addEventListener("visibilitychange", function () { if (on && !document.hidden) { stop(); start(); } });
+
+    function onShow(lobby) {
+      on = lobby;
+      if (lobby) { start(); board(); syncMute(); room.hidden = true; fr.setAttribute("aria-expanded", "false"); }
+      else stop();
+    }
+    return { onShow: onShow, board: board };
+  })();
+  if (!els.lobby.hidden) { document.body.classList.add("inlobby"); MM.onShow(true); }
 
   // ---------- hotbar (slots 1-4): hands / chips + chip count / drink / mini-map ----------
   var HB = { sel: 0, drink: null, el: null, slots: [], toastEl: null, chipEl: null, mapEl: null, mapCv: null, mapBase: null, chipHtml: "" };
@@ -8992,6 +9274,7 @@ input[type=text], input:not([type]), textarea { cursor: text; }
     setGate(roomMod ? "" : "התנועה בין המכשירים בזמן אמת לא זמינה כרגע. אפשר לשחק, אבל לא תראו את הדמות של השני זזה.");
     els.create.disabled = false; els.join.disabled = false;
     frInit();
+    if (window.MM && !els.lobby.hidden) MM.board();
 
     var saved = null;
     try { saved = JSON.parse(store("session", SESSION_KEY) || "null"); } catch (e) { saved = null; }
