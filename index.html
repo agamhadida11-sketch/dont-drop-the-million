@@ -6282,16 +6282,32 @@ body.inlobby { padding-block: 0; }
         root.visible = show; av.nameS.sp.visible = !isMe && !!(c.name);
         if (!show) return;
         var fall = c.fall || 0, wa = Math.min(1, c.spd / 3.2);
-        root.position.set(c.x, c.y + (c.jy || 0) - fall * fall * 7, c.z);
-        root.rotation.y = c.yaw; root.rotation.x = fall * 0.8;
+        // motion state per avatar: which way it moves relative to where it faces (forward / sideways), how fast, whether it rises or falls
+        var ms = av._m || (av._m = { x: c.x, z: c.z, t: t, f: 1, s: 0, run: 0, jy: 0, vy: 0, air: 0, land: -1e9, cr: 0, lean: 0, side: 0 });
+        var dtm = Math.min(0.1, Math.max(0.001, (t - ms.t) / 1000)), kk = 1 - Math.exp(-dtm * 10);
+        var vx = (c.x - ms.x) / dtm, vz = (c.z - ms.z) / dtm, fwv = -(vx * Math.sin(c.yaw) + vz * Math.cos(c.yaw)), sdv = vx * Math.cos(c.yaw) - vz * Math.sin(c.yaw), spv = Math.hypot(fwv, sdv);
+        if (spv > 0.4 && spv < 40) { ms.f += (fwv / spv - ms.f) * kk; ms.s += (sdv / spv - ms.s) * kk; }
+        ms.run += (Math.max(0, Math.min(1, (c.spd - 5.4) / 2.6)) - ms.run) * kk;
+        var jy = c.jy || 0, vy = (jy - ms.jy) / dtm; ms.vy += (vy - ms.vy) * 0.5;
+        if (jy > 0.02) ms.air = Math.min(1, ms.air + dtm * 8); else { if (ms.air > 0.5) ms.land = t; ms.air = Math.max(0, ms.air - dtm * 10); }
+        ms.cr += ((c.cr || 0) - ms.cr) * kk; ms.x = c.x; ms.z = c.z; ms.t = t; ms.jy = jy;
+        var fwd = ms.f, sid = ms.s, rn = ms.run, air = ms.air, cr = ms.cr, ph = c.phase, sph = Math.sin(ph);
+        var landK = Math.max(0, 1 - (t - ms.land) / 220), bob = Math.abs(Math.sin(ph)) * (0.035 + 0.05 * rn) * wa * (1 - air);
+        root.rotation.order = "YXZ";
+        root.position.set(c.x, c.y + jy - fall * fall * 7 + bob - 0.2 * cr - 0.06 * landK, c.z);
+        ms.lean += ((fwd * (0.06 + 0.2 * rn) * wa) - ms.lean) * kk; ms.side += ((-sid * 0.12 * wa) - ms.side) * kk;
+        root.rotation.y = c.yaw; root.rotation.x = fall * 0.8 - ms.lean - 0.2 * cr; root.rotation.z = ms.side;
         root.visible = fall < 0.98;
-        var ph = c.phase;
-        av.legs[0].rotation.x = Math.sin(ph) * 0.7 * wa; av.legs[1].rotation.x = -Math.sin(ph) * 0.7 * wa;
+        // legs: swing along the direction of travel (forward/back for walking, apart/together for side steps), longer strides when running
+        var amp = (0.62 + 0.38 * rn) * wa, fA = amp * fwd, sA = amp * 0.75 * Math.abs(sid);
+        av.legs[0].rotation.set(sph * fA, 0, Math.max(0, sph) * sA * (sid > 0 ? 1 : -1) - 0.12 * cr);
+        av.legs[1].rotation.set(-sph * fA, 0, Math.max(0, -sph) * sA * (sid > 0 ? 1 : -1) + 0.12 * cr);
+        av.legs[0].scale.y = av.legs[1].scale.y = 1 - 0.32 * cr;
         var carrying = c.carry > 0, emo = c.emo;
         if (carrying) { av.arms[0].rotation.x = 1.35; av.arms[1].rotation.x = 1.35; av.arms[0].rotation.z = 0.5; av.arms[1].rotation.z = -0.5; }
         else if (emo === "cheer") { av.arms[0].rotation.x = -3.0 + Math.sin(t / 90) * 0.25; av.arms[1].rotation.x = -3.0 - Math.sin(t / 90) * 0.25; av.arms[0].rotation.z = 0.2; av.arms[1].rotation.z = -0.2; }
         else if (emo === "shock") { av.arms[0].rotation.x = 2.2; av.arms[1].rotation.x = 2.2; av.arms[0].rotation.z = 0.5; av.arms[1].rotation.z = -0.5; }
-        else { av.arms[0].rotation.x = -Math.sin(ph) * 0.6 * wa; av.arms[1].rotation.x = Math.sin(ph) * 0.6 * wa; av.arms[0].rotation.z = -0.1; av.arms[1].rotation.z = 0.1; }
+        else { var aa = (0.45 + 0.55 * rn) * wa * (0.35 + 0.65 * Math.abs(fwd)); av.arms[0].rotation.x = -sph * aa + 0.35 * rn * wa + 0.5 * cr; av.arms[1].rotation.x = sph * aa + 0.35 * rn * wa + 0.5 * cr; av.arms[0].rotation.z = -0.1 - 0.2 * Math.abs(sid) * wa; av.arms[1].rotation.z = 0.1 + 0.2 * Math.abs(sid) * wa; }
         av.bundle.visible = carrying;
         if (carrying) { var cnt = clamp(Math.ceil(c.carry / UNIT), 1, 6); if (av.bundleCount !== cnt) { av.bundleCount = cnt; avatarSetCount(av, cnt); } }
         av.head.rotation.z = emo === "sad" ? 0.18 : (emo === "cheer" ? Math.sin(t / 120) * 0.08 : 0);
@@ -6299,9 +6315,15 @@ body.inlobby { padding-block: 0; }
         av.smile.visible = emo === "smile" || emo === "happy" || emo === "cheer" || emo === "focus";
         av.frown.visible = emo === "sad" || emo === "worried";
         av.oh.visible = emo === "shock";
-        var sqz = Math.sin(c.phase * 2) * (isMe ? 0.015 : 0.05) * wa + Math.sin(t / 650 + c.yaw) * 0.012;
-        var crh = 1 - 0.3 * (c.cr || 0); root.scale.set(1 + sqz + 0.08 * (c.cr || 0), (1 - sqz) * crh, 1 + sqz + 0.08 * (c.cr || 0));
-        if ((c.jy || 0) > 0.02) { av.legs[0].rotation.x = -0.5; av.legs[1].rotation.x = 0.4; av.arms[0].rotation.z = av.arms[0].rotation.z - 0.5; av.arms[1].rotation.z = av.arms[1].rotation.z + 0.5; }
+        var sqz = Math.sin(t / 650 + c.yaw) * 0.008 + landK * 0.06;   // a gentle breath, and a short squash on landing
+        root.scale.set(1 + sqz, 1 - sqz, 1 + sqz);
+        if (air > 0) {   // jump: knees up and arms out on the way up, legs reach down for the floor on the way down
+          var up = Math.max(0, Math.min(1, ms.vy / 3)), dn = Math.max(0, Math.min(1, -ms.vy / 3)), la = 1 - air;
+          var l0 = 0.6 * up - 0.12 * dn, l1 = -0.2 * up + 0.22 * dn;
+          av.legs[0].rotation.x = av.legs[0].rotation.x * la + l0 * air; av.legs[1].rotation.x = av.legs[1].rotation.x * la + l1 * air;
+          av.legs[0].rotation.z = av.legs[0].rotation.z * la - 0.12 * dn * air; av.legs[1].rotation.z = av.legs[1].rotation.z * la + 0.12 * dn * air;
+          if (!carrying && emo !== "cheer" && emo !== "shock") { av.arms[0].rotation.x = av.arms[0].rotation.x * la + (0.7 * up + 0.25 * dn) * air; av.arms[1].rotation.x = av.arms[1].rotation.x * la + (0.7 * up + 0.25 * dn) * air; av.arms[0].rotation.z -= 0.55 * air; av.arms[1].rotation.z += 0.55 * air; }
+        }
         var dead = fall > 0.04;
         av.xeyes.visible = dead; av.eyes[0].visible = av.eyes[1].visible = av.pupils[0].visible = av.pupils[1].visible = !dead;
         if (dead) { av.smile.visible = false; av.frown.visible = false; av.oh.visible = true; }
