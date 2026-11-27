@@ -6426,20 +6426,18 @@ body.inlobby { padding-block: 0; }
             h.g.position.set(h.s * 0.36 - lagX * 0.5 + Math.sin(ph) * 0.012 * wa + cam.hx * 0.6, -0.5 - bobY * 0.4 + lagY * 0.3 + idle + sl * 0.26 + cam.hy * 0.6 - me.cr * 0.02, -0.88 + sl * 0.38 + cam.hz * 0.6);
             h.g.rotation.set(0.35, -h.s * 0.12, -h.s * 1.35);
           } else {
-            // natural arm swing: each hand pumps forward and back opposite the legs, rises a little as it comes forward and moves in toward the middle;
-            // running pumps harder with loose fists, the hands breathe when you stand still, spread in a jump and drop when you crouch
-            var pz = h.s === pokeS ? pa : 0, air = me.jy > 0.03 ? 1 : 0, cr = me.cr || 0, amp = wa * (1 + 0.55 * rn), fw = Math.max(0, -swing);
-            var br = Math.sin(t / 1250 + h.s * 0.7), br2 = Math.sin(t / 1900 + h.s * 2.1);
+            // the hands hang at your sides like real arms: out of view when you stand still and look ahead. Walking swings them forward
+            // (opposite the legs) so they peek in at the bottom corners, running swings them higher, looking down brings them into view,
+            // a jump lifts them out to the sides, and pressing E (take / place) reaches one hand forward
+            var pz = h.s === pokeS ? pa : 0, air = me.jy > 0.03 ? 1 : 0, cr = me.cr || 0, amp = wa * (1 + 0.6 * rn), fw = Math.max(0, -swing), bk = Math.max(0, swing);
+            var br = Math.sin(t / 1250 + h.s * 0.7), pd = clamp(-(me.pitch || 0), 0, 1.3);
             h.ax = (h.ax || 0) + ((air ? 1 : 0) - (h.ax || 0)) * (1 - Math.exp(-dtf * 8));
             h.g.position.set(
-              h.s * 0.52 - lagX * 0.3 - h.s * pz * 0.1 + cam.hx - h.s * fw * 0.05 * amp + h.s * h.ax * 0.05 + br2 * 0.004 * (1 - wa),
-              -0.6 + idle + br * 0.006 * (1 - wa) + lift * 0.035 * amp - Math.abs(swing) * 0.01 * amp + 0.01 * rn * wa + lagY * 0.15 + pz * 0.1 + cam.hy - cr * 0.06 + h.ax * 0.04,
-              -0.68 - swing * 0.075 * amp - pz * 0.26 + cam.hz - cr * 0.04);
-            h.g.rotation.set(
-              0.95 + swing * 0.2 * amp - pz * 0.4 - 0.12 * rn * wa + br * 0.015 * (1 - wa) - h.ax * 0.15,
-              h.s * 0.2 - h.s * swing * 0.12 * amp,
-              h.s * 0.05 + h.s * swing * 0.09 * amp + cam.hx * 1.6 + h.s * h.ax * 0.25 + br2 * 0.012 * (1 - wa));
-            var curl = 0.5 * rn * wa + 0.15 * h.ax + 0.08 * (1 + Math.sin(t / 1700 + h.s)) * (1 - wa);   // relaxed fingers at rest, a loose fist when running
+              h.s * (0.5 - fw * 0.08 * amp - pz * 0.22) - lagX * 0.3 + cam.hx + h.s * h.ax * 0.1,
+              -0.98 + fw * (0.38 * wa + 0.1 * rn * wa) + bk * 0.03 * amp + pd * 0.5 + h.ax * 0.3 - cr * 0.03 + br * 0.006 + cam.hy + lagY * 0.15 + pz * 0.42,
+              -0.62 - fw * (0.2 + 0.06 * rn) * wa + bk * 0.1 * amp - pd * 0.08 + cam.hz - pz * 0.2);
+            h.g.rotation.set(0.4 + fw * (0.45 + 0.15 * rn) * wa - bk * 0.15 * amp + pd * 0.25 + pz * 0.35 + h.ax * 0.2, h.s * 0.18, h.s * (0.12 + 0.1 * fw * amp) + h.s * h.ax * 0.3 + cam.hx * 1.6);
+            var curl = 0.5 * rn * wa + 0.1 + 0.05 * Math.sin(t / 1700 + h.s);   // relaxed fingers, a loose fist when running
             h.f.forEach(function (f, k) { f.rotation.x = f.userData.rx - curl * (0.8 + k * 0.12); }); h.tg.rotation.x = h.tr.x - curl * 0.5;
           }
         });
