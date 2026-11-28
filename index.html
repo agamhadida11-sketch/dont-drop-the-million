@@ -1057,6 +1057,19 @@ body.inlobby { padding-block: 0; }
   .plkp-chips { display: none; } .plkp-go { padding: 10px; font-size: 1.2rem; }
 }
 
+/* v148 · loading screen: covers the first moments of a game while the 3D scene warms up (it stutters then), and fades out by itself
+   once frames run smoothly */
+.loadscr { position: fixed; inset: 0; z-index: 94; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center; background: radial-gradient(ellipse at 50% 40%, #2a1650 0%, #0d0820 60%, #05030c 100%); transition: opacity .45s; }
+.loadscr[hidden] { display: none; }
+.loadscr.out { opacity: 0; pointer-events: none; }
+.loadscr h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 6vw, 3.4rem); background: linear-gradient(180deg, #fffbe6, #ffe27a 42%, #f3b93a 70%, #c98a1c); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #3b2105); }
+.ld-coin { width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center; font: 900 2.2rem var(--font-luxe); color: #6a4300; background: radial-gradient(circle at 32% 28%, #fff3c4, #f3c24f 55%, #b9821c); box-shadow: 0 0 0 5px rgba(255, 226, 122, .25), 0 10px 30px rgba(0, 0, 0, .5), 0 0 40px rgba(243, 194, 79, .45); animation: ldSpin 1.6s linear infinite; }
+@keyframes ldSpin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+.ld-bar { width: min(340px, 80vw); height: 12px; border-radius: 999px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(243, 210, 127, .35); overflow: hidden; }
+.ld-bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #f3b93a, #ffe27a); box-shadow: 0 0 14px rgba(255, 226, 122, .7); transition: width .2s; }
+.ld-tip { margin: 0; color: var(--mute); font-weight: 700; min-height: 1.4em; }
+@media (prefers-reduced-motion: reduce) { .ld-coin { animation-duration: 3s; } }
+
 /* v129 · entry screen: browsers allow no sound before the first click or key press, so when sound is still blocked
    the first click lands on this screen and switches the sound on for everything after it */
 .splash { position: fixed; inset: 0; z-index: 95; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; text-align: center; background: radial-gradient(ellipse at 50% 40%, rgba(40, 22, 70, .9), rgba(5, 3, 12, .97)); cursor: pointer; }
@@ -1257,6 +1270,12 @@ body.inlobby { padding-block: 0; }
       </aside>
     </div>
   </section>
+  <div class="loadscr" id="loadScr" hidden role="status" aria-live="polite" aria-label="טוענים את המשחק">
+    <div class="ld-coin" aria-hidden="true">₪</div>
+    <h2>אל תפיל את המיליון</h2>
+    <div class="ld-bar"><i id="loadFill"></i></div>
+    <p class="ld-tip" id="loadTip">מכינים את האולפן...</p>
+  </div>
   <div class="splash" id="splash" hidden role="dialog" aria-label="כניסה למשחק">
     <h2>אל תפיל<br>את המיליון</h2>
     <button type="button" class="go" id="splashGo">🔊 לחצו כדי להיכנס</button>
@@ -2618,7 +2637,7 @@ body.inlobby { padding-block: 0; }
     document.body.classList.toggle("inlobby", which === "lobby");
     if (which !== "game") stopLoop();
     if (window.MM) MM.onShow(which === "lobby");
-    if (which === "game" && shownWas !== "game" && window.tryLock) setTimeout(tryLock, 0);   // entering the stage: grab the mouse right away when the browser allows it
+    if (which === "game" && shownWas !== "game") { if (window.LOADSCR) LOADSCR.start(); else if (window.tryLock) setTimeout(tryLock, 0); }   // entering the stage: the loading screen covers the first stuttery moments, then grabs the mouse
     shownWas = which;
   }
   var shownWas = "";
@@ -10866,6 +10885,33 @@ body.inlobby { padding-block: 0; }
     return { onShow: onShow, board: board, splash: splashShow };
   })();
   if (!els.lobby.hidden) { document.body.classList.add("inlobby"); MM.onShow(true); }
+
+  // ---------- v148: loading screen when you enter a game ----------
+  // The first moments on the stage stutter while the 3D scene compiles and fills in. The screen stays up (the game keeps drawing behind it,
+  // which is what warms it up) until frames run steadily (the last 14 frames without stutter spikes), at least 0.9 s, at most 6 s.
+  window.LOADSCR = (function () {
+    var el = $("loadScr"), fill = $("loadFill"), tip = $("loadTip"), raf = 0, t0 = 0, last = 0, good = 0, prog = 0, hist = [];
+    var TIPS = ["מכינים את האולפן...", "סופרים את המיליון...", "מדליקים את הזרקורים...", "מסדרים את הפודיומים...", "כמעט מוכן..."];
+    function done() {
+      if (!raf) return; cancelAnimationFrame(raf); raf = 0; fill.style.width = "100%"; tip.textContent = "יאללה!";
+      el.classList.add("out"); setTimeout(function () { el.hidden = true; el.classList.remove("out"); }, 460);
+      if (window.tryLock) setTimeout(tryLock, 0);
+    }
+    function frame(now) {
+      raf = requestAnimationFrame(frame);
+      var dt = last ? now - last : 16, el2 = now - t0; last = now;
+      hist.push(dt); if (hist.length > 14) hist.shift(); var srt = hist.slice().sort(function (a, b) { return a - b; }), med = srt[srt.length >> 1] || 16;
+      good = hist.length >= 14 && srt[srt.length - 1] < Math.max(45, med * 1.7) ? good + 1 : 0;   // steady frames (no stutter spikes), even on a slower device
+      var target = Math.min(0.95, 0.15 + el2 / 6000 * 0.6 + good / 4 * 0.4); prog += (target - prog) * 0.12; fill.style.width = Math.round(prog * 100) + "%";
+      tip.textContent = TIPS[Math.min(TIPS.length - 1, Math.floor(el2 / 1400))];
+      if ((good >= 4 && el2 > 900) || el2 > 6000 || els.game.hidden) done();
+    }
+    function start() {
+      if (raf) return; el.hidden = false; el.classList.remove("out"); fill.style.width = "8%"; tip.textContent = TIPS[0];
+      t0 = performance.now(); last = 0; good = 0; hist = []; prog = 0.08; raf = requestAnimationFrame(frame);
+    }
+    return { start: start, done: done };
+  })();
 
   // ---------- v127: chat box for game messages ----------
   // The old message spots (hint line, verdict, toast, gate tip) stay in the page and keep being written by the game code;
