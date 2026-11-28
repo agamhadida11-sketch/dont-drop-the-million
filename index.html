@@ -949,6 +949,19 @@ body.inlobby { padding-block: 0; }
 #game.offstage .deck, #game.offstage .answers, #game.offstage .pot { display: none; }
 @media (max-width: 640px) { #game .pot { top: 68px; left: 10px; } #game .pot .big { font-size: 1rem; } #game .answers { top: 104px; width: calc(100% - 120px); grid-template-columns: repeat(2, minmax(0, 1fr)); } #game .stage .qov { width: calc(100% - 140px); } }
 
+/* v128 · main menu: the yellow bubble follows the item under the mouse (or keyboard focus); every other item is plain text.
+   All items keep the same size and padding, so nothing jumps when the bubble moves. */
+.mm-menu > .mmi { padding: 6px 22px 8px; margin-inline-start: -22px; border-radius: 18px; transform: none; transition: background .14s, color .14s, box-shadow .14s, transform .16s cubic-bezier(.2, .9, .3, 1.3); }
+.mm-menu > .mmi::before { content: none; }
+.mm-menu > .mmi:hover, .mm-menu > .mmi:focus-visible, .mm-menu > .mmi[aria-expanded="true"] { transform: none; }
+.mm-menu > .mmi[aria-expanded="true"]:not(.sel) { color: #ffe27a; }
+.mm-menu > .mmi.sel { background: linear-gradient(180deg, #ffe89a, #f3c24f 60%, #e3a92c); color: #2b1b00; text-shadow: none; box-shadow: 0 5px 0 #9b7424, 0 0 30px rgba(243, 194, 79, .4); transform: scale(1.05); transform-origin: right center; }
+.mm-menu > .mmi.sel::after { content: "◀"; font-size: .55em; margin-inline-start: .45em; }
+.mm-menu > .mmi.sel:active { transform: scale(1.02) translateY(3px); box-shadow: 0 2px 0 #9b7424; }
+.mm-menu > .mmi:disabled { opacity: .55; }
+.mm-menu > .mmi.small.sel { font-family: var(--font-body); }
+@media (prefers-reduced-motion: reduce) { .mm-menu > .mmi { transition: none; } }
+
 /* chat box: bottom-left of the screen; new lines light up, then the box fades back so it does not cover the view */
 .chat { position: absolute; left: 12px; bottom: 12px; z-index: 30; width: min(380px, 38%); max-height: 34%; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 12px; background: rgba(8, 5, 18, .62); border: 1px solid rgba(243, 210, 127, .25); color: var(--cash); font-size: .88rem; line-height: 1.35; direction: rtl; pointer-events: auto; transition: opacity .5s, background .5s; }
 .chat.dim { opacity: .45; background: rgba(8, 5, 18, .3); }
@@ -1094,7 +1107,7 @@ body.inlobby { padding-block: 0; }
           </div>
         </div>
         <nav class="mm-menu" id="paths" aria-label="תפריט ראשי">
-          <button id="solo" class="mm-play" type="button" disabled>משחקים לבד</button>
+          <button id="solo" class="mmi sel" type="button" disabled>משחקים לבד</button>
           <button id="mmFriends" class="mmi" type="button" aria-expanded="false" aria-controls="mmRoom">משחק עם חברים</button>
           <div class="mm-room" id="mmRoom" hidden>
             <div class="mm-rcard">
@@ -10330,7 +10343,7 @@ body.inlobby { padding-block: 0; }
     });
     document.addEventListener("pointerdown", function () { lastPtr = performance.now(); }, true);
     document.addEventListener("focusin", function (e) { if (performance.now() - lastPtr < 400) return; if (itemOf(e.target)) uiHover(); });
-    document.addEventListener("click", function (e) { var el = itemOf(e.target); if (el) uiSelect(el.classList.contains("mm-play") || el.classList.contains("pz-go") || el.id === "create" || el.id === "join"); }, true);
+    document.addEventListener("click", function (e) { var el = itemOf(e.target); if (el) uiSelect(el.id === "solo" ||el.classList.contains("pz-go") || el.id === "create" || el.id === "join"); }, true);
 
     // --- menu actions
     var fr = $("mmFriends"), room = $("mmRoom");
@@ -10356,6 +10369,12 @@ body.inlobby { padding-block: 0; }
       var i = list.indexOf(document.activeElement); if (i < 0 && !document.activeElement.closest("#paths")) return;
       e.preventDefault(); var n = list[(i + (e.key === "ArrowDown" ? 1 : -1) + list.length) % list.length]; if (n) n.focus();
     });
+
+    // --- the yellow bubble sits on whatever the mouse is over (or the keyboard is on); it stays on the last one when the mouse leaves
+    var nav = $("paths");
+    function selItem(b) { if (!b || b.classList.contains("sel")) return; Array.prototype.forEach.call(nav.querySelectorAll(":scope > .mmi"), function (x) { x.classList.toggle("sel", x === b); }); }
+    nav.addEventListener("pointerover", function (e) { var b = e.target.closest && e.target.closest(".mmi"); if (b && b.parentNode === nav) selItem(b); });
+    nav.addEventListener("focusin", function (e) { if (e.target.classList && e.target.classList.contains("mmi") && e.target.parentNode === nav) selItem(e.target); });
 
     // --- the leaderboard panel on the side of the menu
     async function board() {
@@ -10418,7 +10437,7 @@ body.inlobby { padding-block: 0; }
 
     function onShow(lobby) {
       on = lobby;
-      if (lobby) { start(); board(); syncMute(); room.hidden = true; fr.setAttribute("aria-expanded", "false"); }
+      if (lobby) { start(); board(); syncMute(); room.hidden = true; fr.setAttribute("aria-expanded", "false"); selItem($("solo")); }
       else stop();
     }
     return { onShow: onShow, board: board };
