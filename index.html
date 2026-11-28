@@ -6733,7 +6733,7 @@ body.inlobby { padding-block: 0; }
         if (!p.isMe && p.presence && p.presence.cl && (p.presence.cl === oId || p.presence.role === other.r)) { peer = p.presence; break; }
       }
     }
-    if (peer) { lastPeerAt = performance.now(); if (peer.pk) { try { plkRemote(peer.pk); } catch (e) { /* cosmetic */ } } if (peer.sl) { try { slRemote(peer.sl); } catch (e) { /* cosmetic */ } }  }
+    if (peer) { lastPeerAt = performance.now(); if (peer.pk) { try { plkRemote(peer.pk); } catch (e) { /* cosmetic */ } } if (peer.sl) { try { slRemote(peer.sl); } catch (e) { /* cosmetic */ } } if (peer.tb) { try { tbRemote(peer.tb); } catch (e) { /* cosmetic */ } }  }
     else if (code !== "solo" && d["pos_" + other.r] && d["pos_" + other.r].t !== lastFbT) {
       lastFbT = d["pos_" + other.r].t; lastFbAt = performance.now();
     }
@@ -6865,10 +6865,10 @@ body.inlobby { padding-block: 0; }
 
     // presence
     if (roomNs && t - lastSend > 50) {
-      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig() + "," + slSig();
+      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig() + "," + slSig() + "," + tbSig();
       if (snap !== lastSent || t - lastSend > 2000) {
         lastSent = snap; lastSend = t;
-        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut(), sl: slOut() }).catch(function () { /* drop */ });
+        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut(), sl: slOut(), tb: tbOut() }).catch(function () { /* drop */ });
       }
     }
     if (code !== "solo" && ref && t - lastFbWrite > 130 && t - lastPeerAt > 2500) {
@@ -7264,7 +7264,7 @@ body.inlobby { padding-block: 0; }
   function plkGhostRun() {
     if (PLK_GHOSTS.length && !plkGhostRaf) { var last = performance.now(); plkGhostRaf = requestAnimationFrame(function step(now) {
       var dt = Math.min(0.1, (now - last) / 1000); last = now;
-      PLK_GHOSTS.slice().forEach(function (gh) { var hits = []; gh.acc += dt; while (gh.acc >= PLK_DT && !gh.b.done) { gh.acc -= PLK_DT; plkStep(gh.L, gh.b, hits); } if (hits.length && gh.own && (!gh.lh || performance.now() - gh.lh > 90)) { gh.lh = performance.now(); pling(600 + Math.random() * 400, 0.03); } gh.m.position.set(gh.b.x, gh.b.y, 0.03); if (gh.b.done && !gh.paid) { gh.paid = 1; var mult = plkMult(gh.L.R, gh.own ? gh.own.risk : 1)[gh.b.k], bxp = (gh.b.k - gh.L.R / 2) * gh.L.SX; if (gh.own) { floatText(gh.g, plkFmt(mult), bxp, gh.L.BY + 0.3, 0.2, mult >= 1 ? "#ffd23f" : "#ff9aa8", 0.18); var pay = Math.round(gh.own.bet * mult), net = pay - gh.own.bet; if (pay > 0) casApply(pay); plkHallMsg((net >= 0 ? "+" : "") + net.toLocaleString() + " · " + plkFmt(mult), net > 0 ? "win" : "lose"); if (net > 0 && mult >= 3) winFx(net, gh.own.bet, "plinko"); else if (net > 0) pling(1320, 0.08); } } if (gh.b.done) { gh.done = (gh.done || 0) + dt; if (gh.done > 0.6) { gh.g.parent && gh.g.parent.remove(gh.g); PLK_GHOSTS.splice(PLK_GHOSTS.indexOf(gh), 1); } } });
+      PLK_GHOSTS.slice().forEach(function (gh) { var hits = []; gh.acc += dt; while (gh.acc >= PLK_DT && !gh.b.done) { gh.acc -= PLK_DT; plkStep(gh.L, gh.b, hits); } if (hits.length && gh.own && (!gh.lh || performance.now() - gh.lh > 90)) { gh.lh = performance.now(); pling(600 + Math.random() * 400, 0.03); } gh.m.position.set(gh.b.x, gh.b.y, 0.03); if (gh.b.done && !gh.paid) { gh.paid = 1; var mult = plkMult(gh.L.R, gh.own ? gh.own.risk : 1)[gh.b.k], bxp = (gh.b.k - gh.L.R / 2) * gh.L.SX; if (!gh.own && mult > 1) { sparks(gh.g, bxp, gh.L.BY + 0.1, 0.15, 16, "pw", "p", 0.8, 700, 2.2, 0.08); coinPuff(gh.g, bxp, gh.L.BY + 0.2, 0.25, 8); } if (gh.own) { floatText(gh.g, plkFmt(mult), bxp, gh.L.BY + 0.3, 0.2, mult >= 1 ? "#ffd23f" : "#ff9aa8", 0.18); var pay = Math.round(gh.own.bet * mult), net = pay - gh.own.bet; if (pay > 0) casApply(pay); plkHallMsg((net >= 0 ? "+" : "") + net.toLocaleString() + " · " + plkFmt(mult), net > 0 ? "win" : "lose"); if (net > 0 && mult >= 3) winFx(net, gh.own.bet, "plinko"); else if (net > 0) pling(1320, 0.08); } } if (gh.b.done) { gh.done = (gh.done || 0) + dt; if (gh.done > 0.6) { gh.g.parent && gh.g.parent.remove(gh.g); PLK_GHOSTS.splice(PLK_GHOSTS.indexOf(gh), 1); } } });
       plkGhostRaf = PLK_GHOSTS.length ? requestAnimationFrame(step) : 0;
     }); }
   }
@@ -8594,10 +8594,17 @@ body.inlobby { padding-block: 0; }
   var TB_OUT = [], TB_SEEN = {}, tbSeq = 0;
   function tbSig() { return TB_OUT.length ? TB_OUT[TB_OUT.length - 1].id : ""; }
   function tbOut() { var now = Date.now(); TB_OUT = TB_OUT.filter(function (o) { return now - o.at < 5000; }); return TB_OUT.map(function (o) { return [o.id, o.t, o.a, o.b, o.k]; }); }
+  var PUFF_G = null, PUFF_M = null;
+  function coinPuff(parent, x, y, z, n) {
+    if (!PUFF_G) { PUFF_G = new T.CylinderGeometry(0.045, 0.045, 0.012, 14); PUFF_M = new T.MeshPhongMaterial({ color: 0xf7c52c, emissive: 0x4a3200, specular: 0xffffff, shininess: 90 }); }
+    var cs = []; for (var i = 0; i < n; i++) { var m = new T.Mesh(PUFF_G, PUFF_M); m.position.set(x, y, z); parent.add(m); var a = Math.random() * 6.28, v = 0.6 + Math.random() * 1.2; cs.push({ m: m, vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 1.8 + Math.random() * 1.6, rx: (Math.random() - 0.5) * 18, rz: (Math.random() - 0.5) * 18 }); }
+    var last = performance.now(); tween(1500, function (k) { var now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now; cs.forEach(function (c) { c.vy -= 6 * dt; c.m.position.x += c.vx * dt; c.m.position.y += c.vy * dt; c.m.position.z += c.vz * dt; c.m.rotation.x += c.rx * dt; c.m.rotation.z += c.rz * dt; if (k > 0.75) c.m.scale.setScalar(Math.max(0.01, (1 - k) / 0.25)); }); if (k >= 1) cs.forEach(function (c) { parent.remove(c.m); }); });
+    tone(2200, 0.05, 0, "triangle", 0.03); tone(2900, 0.05, 0.08, "triangle", 0.025);
+  }
   function tbRemote(list) {   // a friend's results at a table float above that table here
     if (!Array.isArray(list) || !world || !world.casApi) return; var H = world.casApi(); if (!H || !H.tables) return;
     list.forEach(function (e) { if (!Array.isArray(e) || TB_SEEN[e[0]]) return; TB_SEEN[e[0]] = 1; var tb = H.tables[e[1]]; if (!tb) return;
-      var col = e[4] === "win" ? "#3dff9a" : e[4] === "lose" ? "#ff8aa0" : "#ffe27a"; floatText(H.hall, String(e[2]), tb.x, 2.3, tb.z, col, 0.42); if (e[3]) setTimeout(function () { floatText(H.hall, String(e[3]), tb.x, 2.0, tb.z, "#ffffff", 0.26); }, 120); if (e[4] === "win") pling(1100, 0.05); });
+      if (e[4] !== "win") return; sparks(H.hall, tb.x, 1.6, tb.z, 26, "pw", "o", 1.4, 1100, 2.4, 0.12); coinPuff(H.hall, tb.x, 1.3, tb.z, 18); });
   }
   var SL_OUT = [], SL_SEEN = {}, slSeq = 0;
   function slSig() { return SL_OUT.length ? SL_OUT[SL_OUT.length - 1].id : ""; }
@@ -8715,7 +8722,7 @@ body.inlobby { padding-block: 0; }
       clearInterval(S.spinTimer); var f = S.fin.map(function (c) { return c[1]; }), mult = slotMult(f[0], f[1], f[2]);
       if (n === 5 && f[0] === f[1] && f[1] === f[2]) { if (f[3] === f[0]) mult *= 2.5; if (f[3] === f[0] && f[4] === f[0]) mult *= 2.4; }
       var win = Math.round(S.bet * mult); S.win = win; S.busy = false;
-      if (S.remote) { S.remote = false; S.win = 0; drawInfo(); return; }
+      if (S.remote) { S.remote = false; S.win = 0; if (mult > 0) { S.winLine = true; S.flash = 1; S.coinN = Math.min(60, Math.round(6 + Math.min(mult, 120) * 0.5)); S.coinT = performance.now(); setTimeout(function () { S.winLine = false; }, 3200); } drawInfo(); return; }
       if (win > 0) { casApply(win); S.freeWin = (S.freeWin || 0) + win; S.winLine = true; S.flash = 1; var big = mult >= 35; hudMsg((win > S.bet ? "זכיתם " + money(win - S.bet) + "! 🎉" : "הימור חוזר"), "win"); var sstk = S.wasFree ? 0 : S.bet; if (win > sstk) winFx(win - sstk, S.bet, "slot"); S.coinN = Math.min(110, Math.round(8 + Math.min(mult, 120) * 0.9)); S.coinT = performance.now(); setTimeout(function () { S.winLine = false; }, 3200); }
       else { hudMsg("לא הפעם – נסו שוב!", "lose"); tone(220, 0.25, 0, "sawtooth", 0.07); tone(165, 0.3, 0.15, "sawtooth", 0.07); }
       drawInfo(); if (S.free > 0) setTimeout(function () { if (S.alive && !S.busy && S.free > 0) spin(); }, 1400); else if (S.freeWin > 0) { var fw = S.freeWin; S.freeWin = 0; hudMsg("בונוס הסתיים: " + money(fw), "win"); }
@@ -9226,7 +9233,7 @@ body.inlobby { padding-block: 0; }
     S.setInfo = function (l, m, r) { var a = $("wcL"), b = $("wcM"), c = $("wcR"); if (!a) return; a.textContent = l || ""; b.textContent = m || ""; c.textContent = r || ""; };
     S.setBet = function (t) { var e = $("wcBetRow"); if (e) e.innerHTML = t == null ? "" : "BET <b>" + t.toLocaleString() + "</b>"; };
     S.setGo = function (t, on, cls) { var g = $("wcGo"); if (!g) return; g.textContent = t || ""; g.disabled = !on; g.className = "wcb wcgo " + (cls || ""); g.style.display = t ? "" : "none"; };
-    S.pop = function (a, b, kind) { if (false) TB_OUT.push({ id: clientId + ":" + (++tbSeq), t: S.id, a: String(a).slice(0, 24), b: String(b || "").slice(0, 28), k: kind || "", at: Date.now() }); var p = $("wcPop"); if (!p) return; p.innerHTML = "<b>" + a + "</b><small>" + b + "</small>"; p.className = "show " + (kind || ""); clearTimeout(S.popT); S.popT = setTimeout(function () { p.className = ""; }, 2000); };
+    S.pop = function (a, b, kind) { if (TS === S && S.alive && kind === "win") TB_OUT.push({ id: clientId + ":" + (++tbSeq), t: S.id, a: String(a).slice(0, 24), b: String(b || "").slice(0, 28), k: kind || "", at: Date.now() }); var p = $("wcPop"); if (!p) return; p.innerHTML = "<b>" + a + "</b><small>" + b + "</small>"; p.className = "show " + (kind || ""); clearTimeout(S.popT); S.popT = setTimeout(function () { p.className = ""; }, 2000); };
     S.big = function (t) { var e = $("wcBig"); if (e) e.textContent = t == null ? "" : t; };
     S.onQ = function (e) { if (e.key === "q" || e.key === "Q") { e.preventDefault(); closeCasino(); } }; document.addEventListener("keydown", S.onQ);
     S.hudClean = function () { clearInterval(S.hudT); clearTimeout(S.popT); document.removeEventListener("keydown", S.onQ); var w = $("wc"); if (w) w.remove(); if ($("tgBar")) $("tgBar").style.display = ""; if ($("tgMsg")) $("tgMsg").style.display = ""; };
