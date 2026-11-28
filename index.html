@@ -6700,7 +6700,9 @@ body.inlobby { padding-block: 0; }
             // Angles are anatomical: palm facing in, thumb on top, wrist straight with the forearm, the forearm rising from below the
             // screen toward the hand. Looking down hands over to your real body (arms at your sides).
             var pz = h.s === pokeS ? pa : 0, air = me.jy > 0.03 ? 1 : 0, cr = me.cr || 0, lookDn = -(me.pitch || 0);
-            h.g.visible = lookDn < 0.55 || pz > 0.02;
+            // v144: looking down, the hands slide smoothly down out of the view (instead of popping away at one angle), and your real body takes over
+            var dnK = clamp((lookDn - 0.18) / 0.4, 0, 1); dnK = dnK * dnK * (3 - 2 * dnK);
+            h.g.visible = dnK < 0.995 || pz > 0.02;
             h.ax = (h.ax || 0) + ((air ? 1 : 0) - (h.ax || 0)) * (1 - Math.exp(-dtf * 7));
             var fr = (1 - Math.sin(ph2)) * 0.5, f2 = fr * fr * (3 - 2 * fr), amp = wa * (1 - 0.6 * cr), rk = rn * wa;   // fr: 0 = back of the swing, 1 = front
             var up = f2 * amp, br = Math.sin(t / 1300 + h.s);
@@ -6711,6 +6713,7 @@ body.inlobby { padding-block: 0; }
             if (pz > 0) {   // reach forward with an open hand (take / place money)
               var e = pz; pX += (h.s * 0.26 - pX) * e; pY += (-0.46 - pY) * e; pZ += (-0.92 - pZ) * e; rX += (0.72 - rX) * e;   // the forearm angles down out of view, so the sleeve never crosses the camera rY += (h.s * 0.12 - rY) * e; rZ += (-h.s * 0.55 - rZ) * e;
             }
+            if (dnK > 0) { var dk2 = dnK * (1 - pz); pY -= dk2 * 0.55; pZ += dk2 * 0.12; }   // slide down and a little back as you look down (not while reaching)
             h.g.position.set(pX, pY, pZ); h.g.rotation.set(rX, rY, rZ);
             var curl = 0.55 + 0.4 * rk + 0.05 * Math.sin(t / 1600 + h.s * 2) - pz * 0.5;   // relaxed curl walking, a loose fist running, opens to reach
             h.f.forEach(function (f, k) { f.rotation.x = f.userData.rx - curl * (0.75 + k * 0.15); }); h.tg.rotation.x = h.tr.x - curl * 0.45;
