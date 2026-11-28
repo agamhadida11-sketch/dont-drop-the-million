@@ -4787,27 +4787,27 @@ body.inlobby { padding-block: 0; }
           }
           crapsTable(51, 66, Math.PI / 2); crapsTable(51, 75, Math.PI / 2);
           // ---------- PLINKO machines + MINES tables (the open floor between the blackjack pits and the baccarat salon) ----------
-          var plinkoM = vivid(function (x, u, a) {
+          var plinkoM = vivid(function (x, u, a) {   // a giant plinko wall: a 4.6 m board in a deep neon cabinet
             tableId++; setBase(x, Zu(u), a, 1); regT("plinko");
-            if (!TEX.plinko) TEX.plinko = ctex(cv(1040, 920, function (g, W, Hh) { plkPaint(g, W, Hh, 1, "cups"); }));
-            if (!TEX.plinkoSign) TEX.plinkoSign = ctex(cv(1024, 240, function (g, W, Hh) { neonSign(g, W, Hh, "PLINKO", "#ff3fb4", "#ffe0f4"); }));
-            box(0x0d0718, 0, 1.78, -0.34, 3.0, 3.56, 0.5);                                   // cabinet back
-            box(0x1a0d2e, 0, 0.38, 0.12, 3.0, 0.76, 0.9); box(0x2a1648, 0, 0.785, 0.12, 3.06, 0.05, 0.96);   // base + ledge
-            quad("plinko", 0, PLK.YC, -0.07, PLK.W, PLK.H, 0);                                // the painted board
-            for (var pr = 0; pr < PLK.R; pr++) for (var pi = 0; pi < pr + 3; pi++) { var ppx = (pi - (pr + 2) / 2) * PLK.SX, ppy = PLK.YT - pr * PLK.SY; prim(G.cyl8, "v", 0xb8bccc, ppx, ppy, -0.02, 0, 0.01, 0.1, 0.01, false, Math.PI / 2); ball(0xf4f2ff, ppx, ppy, 0.032, 0.015, 1, true); }
-            box(0x241238, -1.33, PLK.YC, 0.01, 0.06, PLK.H + 0.12, 0.17); box(0x241238, 1.33, PLK.YC, 0.01, 0.06, PLK.H + 0.12, 0.17); box(0x241238, 0, PLK.YC + PLK.H / 2 + 0.03, 0.01, PLK.W + 0.12, 0.06, 0.17);
-            box(0xff3fb4, 0, PLK.YC + PLK.H / 2 + 0.02, -0.06, PLK.W + 0.1, 0.04, 0.04, 0, true); box(0xff3fb4, 0, PLK.YC - PLK.H / 2 - 0.02, -0.06, PLK.W + 0.1, 0.04, 0.04, 0, true);
+            var W = PLKB.W, Hb = PLKB.H, YC = PLKB.YC, yT = YC + Hb / 2, yB = YC - Hb / 2, L = plkLayout(12);
+            if (!TEX.plinko) TEX.plinko = ctex(cv(1050, 1150, function (g, w, h) { plkPaint(g, w, h, 1, 12, true); }));
+            if (!TEX.plinkoSign) TEX.plinkoSign = ctex(cv(1024, 240, function (g, w, h) { neonSign(g, w, h, "PLINKO", "#ff3fb4", "#ffe0f4"); }));
+            box(0x0d0718, 0, (yT + 0.9) / 2, -0.34, W + 0.6, yT + 0.9, 0.5);                          // cabinet back
+            box(0x1a0d2e, 0, yB / 2, 0.16, W + 0.6, yB, 1.0); box(0x2a1648, 0, yB + 0.025, 0.16, W + 0.66, 0.05, 1.06);   // base + ledge
+            quad("plinko", 0, YC, -0.07, W, Hb, 0);
+            L.pegs.forEach(function (p) { prim(G.cyl8, "v", 0xb8bccc, p.x, p.y, -0.02, 0, L.rp * 0.6, 0.1, L.rp * 0.6, false, Math.PI / 2); ball(0xf4f2ff, p.x, p.y, 0.032, L.rp, 1, true); });
             [-1, 1].forEach(function (q) {
-              box(0xff3fb4, q * (PLK.W / 2 + 0.03), PLK.YC, -0.06, 0.04, PLK.H + 0.08, 0.04, 0, true);
-              box(0x160a28, q * 1.42, PLK.YC, -0.1, 0.16, PLK.H + 0.2, 0.34); box(0x3df2ff, q * 1.5, 1.78, -0.06, 0.04, 3.5, 0.04, 0, true);
-              for (var k = 0; k < 9; k++) ball(k % 2 ? 0xffd23f : 0xfff3c0, q * 1.42, 0.92 + k * 0.26, 0.08, 0.03, 1, true);   // chaser bulbs
+              box(0x241238, q * (W / 2 + 0.03), YC, 0.01, 0.06, Hb + 0.12, 0.17); box(0xff3fb4, q * (W / 2 + 0.03), YC, -0.06, 0.04, Hb + 0.08, 0.04, 0, true);
+              box(0x160a28, q * (W / 2 + 0.2), YC, -0.1, 0.3, Hb + 0.3, 0.42); box(0x3df2ff, q * (W / 2 + 0.34), YC, -0.06, 0.04, Hb + 0.2, 0.04, 0, true);
+              for (var k = 0; k < 16; k++) ball(k % 2 ? 0xffd23f : 0xfff3c0, q * (W / 2 + 0.2), yB + 0.15 + k * (Hb - 0.3) / 15, 0.12, 0.04, 1, true);   // chaser bulbs
             });
-            box(0x12061f, 0, 3.62, -0.22, 2.96, 0.74, 0.36); quad("plinkoSign", 0, 3.62, -0.035, 2.76, 0.65, 0);
-            box(0xffd23f, 0, 4.0, -0.06, 3.0, 0.03, 0.04, 0, true); box(0xffd23f, 0, 3.24, -0.06, 3.0, 0.03, 0.04, 0, true);
-            box(0x3df2ff, 0, 0.765, 0.6, 3.06, 0.025, 0.02, 0, true); box(0x0a0612, 0, 0.45, 0.575, 2.6, 0.3, 0.02); box(0xff3fb4, 0, 0.45, 0.59, 2.5, 0.02, 0.01, 0, true);
-            solidLocal(-1.6, 1.6, -0.62, 0.62);
-            var c = BW(0, 1.9); pool(c[0], z0 - c[1], 3.0, 0x5a1a4a);
-            STS.push({ g: "plinko", tbl: tableId, label: "🔺 פלינקו", x: c[0], u: z0 - c[1], r: 2.4 }); clearBase();
+            box(0x241238, 0, yT + 0.03, 0.01, W + 0.12, 0.06, 0.17); box(0xff3fb4, 0, yT + 0.02, -0.06, W + 0.1, 0.04, 0.04, 0, true); box(0xff3fb4, 0, yB - 0.02, -0.06, W + 0.1, 0.04, 0.04, 0, true);
+            box(0x12061f, 0, yT + 0.55, -0.22, W + 0.4, 1.0, 0.36); quad("plinkoSign", 0, yT + 0.55, -0.035, W + 0.1, 0.92, 0);
+            box(0xffd23f, 0, yT + 1.07, -0.06, W + 0.44, 0.04, 0.05, 0, true); box(0xffd23f, 0, yT + 0.03, 0.08, W + 0.44, 0.04, 0.05, 0, true);
+            box(0x3df2ff, 0, yB - 0.01, 0.69, W + 0.66, 0.025, 0.02, 0, true); box(0xff3fb4, 0, yB * 0.55, 0.665, W + 0.2, 0.02, 0.01, 0, true);
+            solidLocal(-(W / 2 + 0.4), W / 2 + 0.4, -0.62, 0.7);
+            var c = BW(0, 3.2); pool(c[0], z0 - c[1], 4.6, 0x5a1a4a);
+            STS.push({ g: "plinko", tbl: tableId, label: "🔺 פלינקו", x: c[0], u: z0 - c[1], r: 3.2 }); clearBase();
           });
           var minesT = vivid(function (x, u, a) {
             tableId++; setBase(x, Zu(u), a, 1); regT("mines");
@@ -6730,7 +6730,7 @@ body.inlobby { padding-block: 0; }
         if (!p.isMe && p.presence && p.presence.cl && (p.presence.cl === oId || p.presence.role === other.r)) { peer = p.presence; break; }
       }
     }
-    if (peer) lastPeerAt = performance.now();
+    if (peer) { lastPeerAt = performance.now(); if (peer.pk) { try { plkRemote(peer.pk); } catch (e) { /* cosmetic */ } } }
     else if (code !== "solo" && d["pos_" + other.r] && d["pos_" + other.r].t !== lastFbT) {
       lastFbT = d["pos_" + other.r].t; lastFbAt = performance.now();
     }
@@ -6862,10 +6862,10 @@ body.inlobby { padding-block: 0; }
 
     // presence
     if (roomNs && t - lastSend > 50) {
-      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1);
+      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig();
       if (snap !== lastSent || t - lastSend > 2000) {
         lastSent = snap; lastSend = t;
-        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10 }).catch(function () { /* drop */ });
+        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut() }).catch(function () { /* drop */ });
       }
     }
     if (code !== "solo" && ref && t - lastFbWrite > 130 && t - lastPeerAt > 2500) {
@@ -7164,46 +7164,87 @@ body.inlobby { padding-block: 0; }
   // =====================================================================
   var PHYS = {}, TS = null;           // TS = the table session you are sitting at
   // ---------- PLINKO + MINES: shared look (the hall paints the idle machines with the same functions the live games use) ----------
-  var PLK = {
-    R: 12, SX: 0.17, SY: 0.14, YT: 2.86, W: 2.6, H: 2.3, YC: 1.9, PEG: 0.022, BALL: 0.036,
-    RISK: [
-      { n: "LOW", m: [10, 3, 1.6, 1.4, 1.1, 1, 0.5, 1, 1.1, 1.4, 1.6, 3, 10] },
-      { n: "MEDIUM", m: [33, 11, 4, 2, 1.1, 0.6, 0.3, 0.6, 1.1, 2, 4, 11, 33] },
-      { n: "HIGH", m: [170, 24, 8.1, 2, 0.7, 0.2, 0.2, 0.2, 0.7, 2, 8.1, 24, 170] }
-    ]
-  };
+  var PLK = { ROWS: [8, 12, 16], RISKN: ["LOW", "MEDIUM", "HIGH"], RISKK: ["low", "medium", "high"], MULT: {"8": {"low": [7.4, 3.3, 1.2, 0.5, 0.4, 0.5, 1.2, 3.3, 7.4], "medium": [11, 4.1, 1.1, 0.3, 0.2, 0.3, 1.1, 4.1, 11], "high": [17, 4.7, 0.8, 0.2, 0.2, 0.2, 0.8, 4.7, 17]}, "12": {"low": [9.5, 5.7, 3.1, 1.6, 0.8, 0.5, 0.5, 0.5, 0.8, 1.6, 3.1, 5.7, 9.5], "medium": [20, 10, 4.7, 1.8, 0.6, 0.2, 0.2, 0.2, 0.6, 1.8, 4.7, 10, 20], "high": [33, 14, 5.2, 1.4, 0.3, 0.2, 0.2, 0.2, 0.3, 1.4, 5.2, 14, 33]}, "16": {"low": [11, 7.3, 4.8, 3, 1.8, 1, 0.7, 0.5, 0.5, 0.5, 0.7, 1, 1.8, 3, 4.8, 7.3, 11], "medium": [27, 16, 9.5, 5, 2.3, 0.8, 0.3, 0.2, 0.2, 0.2, 0.3, 0.8, 2.3, 5, 9.5, 16, 27], "high": [46, 25, 12, 5.3, 1.9, 0.5, 0.2, 0.2, 0.2, 0.2, 0.2, 0.5, 1.9, 5.3, 12, 25, 46]}} };
+  function plkMult(R, risk) { return PLK.MULT[R][PLK.RISKK[risk]]; }
   function plkFmt(m) { return (m >= 10 ? String(Math.round(m)) : String(m)) + "x"; }
-  function plkCol(j) { var d = Math.abs(j - 6) / 6, c1 = [255, 214, 64], c2 = [255, 120, 40], c3 = [255, 36, 92], a, b, k; if (d < 0.5) { a = c1; b = c2; k = d / 0.5; } else { a = c2; b = c3; k = (d - 0.5) / 0.5; } return "rgb(" + [0, 1, 2].map(function (i) { return Math.round(a[i] + (b[i] - a[i]) * k); }).join(",") + ")"; }
+  function plkCol(j, R) { var d = Math.abs(j - R / 2) / (R / 2), c1 = [255, 214, 64], c2 = [255, 120, 40], c3 = [255, 36, 92], a, b, k; if (d < 0.5) { a = c1; b = c2; k = d / 0.5; } else { a = c2; b = c3; k = (d - 0.5) / 0.5; } return "rgb(" + [0, 1, 2].map(function (i) { return Math.round(a[i] + (b[i] - a[i]) * k); }).join(",") + ")"; }
   function rrect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r); g.lineTo(x + w, y + h - r); g.quadraticCurveTo(x + w, y + h, x + w - r, y + h); g.lineTo(x + r, y + h); g.quadraticCurveTo(x, y + h, x, y + h - r); g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y); g.closePath(); }
-  // the board face, in board metres (x -1.3..1.3, y 0.75..3.05). `pegs` also paints pegs and buckets (the idle machine); the live game has real 3D ones
-  function plkPaint(g, W, Hh, risk, pegs) {
-    var S = W / PLK.W; function X(x) { return (x + PLK.W / 2) * S; } function Y(y) { return (PLK.YC + PLK.H / 2 - y) * S; }
+  // ---------- PLINKO physics: a deterministic 2D simulation in the board plane (same seed + rows = same bounce on every device) ----------
+  var PLKB = { W: 4.2, H: 4.6, YC: 2.95 };
+  function plkLayout(R) {
+    var SX = 3.7 / (R + 1), SY = Math.min(SX * 0.92, 3.3 / R), YT = PLKB.YC + PLKB.H / 2 - 0.62, pegs = [], r, i;
+    for (r = 0; r < R; r++) for (i = 0; i < r + 3; i++) pegs.push({ x: (i - (r + 2) / 2) * SX, y: YT - r * SY, r: r, i: i });
+    return { R: R, SX: SX, SY: SY, YT: YT, BY: YT - (R - 1) * SY - SY * 0.95, rp: SX * 0.105, rb: SX * 0.27, pegs: pegs };
+  }
+  function plkRng(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function plkBall(L, seed) { var rn = plkRng(seed); return { x: (rn() - 0.5) * L.SX * 0.5, y: L.YT + L.SY * 1.1, vx: (rn() - 0.5) * 0.15, vy: -0.4, rn: rn, done: false, k: -1, t: 0, still: 0 }; }
+  var PLK_G = 7, PLK_E = 0.4, PLK_DT = 1 / 240;
+  function plkStep(L, b, hits) {
+    if (b.done) return;
+    var dt = PLK_DT, R = L.R, SX = L.SX, SY = L.SY, rr = L.rp + L.rb, i, p, dx, dy, d2, d, nx, ny, vn, row;
+    b.vy -= PLK_G * dt; b.vx *= 0.996; b.x += b.vx * dt; b.y += b.vy * dt; b.t += dt;
+    // pegs near the ball (only the two rows around it)
+    row = Math.round((L.YT - b.y) / SY);
+    for (i = 0; i < L.pegs.length; i++) {
+      p = L.pegs[i]; if (p.r < row - 1 || p.r > row + 1) continue;
+      dx = b.x - p.x; dy = b.y - p.y; d2 = dx * dx + dy * dy; if (d2 >= rr * rr) continue;
+      d = Math.sqrt(d2) || 1e-6; nx = dx / d; ny = dy / d;
+      if (ny > 0.985) { nx += (b.rn() - 0.5) * 0.35; d = Math.sqrt(nx * nx + ny * ny); nx /= d; ny /= d; }   // dead on top of a peg: it tips to one side
+      b.x = p.x + nx * rr; b.y = p.y + ny * rr;
+      vn = b.vx * nx + b.vy * ny;
+      if (vn < 0) { b.vx -= (1 + PLK_E) * vn * nx; b.vy -= (1 + PLK_E) * vn * ny; var tx = -ny, ty = nx, vt = b.vx * tx + b.vy * ty; b.vx -= vt * 0.08 * tx; b.vy -= vt * 0.08 * ty; b.vx += (b.rn() - 0.5) * 0.05; if (hits) hits.push(i); }
+    }
+    // side walls follow the peg triangle (a narrow chute above the first row)
+    var rf = (L.YT - b.y) / SY, hw = rf < -0.4 ? SX * 0.9 : (Math.min(R - 1, Math.max(0, rf)) + 2) / 2 * SX + SX * 0.42;
+    if (b.y < L.YT - (R - 1) * SY) hw = (R + 1) / 2 * SX;
+    if (b.x - L.rb < -hw) { b.x = -hw + L.rb; b.vx = Math.abs(b.vx) * 0.5; } else if (b.x + L.rb > hw) { b.x = hw - L.rb; b.vx = -Math.abs(b.vx) * 0.5; }
+    if (Math.abs(b.vx) + Math.abs(b.vy) < 0.05) { b.still += dt; if (b.still > 0.25) { b.vx += (b.rn() - 0.5) * 0.8; b.vy += 0.3; b.still = 0; } } else b.still = 0;
+    if (b.y <= L.BY) { b.done = true; b.k = Math.max(0, Math.min(R, Math.round(b.x / SX + R / 2))); }
+    if (b.t > 30) { b.done = true; b.k = Math.max(0, Math.min(R, Math.round(b.x / SX + R / 2))); }
+  }
+  // the board face, in board metres (x -W/2..W/2, y YC-H/2..YC+H/2). cups: also paint pegs and buckets (the idle hall machine)
+  function plkPaint(g, W, Hh, risk, R, cups) {
+    var L = plkLayout(R), S = W / PLKB.W; function X(x) { return (x + PLKB.W / 2) * S; } function Y(y) { return (PLKB.YC + PLKB.H / 2 - y) * S; }
     var gr = g.createLinearGradient(0, 0, 0, Hh); gr.addColorStop(0, "#22104a"); gr.addColorStop(0.55, "#12082e"); gr.addColorStop(1, "#08041a"); g.fillStyle = gr; g.fillRect(0, 0, W, Hh);
     var rg = g.createRadialGradient(W / 2, Hh * 0.42, 10, W / 2, Hh * 0.42, W * 0.62); rg.addColorStop(0, "rgba(255,63,180,.22)"); rg.addColorStop(0.6, "rgba(120,60,255,.08)"); rg.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = rg; g.fillRect(0, 0, W, Hh);
     g.strokeStyle = "rgba(255,255,255,.035)"; g.lineWidth = 1; for (var gx = 0; gx < W; gx += 26) { g.beginPath(); g.moveTo(gx, 0); g.lineTo(gx, Hh); g.stroke(); }
-    var top = PLK.YT + 0.09, bot = PLK.YT - (PLK.R - 1) * PLK.SY - 0.06, hw0 = PLK.SX * 1.5, hw1 = PLK.SX * 7.2;
+    var top = L.YT + L.SY * 0.6, bot = L.YT - (R - 1) * L.SY - L.SY * 0.4, hw0 = L.SX * 1.5, hw1 = (R + 2) / 2 * L.SX + L.SX * 0.3;
     g.save(); g.shadowColor = "#3df2ff"; g.shadowBlur = 18; g.strokeStyle = "rgba(61,242,255,.55)"; g.lineWidth = 5; g.beginPath(); g.moveTo(X(-hw0), Y(top)); g.lineTo(X(hw0), Y(top)); g.lineTo(X(hw1), Y(bot)); g.lineTo(X(-hw1), Y(bot)); g.closePath(); g.stroke(); g.restore();
     g.fillStyle = "rgba(61,242,255,.05)"; g.beginPath(); g.moveTo(X(-hw0), Y(top)); g.lineTo(X(hw0), Y(top)); g.lineTo(X(hw1), Y(bot)); g.lineTo(X(-hw1), Y(bot)); g.closePath(); g.fill();
-    // the drop chute
-    g.save(); g.shadowColor = "#ffd23f"; g.shadowBlur = 16; g.fillStyle = "#ffd23f"; g.beginPath(); var cx = X(0), cy = Y(PLK.YT + 0.16); g.moveTo(cx - 22, cy - 18); g.lineTo(cx + 22, cy - 18); g.lineTo(cx, cy + 8); g.closePath(); g.fill(); g.restore();
-    if (pegs) {
-      if (pegs === true) for (var r = 0; r < PLK.R; r++) for (var i = 0; i < r + 3; i++) {
-        var px = X((i - (r + 2) / 2) * PLK.SX), py = Y(PLK.YT - r * PLK.SY), pr = PLK.PEG * S;
-        var pg = g.createRadialGradient(px - pr * 0.35, py - pr * 0.35, 1, px, py, pr * 2.4); pg.addColorStop(0, "#ffffff"); pg.addColorStop(0.35, "#e6e0ff"); pg.addColorStop(0.45, "rgba(180,160,255,.35)"); pg.addColorStop(1, "rgba(180,160,255,0)");
+    g.save(); g.shadowColor = "#ffd23f"; g.shadowBlur = 16; g.fillStyle = "#ffd23f"; g.beginPath(); var cx = X(0), cy = Y(L.YT + L.SY * 1.4); g.moveTo(cx - 26, cy - 22); g.lineTo(cx + 26, cy - 22); g.lineTo(cx, cy + 10); g.closePath(); g.fill(); g.restore();
+    if (cups) {
+      L.pegs.forEach(function (p) {
+        var px = X(p.x), py = Y(p.y), pr = L.rp * S, pg = g.createRadialGradient(px - pr * 0.35, py - pr * 0.35, 1, px, py, pr * 2.4); pg.addColorStop(0, "#ffffff"); pg.addColorStop(0.35, "#e6e0ff"); pg.addColorStop(0.45, "rgba(180,160,255,.35)"); pg.addColorStop(1, "rgba(180,160,255,0)");
         g.fillStyle = pg; g.beginPath(); g.arc(px, py, pr * 2.4, 0, 6.3); g.fill();
-      }
-      var M = PLK.RISK[risk].m, by = PLK.YT - (PLK.R - 1) * PLK.SY - 0.16;
-      for (var j = 0; j < 13; j++) {
-        var bx = X((j - 6) * PLK.SX - PLK.SX * 0.45), bw = PLK.SX * 0.9 * S, bh = 0.12 * S;
-        g.fillStyle = plkCol(j); rrect(g, bx, Y(by + 0.06), bw, bh, 8); g.fill();
-        g.fillStyle = "rgba(255,255,255,.25)"; rrect(g, bx + 3, Y(by + 0.06) + 3, bw - 6, bh * 0.35, 6); g.fill();
-        g.fillStyle = "#2a0a12"; g.font = "800 " + Math.round(bw * (M[j] >= 100 ? 0.3 : 0.34)) + "px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(plkFmt(M[j]), bx + bw / 2, Y(by) + 2);
+      });
+      var M = plkMult(R, risk);
+      for (var j = 0; j <= R; j++) {
+        var bx = X((j - R / 2) * L.SX - L.SX * 0.45), bw = L.SX * 0.9 * S, bh = L.SX * 0.55 * S, by = Y(L.BY + L.SX * 0.1);
+        g.fillStyle = plkCol(j, R); rrect(g, bx, by, bw, bh, 8); g.fill(); g.fillStyle = "rgba(255,255,255,.25)"; rrect(g, bx + 3, by + 3, bw - 6, bh * 0.35, 6); g.fill();
+        g.fillStyle = "#2a0a12"; g.font = "800 " + Math.round(bw * (M[j] >= 10 ? 0.3 : 0.34)) + "px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(plkFmt(M[j]), bx + bw / 2, by + bh / 2 + 2);
       }
     }
-    // footer
     g.textAlign = "center"; g.textBaseline = "middle";
-    g.save(); g.shadowColor = "#ff3fb4"; g.shadowBlur = 22; g.fillStyle = "#ffd0f0"; g.font = "700 " + Math.round(S * 0.17) + "px Fredoka, Arial, sans-serif"; g.fillText("PLINKO", W / 2, Y(0.98)); g.restore();
-    g.fillStyle = "#9fe9ff"; g.font = "600 " + Math.round(S * 0.055) + "px Fredoka, Arial, sans-serif"; g.fillText("RISK " + PLK.RISK[risk].n + "  ·  MAX " + plkFmt(PLK.RISK[risk].m[0]), W / 2, Y(0.83));
+    g.save(); g.shadowColor = "#ff3fb4"; g.shadowBlur = 22; g.fillStyle = "#ffd0f0"; g.font = "700 " + Math.round(S * 0.26) + "px Fredoka, Arial, sans-serif"; g.fillText("PLINKO", W / 2, Y(PLKB.YC - PLKB.H / 2 + 0.36)); g.restore();
+    g.fillStyle = "#9fe9ff"; g.font = "600 " + Math.round(S * 0.075) + "px Fredoka, Arial, sans-serif"; g.fillText(R + " ROWS  ·  RISK " + PLK.RISKN[risk] + "  ·  MAX " + plkFmt(plkMult(R, risk)[0]), W / 2, Y(PLKB.YC - PLKB.H / 2 + 0.13));
+  }
+  // ---------- plinko with friends: your drops go out with your presence (machine, rows, seed); the other player's drops replay here ----------
+  var PLK_OUT = [], PLK_SEEN = {}, PLK_GHOSTS = [], plkGhostRaf = 0;
+  function plkSig() { return PLK_OUT.length ? PLK_OUT[PLK_OUT.length - 1].id : ""; }
+  function plkOut() { var now = Date.now(); PLK_OUT = PLK_OUT.filter(function (o) { return now - o.at < 6000; }); return PLK_OUT.map(function (o) { return [o.id, o.tbl, o.R, o.seed]; }); }
+  function plkRemote(list) {
+    if (!Array.isArray(list) || !world || !world.casApi) return; var H = world.casApi(); if (!H || !H.tables) return;
+    list.forEach(function (e) {
+      if (!Array.isArray(e) || PLK_SEEN[e[0]]) return; PLK_SEEN[e[0]] = 1; var tb = H.tables[e[1]], R = +e[2]; if (!tb || PLK.ROWS.indexOf(R) < 0) return;
+      var grp = new T.Group(); grp.position.set(tb.x, 0, tb.z); grp.rotation.y = tb.a; grp.scale.setScalar(tb.s || 1); H.hall.add(grp);
+      var L = plkLayout(R), m = new T.Mesh(new T.SphereGeometry(L.rb, 20, 14), new T.MeshPhongMaterial({ color: 0x46e0ff, emissive: 0x124050, specular: 0xffffff, shininess: 120 }));
+      grp.add(m); PLK_GHOSTS.push({ g: grp, m: m, L: L, b: plkBall(L, e[3] >>> 0), acc: 0 });
+    });
+    if (PLK_GHOSTS.length && !plkGhostRaf) { var last = performance.now(); plkGhostRaf = requestAnimationFrame(function step(now) {
+      var dt = Math.min(0.1, (now - last) / 1000); last = now;
+      PLK_GHOSTS.slice().forEach(function (gh) { gh.acc += dt; while (gh.acc >= PLK_DT && !gh.b.done) { gh.acc -= PLK_DT; plkStep(gh.L, gh.b, null); } gh.m.position.set(gh.b.x, gh.b.y, 0.03); if (gh.b.done) { gh.done = (gh.done || 0) + dt; if (gh.done > 0.6) { gh.g.parent && gh.g.parent.remove(gh.g); PLK_GHOSTS.splice(PLK_GHOSTS.indexOf(gh), 1); } } });
+      plkGhostRaf = PLK_GHOSTS.length ? requestAnimationFrame(step) : 0;
+    }); }
   }
   function neonSign(g, W, Hh, txt, col, core) {
     var gr = g.createLinearGradient(0, 0, 0, Hh); gr.addColorStop(0, "#1a0a2e"); gr.addColorStop(1, "#0a0416"); g.fillStyle = gr; g.fillRect(0, 0, W, Hh);
@@ -9445,139 +9486,124 @@ body.inlobby { padding-block: 0; }
     var g = new T.ExtrudeGeometry(s, { depth: h - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 3, curveSegments: 6 }); g.rotateX(-Math.PI / 2); g.translate(0, -(h - 2 * bev) / 2, 0); g.computeVertexNormals(); return g;
   }
 
-  // ---------- PLINKO: a real cabinet in front of you. Chrome pegs stick out of the back board, the ball rolls out of a hopper,
-  // bounces peg to peg behind a glass pane and drops into a cup. Pick a chip and a risk, DROP (or tap / E / Space); every ball is its own bet ----------
+  // ---------- PLINKO: a giant board in front of you with real physics. Every ball is simulated (gravity, bounces off the chrome pegs,
+  // spin) and lands where the bounces take it. Pick rows (8 / 12 / 16), risk and a chip, DROP (or tap the board / E / Space).
+  // A friend in the room sees your balls fall on the same machine, and you see theirs ----------
   PHYS.plinko = function (S) {
     return guard(S, async function () {
-      var tg = S.tg, R = PLK.R, SX = PLK.SX, SY = PLK.SY, risk = 1, flying = [], last = [], keyH, ZB = -0.065, ZP = -0.012, BR = 0.032;
-      wcHud(S, "plinko"); ["wcUndo", "wcClear"].forEach(function (id) { var e = $(id); if (e) e.style.display = "none"; });
+      var tg = S.tg, risk = 1, R = 12, L = plkLayout(R), flying = [], last = [], keyH, ZB = -0.065, DEP = 0.2, ZP = ZB + DEP * 0.42;
+      wcHud(S, "plinko"); var cBtn = $("wcClear"); if (cBtn) cBtn.style.display = "none";
       var lookOff = fpLook(S);
-      // back board (no painted pegs: the pegs are real)
-      var bc = document.createElement("canvas"); bc.width = 1040; bc.height = 920; var bg = bc.getContext("2d"), btex = new T.CanvasTexture(bc); btex.anisotropy = 8;
-      var board = new T.Mesh(new T.PlaneGeometry(PLK.W, PLK.H), new T.MeshPhongMaterial({ map: btex, specular: 0x222244, shininess: 12, emissive: 0xffffff, emissiveMap: btex, emissiveIntensity: 0.8 })); board.position.set(0, PLK.YC, ZB); tg.add(board);
-      function paint() { plkPaint(bg, 1040, 920, risk, false); btex.needsUpdate = true; }
-      // cabinet depth: side walls, top, glass, bezel with LED strips
+      var bc = document.createElement("canvas"); bc.width = 1050; bc.height = 1150; var bg = bc.getContext("2d"), btex = new T.CanvasTexture(bc); btex.anisotropy = 8;
+      var board = new T.Mesh(new T.PlaneGeometry(PLKB.W, PLKB.H), new T.MeshPhongMaterial({ map: btex, specular: 0x222244, shininess: 12, emissive: 0xffffff, emissiveMap: btex, emissiveIntensity: 0.8 })); board.position.set(0, PLKB.YC, ZB); tg.add(board);
+      function paint() { plkPaint(bg, 1050, 1150, risk, R, false); btex.needsUpdate = true; }
       var frameM = phong(0x241238, { sp: 0x553388, sh: 50 }), chromeM = phong(0xc9cde0, { sp: 0xffffff, sh: 110, em: 0x3a3a4c }), ledP = new T.MeshBasicMaterial({ color: 0xff3fb4 }), ledC = new T.MeshBasicMaterial({ color: 0x3df2ff });
-      function bx(m, x, y, z, w, h, d) { var o = new T.Mesh(new T.BoxGeometry(w, h, d), m); o.position.set(x, y, z); tg.add(o); return o; }
-      var HW = PLK.W / 2, yTop = PLK.YC + PLK.H / 2, yBot = PLK.YC - PLK.H / 2, DEP = 0.17;
-      [-1, 1].forEach(function (q) { bx(frameM, q * (HW + 0.03), PLK.YC, ZB + DEP / 2, 0.06, PLK.H + 0.12, DEP); bx(ledP, q * (HW + 0.062), PLK.YC, ZB + DEP - 0.01, 0.012, PLK.H + 0.1, 0.012); bx(chromeM, q * (HW + 0.03), PLK.YC, ZB + DEP + 0.005, 0.075, PLK.H + 0.14, 0.014); });
-      bx(frameM, 0, yTop + 0.03, ZB + DEP / 2, PLK.W + 0.12, 0.06, DEP); bx(frameM, 0, yBot - 0.03, ZB + DEP / 2, PLK.W + 0.12, 0.06, DEP);
-      bx(chromeM, 0, yTop + 0.03, ZB + DEP + 0.005, PLK.W + 0.14, 0.075, 0.014); bx(chromeM, 0, yBot - 0.03, ZB + DEP + 0.005, PLK.W + 0.14, 0.075, 0.014); bx(ledC, 0, yTop + 0.065, ZB + DEP - 0.01, PLK.W + 0.1, 0.012, 0.012);
-      // glass with a soft reflection streak
+      function bx(m, x, y, z, w, h, d, par) { var o = new T.Mesh(new T.BoxGeometry(w, h, d), m); o.position.set(x, y, z); (par || tg).add(o); return o; }
+      var HW = PLKB.W / 2, yTop = PLKB.YC + PLKB.H / 2, yBot = PLKB.YC - PLKB.H / 2;
+      [-1, 1].forEach(function (q) { bx(frameM, q * (HW + 0.03), PLKB.YC, ZB + DEP / 2, 0.06, PLKB.H + 0.12, DEP); bx(ledP, q * (HW + 0.062), PLKB.YC, ZB + DEP - 0.01, 0.014, PLKB.H + 0.1, 0.014); bx(chromeM, q * (HW + 0.03), PLKB.YC, ZB + DEP + 0.005, 0.08, PLKB.H + 0.14, 0.016); });
+      bx(frameM, 0, yTop + 0.03, ZB + DEP / 2, PLKB.W + 0.12, 0.06, DEP); bx(frameM, 0, yBot - 0.03, ZB + DEP / 2, PLKB.W + 0.12, 0.06, DEP);
+      bx(chromeM, 0, yTop + 0.03, ZB + DEP + 0.005, PLKB.W + 0.14, 0.08, 0.016); bx(chromeM, 0, yBot - 0.03, ZB + DEP + 0.005, PLKB.W + 0.14, 0.08, 0.016); bx(ledC, 0, yTop + 0.07, ZB + DEP - 0.01, PLKB.W + 0.1, 0.014, 0.014);
       var gc = document.createElement("canvas"); gc.width = 512; gc.height = 512; var gg = gc.getContext("2d"), gr = gg.createLinearGradient(0, 0, 512, 512);
-      gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.36, "rgba(255,255,255,0)"); gr.addColorStop(0.42, "rgba(255,255,255,.16)"); gr.addColorStop(0.47, "rgba(255,255,255,.04)"); gr.addColorStop(0.55, "rgba(255,255,255,.11)"); gr.addColorStop(0.6, "rgba(255,255,255,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 512, 512);
-      var glass = new T.Mesh(new T.PlaneGeometry(PLK.W, PLK.H), new T.MeshPhongMaterial({ map: new T.CanvasTexture(gc), color: 0xbfd8ff, transparent: true, opacity: 0.55, specular: 0xffffff, shininess: 160, depthWrite: false, blending: T.AdditiveBlending })); glass.position.set(0, PLK.YC, ZB + DEP); glass.renderOrder = 10; tg.add(glass);
-      // chrome pegs (instanced): a shaft out of the board and a round cap, with a soft contact shadow on the board
-      var NP = 0, r, i, j; for (r = 0; r < R; r++) NP += r + 3;
-      var shaftG = new T.CylinderGeometry(0.0105, 0.0105, DEP * 0.62, 12); shaftG.rotateX(Math.PI / 2);
-      var shafts = new T.InstancedMesh(shaftG, chromeM, NP), caps = new T.InstancedMesh(new T.SphereGeometry(0.0165, 16, 12), phong(0xffffff, { sp: 0xffffff, sh: 140, em: 0x8a86a8 }), NP);
-      var shM = new T.MeshBasicMaterial({ map: glowTex("psh", [[0, "rgba(0,0,0,.75)"], [0.5, "rgba(0,0,0,.3)"], [1, "rgba(0,0,0,0)"]]), transparent: true, depthWrite: false }), shadows = new T.InstancedMesh(new T.PlaneGeometry(0.075, 0.075), shM, NP);
-      var pegs = [], dm = new T.Object3D(), ci = new T.Color();
-      for (r = 0, j = 0; r < R; r++) { var row = []; for (i = 0; i < r + 3; i++, j++) {
-        var px = (i - (r + 2) / 2) * SX, py = PLK.YT - r * SY; row.push({ x: px, y: py, n: j, hit: 0 });
-        dm.position.set(px, py, ZB + DEP * 0.31); dm.scale.setScalar(1); dm.updateMatrix(); shafts.setMatrixAt(j, dm.matrix);
-        dm.position.set(px, py, ZB + DEP * 0.62); dm.updateMatrix(); caps.setMatrixAt(j, dm.matrix); caps.setColorAt(j, ci.setRGB(1, 1, 1));
-        dm.position.set(px - 0.012, py - 0.018, ZB + 0.002); dm.updateMatrix(); shadows.setMatrixAt(j, dm.matrix);
-      } pegs.push(row); }
-      tg.add(shafts); tg.add(caps); tg.add(shadows);
-      var pegGlow = []; for (i = 0; i < 6; i++) { var s0 = glowSprite("pw", GLOW_W, 0.12, tg); s0.material.opacity = 0; pegGlow.push(s0); } var pgI = 0;
-      // the cups: dividers, a floor and a lit label plate in front
-      var BY = PLK.YT - (R - 1) * SY - 0.17, buckets = [], divM = phong(0xe8e4ff, { sp: 0xffffff, sh: 90 });
-      for (j = 0; j <= 13; j++) { var dv = bx(divM, (j - 6.5) * SX, BY + 0.02, ZB + DEP * 0.45, 0.012, 0.15, DEP * 0.9); dv.scale.y = 1; }
+      gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.36, "rgba(255,255,255,0)"); gr.addColorStop(0.42, "rgba(255,255,255,.14)"); gr.addColorStop(0.47, "rgba(255,255,255,.03)"); gr.addColorStop(0.55, "rgba(255,255,255,.1)"); gr.addColorStop(0.6, "rgba(255,255,255,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 512, 512);
+      var glass = new T.Mesh(new T.PlaneGeometry(PLKB.W, PLKB.H), new T.MeshPhongMaterial({ map: new T.CanvasTexture(gc), color: 0xbfd8ff, transparent: true, opacity: 0.5, specular: 0xffffff, shininess: 160, depthWrite: false, blending: T.AdditiveBlending })); glass.position.set(0, PLKB.YC, ZB + DEP); glass.renderOrder = 10; tg.add(glass);
+      var shM = new T.MeshBasicMaterial({ map: glowTex("psh", [[0, "rgba(0,0,0,.75)"], [0.5, "rgba(0,0,0,.3)"], [1, "rgba(0,0,0,0)"]]), transparent: true, depthWrite: false });
+      var pegGlow = []; for (var gi = 0; gi < 10; gi++) { var s0 = glowSprite("pw", GLOW_W, 0.12, tg); s0.material.opacity = 0; pegGlow.push(s0); } var pgI = 0;
+      // pegs + cups for the current number of rows (rebuilt when you change rows)
+      var rowsG = null, shafts, caps, pegs, buckets, dm = new T.Object3D(), ci = new T.Color(), BY;
       function bucketTex(j) {
-        var c = document.createElement("canvas"); c.width = 160; c.height = 96; var g = c.getContext("2d"), col = plkCol(j), gr = g.createLinearGradient(0, 0, 0, 96);
-        gr.addColorStop(0, "#ffffff"); gr.addColorStop(0.1, col); gr.addColorStop(0.85, col); gr.addColorStop(1, "rgba(0,0,0,.4)"); g.fillStyle = gr; rrect(g, 3, 3, 154, 90, 16); g.fill();
-        g.fillStyle = "rgba(255,255,255,.3)"; rrect(g, 10, 8, 140, 22, 10); g.fill(); var t = plkFmt(PLK.RISK[risk].m[j]);
+        var c = document.createElement("canvas"); c.width = 160; c.height = 96; var g = c.getContext("2d"), col = plkCol(j, R), gr2 = g.createLinearGradient(0, 0, 0, 96);
+        gr2.addColorStop(0, "#ffffff"); gr2.addColorStop(0.1, col); gr2.addColorStop(0.85, col); gr2.addColorStop(1, "rgba(0,0,0,.4)"); g.fillStyle = gr2; rrect(g, 3, 3, 154, 90, 16); g.fill();
+        g.fillStyle = "rgba(255,255,255,.3)"; rrect(g, 10, 8, 140, 22, 10); g.fill(); var t = plkFmt(plkMult(R, risk)[j]);
         g.fillStyle = "#2a0a12"; g.font = "800 " + (t.length > 4 ? 44 : 52) + "px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(t, 80, 52); return new T.CanvasTexture(c);
       }
-      for (j = 0; j < 13; j++) {
-        var cx = (j - 6) * SX, col = new T.Color(plkCol(j));
-        var floor = bx(phong(col.clone().multiplyScalar(0.55), { sh: 30 }), cx, BY - 0.055, ZB + DEP * 0.45, SX - 0.014, 0.012, DEP * 0.9);
-        var back = bx(new T.MeshBasicMaterial({ color: col.clone().multiplyScalar(0.35) }), cx, BY + 0.01, ZB + 0.004, SX - 0.014, 0.12, 0.004);
-        var plate = new T.Mesh(new T.BoxGeometry(SX - 0.01, 0.1, 0.022), [0, 1, 2, 3, 4, 5].map(function (f) { return f === 4 ? new T.MeshBasicMaterial({ map: bucketTex(j), color: 0xdddddd }) : phong(col, { sh: 60, em: col.clone().multiplyScalar(0.3) }); }));
-        plate.position.set(cx, BY - 0.035, ZB + DEP * 0.92); tg.add(plate);
-        var bgw = glowSprite("bp", GLOW_P, 0.34, tg); bgw.position.set(cx, BY + 0.01, ZB + 0.03); bgw.material.opacity = 0; buckets.push({ plate: plate, g: bgw, t: 0, back: back, base: col.clone().multiplyScalar(0.35) });
+      function buildRows() {
+        if (rowsG) { tg.remove(rowsG); rowsG.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); }
+        rowsG = new T.Group(); tg.add(rowsG); L = plkLayout(R); BY = L.BY; var NP = L.pegs.length;
+        var shaftG = new T.CylinderGeometry(L.rp * 0.62, L.rp * 0.62, DEP * 0.62, 12); shaftG.rotateX(Math.PI / 2);
+        shafts = new T.InstancedMesh(shaftG, chromeM, NP); caps = new T.InstancedMesh(new T.SphereGeometry(L.rp, 16, 12), phong(0xffffff, { sp: 0xffffff, sh: 140, em: 0x8a86a8 }), NP);
+        var shadows = new T.InstancedMesh(new T.PlaneGeometry(L.rp * 4.5, L.rp * 4.5), shM, NP); pegs = [];
+        L.pegs.forEach(function (p, j) {
+          pegs.push({ x: p.x, y: p.y, n: j, hit: 0 });
+          dm.position.set(p.x, p.y, ZB + DEP * 0.31); dm.scale.setScalar(1); dm.updateMatrix(); shafts.setMatrixAt(j, dm.matrix);
+          dm.position.set(p.x, p.y, ZP); dm.updateMatrix(); caps.setMatrixAt(j, dm.matrix); caps.setColorAt(j, ci.setRGB(1, 1, 1));
+          dm.position.set(p.x - L.rp * 0.7, p.y - L.rp, ZB + 0.002); dm.updateMatrix(); shadows.setMatrixAt(j, dm.matrix);
+        });
+        rowsG.add(shafts); rowsG.add(caps); rowsG.add(shadows);
+        var divM = phong(0xe8e4ff, { sp: 0xffffff, sh: 90 }); buckets = [];
+        for (var j = 0; j <= R + 1; j++) bx(divM, (j - R / 2 - 0.5) * L.SX, BY + L.SX * 0.2, ZB + DEP * 0.45, 0.014, L.SX * 0.75, DEP * 0.9, rowsG);
+        for (j = 0; j <= R; j++) {
+          var cx = (j - R / 2) * L.SX, col = new T.Color(plkCol(j, R));
+          bx(phong(col.clone().multiplyScalar(0.55), { sh: 30 }), cx, BY - L.SX * 0.18, ZB + DEP * 0.45, L.SX - 0.016, 0.014, DEP * 0.9, rowsG);
+          var back = bx(new T.MeshBasicMaterial({ color: col.clone().multiplyScalar(0.35) }), cx, BY + L.SX * 0.12, ZB + 0.004, L.SX - 0.016, L.SX * 0.6, 0.004, rowsG);
+          var plate = new T.Mesh(new T.BoxGeometry(L.SX - 0.012, L.SX * 0.5, 0.022), [0, 1, 2, 3, 4, 5].map(function (f) { return f === 4 ? new T.MeshBasicMaterial({ map: bucketTex(j), color: 0xdddddd }) : phong(col, { sh: 60, em: col.clone().multiplyScalar(0.3) }); }));
+          plate.position.set(cx, BY - L.SX * 0.32, ZB + DEP * 0.92); rowsG.add(plate);
+          var bgw = glowSprite("bp", GLOW_P, L.SX * 1.8, rowsG); bgw.position.set(cx, BY + L.SX * 0.1, ZB + 0.03); bgw.material.opacity = 0; buckets.push({ plate: plate, g: bgw, t: 0, back: back, base: col.clone().multiplyScalar(0.35), y: plate.position.y });
+        }
       }
-      function relabel() { buckets.forEach(function (b, j) { var mt = b.plate.material[4]; mt.map.dispose(); mt.map = bucketTex(j); mt.needsUpdate = true; }); }
-      // the hopper: a chrome tray on top, sloping to the drop chute, with balls waiting in it
-      var ballCols = [0xffc83a, 0xff4fb8, 0x46e0ff, 0x7dffb0], ballGeo = new T.SphereGeometry(BR, 28, 20);
+      buildRows(); paint();
+      var ballCols = [0xffc83a, 0xff4fb8, 0x46e0ff, 0x7dffb0];
       function ballMat(c) { return new T.MeshPhongMaterial({ color: c, specular: 0xffffff, shininess: 120, emissive: new T.Color(c).multiplyScalar(0.28) }); }
-      var trayY = PLK.YT + 0.2, tray = bx(chromeM, 0.5, trayY - BR - 0.008, ZP, 0.95, 0.012, 0.09); tray.rotation.z = 0.07; bx(chromeM, 0.5, trayY - BR + 0.02, ZP + 0.05, 0.95, 0.05, 0.008).rotation.z = 0.07;
-      var queue = []; for (i = 0; i < 5; i++) { var qb = new T.Mesh(ballGeo, ballMat(ballCols[i % 4])); qb.position.set(0.24 + i * (BR * 2 + 0.006), trayY + 0.006 + (0.24 + i * 0.07) * 0.07 - 0.02, ZP); tg.add(qb); queue.push(qb); }
-      paint();
-      S.refit = function () { frameCam(S, [0, PLK.YC + 0.06, 0], [[-1.3, 1.07, 0.1], [1.3, 1.07, 0.1], [-1.3, 3.04, 0], [1.3, 3.04, 0]], -0.05, 0, 1.0); }; S.refit();
-      function info() { S.setInfo("RISK " + PLK.RISK[risk].n, S.msg || "", last.length ? "LAST " + last.slice(0, 5).map(plkFmt).join("  ") : ""); S.setBet(DEN[S.ci]); }
-      function setRisk() { S.setX("RISK: " + PLK.RISK[risk].n, !flying.length); }
-      S.onX = function () { if (flying.length) { S.pop("WAIT", "BALLS STILL FALLING", "lose"); return; } risk = (risk + 1) % 3; setRisk(); paint(); relabel(); sfx("chip"); info(); };
-      setRisk(); S.setGo("DROP", true);
-      var alive = true;
-      (function fx() {
-        if (!alive) return; var now = performance.now(), dirty = false;
-        pegs.forEach(function (row) { row.forEach(function (p) { if (!p.hit) return; var k = Math.max(0, 1 - (now - p.hit) / 420); dm.position.set(p.x, p.y, ZB + DEP * 0.62); dm.scale.setScalar(1 + k * 0.7); dm.updateMatrix(); caps.setMatrixAt(p.n, dm.matrix); caps.setColorAt(p.n, ci.setRGB(1, 1 - k * 0.25, 1 - k * 0.05).lerp(new T.Color(0xff6ad0), k * 0.7)); if (k <= 0) p.hit = 0; dirty = true; }); });
-        if (dirty) { caps.instanceMatrix.needsUpdate = true; if (caps.instanceColor) caps.instanceColor.needsUpdate = true; }
-        pegGlow.forEach(function (s) { if (s.userData.t) { var k = (now - s.userData.t) / 380; s.material.opacity = Math.max(0, 0.9 * (1 - k)); s.scale.setScalar(0.08 + k * 0.1); if (k >= 1) s.userData.t = 0; } });
-        buckets.forEach(function (b) { var k = Math.max(0, 1 - (now - b.t) / 700); b.plate.position.y = BY - 0.035 - Math.sin(Math.min(1, (now - b.t) / 240) * Math.PI) * 0.02 * (k > 0 ? 1 : 0); b.g.material.opacity = k * 0.95; b.back.material.color.copy(b.base).lerp(new T.Color(0xffffff), k * 0.6); b.plate.material[4].color.setScalar(0.86 + k * 0.14); });
-        var t = now / 1000; ledP.color.setHSL((0.9 + Math.sin(t * 0.7) * 0.05) % 1, 1, 0.6); ledC.color.setHSL(0.5 + Math.sin(t * 0.9) * 0.04, 1, 0.55);
-        requestAnimationFrame(fx);
-      })();
-      function hitPeg(rr, k) { var p = pegs[rr][k + 1]; if (!p) return; p.hit = performance.now(); var s = pegGlow[pgI++ % pegGlow.length]; s.position.set(p.x, p.y, ZB + DEP * 0.65); s.userData.t = performance.now(); }
+      S.refit = function () { frameCam(S, [0, PLKB.YC - 0.1, 0], [[-HW - 0.1, yBot + 0.2, 0.1], [HW + 0.1, yBot + 0.2, 0.1], [-HW, yTop, 0], [HW, yTop, 0]], -0.12, 0, 1.0); }; S.refit();
+      function info() { S.setInfo(R + " ROWS · RISK " + PLK.RISKN[risk], S.msg || "", last.length ? "LAST " + last.slice(0, 5).map(plkFmt).join("  ") : ""); S.setBet(DEN[S.ci]); }
+      var rBtn = $("wcUndo");
+      function setBtns() { S.setX("RISK: " + PLK.RISKN[risk], !flying.length); if (rBtn) { rBtn.style.display = ""; rBtn.textContent = R + " ROWS"; rBtn.style.opacity = flying.length ? 0.5 : 1; } }
+      S.onX = function () { if (flying.length) { S.pop("WAIT", "BALLS STILL FALLING", "lose"); return; } risk = (risk + 1) % 3; buildRows(); paint(); setBtns(); sfx("chip"); info(); };
+      S.onUndo = function () { if (flying.length) { S.pop("WAIT", "BALLS STILL FALLING", "lose"); return; } R = PLK.ROWS[(PLK.ROWS.indexOf(R) + 1) % PLK.ROWS.length]; buildRows(); paint(); setBtns(); sfx("chip"); info(); };
+      setBtns(); S.setGo("DROP", true);
+      var alive = true, tPrev = performance.now();
+      function hitPeg(pi) { var p = pegs[pi]; if (!p) return; var now = performance.now(); if (now - p.hit < 90) return; p.hit = now; var s = pegGlow[pgI++ % pegGlow.length]; s.position.set(p.x, p.y, ZP + 0.02); s.userData.t = now; pling(560 + (L.YT - p.y) / (L.SY * R) * 900 + Math.random() * 40, 0.04); }
       function settle(b) {
-        if (b.done) return; b.done = true; flying.splice(flying.indexOf(b), 1); if (S.alive) setRisk();
-        var pay = Math.round(b.bet * b.mult); if (pay > 0) casApply(pay); var net = pay - b.bet;
+        if (b.done) return; b.done = true; flying.splice(flying.indexOf(b), 1); if (S.alive) setBtns();
+        var mult = plkMult(b.R, b.risk)[b.st.k], pay = Math.round(b.bet * mult); if (pay > 0) casApply(pay); var net = pay - b.bet;
         if (!S.alive) return;
-        last.unshift(b.mult); last.length = Math.min(last.length, 8);
-        var bk = buckets[b.k]; bk.t = performance.now(); sparks(tg, (b.k - 6) * SX, BY + 0.04, ZP + 0.02, net > 0 ? 16 : 6, "pw", net > 0 ? "p" : "o", net > 0 ? 0.8 : 0.35, 700, 2.2, 0.05);
-        floatText(tg, plkFmt(b.mult), (b.k - 6) * SX, BY + 0.16, ZB + DEP + 0.02, net > 0 ? "#ffd23f" : "#ff9aa8", 0.11);
-        if (net > 0) { S.pop("+" + net.toLocaleString(), plkFmt(b.mult) + " WIN", "win"); if (b.mult >= 3) winFx(net, b.bet, "plinko"); else pling(1320, 0.1); }
-        else if (net < 0) { S.pop(net.toLocaleString(), plkFmt(b.mult), "lose"); tone(260, 0.12, 0, "triangle", 0.06); }
+        last.unshift(mult); last.length = Math.min(last.length, 8);
+        if (b.R === R) { var bk = buckets[b.st.k]; if (bk) { bk.t = performance.now(); } }
+        var bxp = (b.st.k - b.R / 2) * L.SX; sparks(tg, bxp, BY + 0.05, ZP + 0.02, net > 0 ? 16 : 6, "pw", net > 0 ? "p" : "o", net > 0 ? 0.8 : 0.35, 700, 2.2, 0.06);
+        floatText(tg, plkFmt(mult), bxp, BY + 0.3, ZB + DEP + 0.03, net > 0 ? "#ffd23f" : "#ff9aa8", 0.16);
+        if (net > 0) { S.pop("+" + net.toLocaleString(), plkFmt(mult) + " WIN", "win"); if (mult >= 3) winFx(net, b.bet, "plinko"); else pling(1320, 0.1); }
+        else if (net < 0) { S.pop(net.toLocaleString(), plkFmt(mult), "lose"); tone(260, 0.12, 0, "triangle", 0.06); }
         else S.pop("0", "1x · BET BACK");
         info();
       }
-      async function runBall(b) {
-        var ball = b.o, sh = b.sh;
-        function place(x, y) { ball.position.set(x, y, ZP); sh.position.set(x - 0.03, y - 0.04, ZB + 0.003); }
-        // roll down the hopper into the chute
-        var x0 = 0.24 + 4 * (BR * 2 + 0.006), y0 = trayY + 0.006 + (0.24 + 4 * 0.07) * 0.07 - 0.02;
-        await tween(380, function (t) { var e = t * t; place(x0 + (0.02 - x0) * e, y0 + (trayY - 0.03 - y0) * e); ball.rotation.z += 0.18; });
-        tone(180, 0.06, 0, "sine", 0.05);
-        var cy = PLK.YT + 0.0105 + BR, startY = ball.position.y;
-        await tween(230, function (t) { place(0.02 * (1 - t), startY + (cy - startY) * t * t); });
-        var k = 0;
-        for (var rr = 0; rr < R; rr++) {
-          if (!S.alive) break;
-          hitPeg(rr, k); pling(620 + rr * 70 + Math.random() * 30, 0.045);
-          var right = b.path[rr]; if (right) k++;
-          var nx = (k - (rr + 1) / 2) * SX + (Math.random() - 0.5) * 0.006, last1 = rr + 1 >= R, ny = !last1 ? PLK.YT - (rr + 1) * SY + 0.0105 + BR : BY - 0.03, sx0 = ball.position.x, sy0 = ball.position.y;
-          var hop = 0.03 + Math.random() * 0.022, dur = !last1 ? 150 + Math.random() * 35 : 260;
-          await tween(dur, function (t) { place(sx0 + (nx - sx0) * (1 - Math.pow(1 - t, 1.6)), sy0 + (ny - sy0) * t * t + hop * Math.sin(t * Math.PI) * (1 - t * 0.5)); ball.rotation.z -= (right ? 1 : -1) * 0.3; });
-        }
-        if (S.alive) { tone(140, 0.08, 0, "sine", 0.08); await tween(160, function (t) { place(ball.position.x, BY - 0.03 + Math.sin(t * Math.PI) * 0.015); }); }
-        b.k = k; b.mult = PLK.RISK[b.risk].m[k]; settle(b);
-        await sleep(500); tg.remove(ball); tg.remove(sh);
-      }
+      (function fx(now) {
+        if (!alive) return; var dt = Math.min(0.1, (now - tPrev) / 1000); tPrev = now; var dirty = false, hits = [];
+        flying.slice().forEach(function (b) {
+          b.acc += dt; hits.length = 0; while (b.acc >= PLK_DT && !b.st.done) { b.acc -= PLK_DT; plkStep(L, b.st, hits); }
+          hits.forEach(hitPeg); b.o.position.set(b.st.x, b.st.y, ZP); b.o.rotation.z -= b.st.vx * dt / L.rb; b.sh.position.set(b.st.x - L.rb * 0.8, b.st.y - L.rb * 1.1, ZB + 0.003);
+          if (b.st.done) { tone(140, 0.08, 0, "sine", 0.08); settle(b); var o = b.o, sh = b.sh; setTimeout(function () { tg.remove(o); tg.remove(sh); }, 500); }
+        });
+        pegs.forEach(function (p) { if (!p.hit) return; var k = Math.max(0, 1 - (now - p.hit) / 420); dm.position.set(p.x, p.y, ZP); dm.scale.setScalar(1 + k * 0.7); dm.updateMatrix(); caps.setMatrixAt(p.n, dm.matrix); caps.setColorAt(p.n, ci.setRGB(1, 1 - k * 0.25, 1 - k * 0.05).lerp(new T.Color(0xff6ad0), k * 0.7)); if (k <= 0) p.hit = 0; dirty = true; });
+        if (dirty) { caps.instanceMatrix.needsUpdate = true; if (caps.instanceColor) caps.instanceColor.needsUpdate = true; }
+        pegGlow.forEach(function (s) { if (s.userData.t) { var k = (now - s.userData.t) / 380; s.material.opacity = Math.max(0, 0.9 * (1 - k)); s.scale.setScalar(L.SX * 0.4 + k * L.SX * 0.4); if (k >= 1) s.userData.t = 0; } });
+        buckets.forEach(function (b) { var k = Math.max(0, 1 - (now - b.t) / 700); b.plate.position.y = b.y - Math.sin(Math.min(1, (now - b.t) / 240) * Math.PI) * 0.03 * (k > 0 ? 1 : 0); b.g.material.opacity = k * 0.95; b.back.material.color.copy(b.base).lerp(new T.Color(0xffffff), k * 0.6); });
+        var t = now / 1000; ledP.color.setHSL((0.9 + Math.sin(t * 0.7) * 0.05) % 1, 1, 0.6); ledC.color.setHSL(0.5 + Math.sin(t * 0.9) * 0.04, 1, 0.55);
+        requestAnimationFrame(fx);
+      })(tPrev);
       function drop() {
         var bet = DEN[S.ci]; if (casBal < bet) { S.pop("NO CHIPS", "NOT ENOUGH CHIPS", "lose"); sfx("lose"); return; }
-        if (flying.length >= 15) { S.pop("WAIT", "MAX 15 BALLS", "lose"); return; }
+        if (flying.length >= 20) { S.pop("WAIT", "MAX 20 BALLS", "lose"); return; }
         casApply(-bet); sfx("chip");
-        var path = [], k = 0; for (var i = 0; i < R; i++) { var rt = Math.random() < 0.5; path.push(rt); if (rt) k++; }
-        var colr = ballCols[Math.floor(Math.random() * 4)], o = new T.Mesh(ballGeo, ballMat(colr)); tg.add(o);
-        var gl = glowSprite("pp", GLOW_P, BR * 4.5, o); gl.material.opacity = 0.35;
-        var sh = new T.Mesh(new T.PlaneGeometry(0.11, 0.11), shM); tg.add(sh);
-        queue.forEach(function (q, qi) { var y0 = q.position.y; tween(300, function (t) { q.rotation.z -= 0.08; }); });
-        var b = { bet: bet, risk: risk, path: path, o: o, sh: sh, done: false, k: k, mult: PLK.RISK[risk].m[k] }; flying.push(b); setRisk();
-        S.msg = ""; info(); runBall(b).catch(function () { settle(b); });
+        var seed = (Math.random() * 4294967296) >>> 0, st = plkBall(L, seed), colr = ballCols[seed % 4];
+        var o = new T.Mesh(new T.SphereGeometry(L.rb, 28, 20), ballMat(colr)); o.position.set(st.x, st.y, ZP); tg.add(o); var gl = glowSprite("pp", GLOW_P, L.rb * 5, o); gl.material.opacity = 0.35;
+        var sh = new T.Mesh(new T.PlaneGeometry(L.rb * 4, L.rb * 4), shM); tg.add(sh);
+        var b = { bet: bet, risk: risk, R: R, st: st, o: o, sh: sh, done: false, acc: 0 }; flying.push(b); setBtns();
+        PLK_OUT.push({ id: clientId + ":" + seed, tbl: S.id, R: R, seed: seed, at: Date.now() });   // your friend sees this ball fall on this machine
+        S.msg = ""; info();
       }
       S.onGo = drop;
       wcInput(S, function () { drop(); });
       keyH = function (e) { if ((e.key === " " || e.key === "e" || e.key === "E" || e.key === "Enter") && !e.repeat) { e.preventDefault(); drop(); } };
       document.addEventListener("keydown", keyH);
       var prevClean = S.cleanup;
-      S.cleanup = function () { alive = false; lookOff(); document.removeEventListener("keydown", keyH); flying.slice().forEach(settle); prevClean && prevClean(); };
+      S.cleanup = function () {   // leaving with balls in the air: they are finished instantly (same physics) and paid
+        alive = false; lookOff(); document.removeEventListener("keydown", keyH);
+        flying.slice().forEach(function (b) { while (!b.st.done) plkStep(L, b.st, null); settle(b); });
+        prevClean && prevClean();
+      };
       S.msg = "PICK A CHIP · DROP"; info();
       while (S.alive) { await sleep(400); chk(); info(); }
     });
   };
-
   // ---------- MINES: you sit at the table, 25 bevelled tiles in front of you. Pick how many mines, BET (your chips go on the felt),
   // then flip tiles: a cut gem raises the multiplier, a bomb burns its fuse and blows the tile apart. CASH OUT any time ----------
   var MNS_OPT = [1, 2, 3, 5, 8, 10, 15, 20, 24];
