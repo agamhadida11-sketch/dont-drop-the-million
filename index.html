@@ -6323,8 +6323,8 @@ body.inlobby { padding-block: 0; }
       var xm = new T.MeshBasicMaterial({ color: 0x14102a });
       [-1, 1].forEach(function (s) {
         var eyeM = new T.MeshPhongMaterial({ color: 0x24160f, specular: 0x555555, shininess: 80 });
-        var eye = new T.Mesh(new T.SphereGeometry(0.05, 32, 24), eyeM); eye.scale.set(0.82, 1.12, 0.38); eye.position.set(s * 0.108, 0.03, onFace(s * 0.108, 0.03) + 0.008); eye.rotation.y = s * 0.38; head.add(eye); eyes.push(eye);
-        var pu = new T.Group(); pu.position.set(s * 0.115, 0.03, onFace(s * 0.108, 0.03) - 0.012); pu.rotation.y = s * 0.38; head.add(pu); pupils.push(pu);
+        var eye = new T.Mesh(new T.SphereGeometry(0.05, 32, 24), eyeM); eye.scale.set(0.82, 1.12, 0.34); eye.position.set(s * 0.108, 0.03, onFace(s * 0.108, 0.03) + 0.019);   /* v150: set into the face (the skull is r 0.28) so it no longer sticks out from the side */ eye.rotation.y = s * 0.38; head.add(eye); eyes.push(eye);
+        var pu = new T.Group(); pu.position.set(s * 0.115, 0.03, onFace(s * 0.108, 0.03) + 0.003); pu.rotation.y = s * 0.38; head.add(pu); pupils.push(pu);
         var hl = new T.Mesh(new T.SphereGeometry(0.014, 12, 10), new T.MeshBasicMaterial({ color: 0xffffff })); hl.scale.z = 0.4; hl.position.set(0.012 - 0.006, 0.022, 0); pu.add(hl);
         var hl2 = new T.Mesh(new T.SphereGeometry(0.0065, 10, 8), new T.MeshBasicMaterial({ color: 0xffffff })); hl2.scale.z = 0.4; hl2.position.set(-0.012 - 0.006, -0.018, 0); pu.add(hl2);
         var chk = new T.Mesh(new T.SphereGeometry(0.055, 20, 14), new T.MeshBasicMaterial({ color: 0xff6f86, transparent: true, opacity: 0.42, depthWrite: false })); chk.scale.set(0.8, 0.5, 0.25); chk.position.set(s * 0.15, -0.065, onFace(s * 0.15, -0.065) + 0.02); chk.rotation.y = s * 0.55; head.add(chk);
