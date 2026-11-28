@@ -3062,9 +3062,9 @@ body.inlobby { padding-block: 0; }
   // =====================================================================
   //  BIG WHEEL: sector table + the console layout, shared by the hall (static look) and the live kiosk
   // =====================================================================
-  // the money wheel (v133, easier to win): 24 sectors. x0.2 x9 · x0.5 x3 · x1.5 x7 · x2 x2 · x3 · x5 · R (free spin again).
-  // You come out ahead on 11 of 24 sectors (about 46%, plus the free spin); it pays a little over 1:1 on average.
-  var BW_SEC = ["1.5", "0.2", "2", "0.2", "1.5", "0.5", "1.5", "0.2", "5", "0.2", "1.5", "0.5", "1.5", "0.2", "3", "0.2", "1.5", "0.5", "1.5", "0.2", "2", "0.2", "R", "0.2"],
+  // the money wheel (v137, easy to win): 24 sectors. x0.2 x7 · x0.5 x3 · x1.5 x8 · x2 x3 · x3 · x5 · R (free spin again).
+  // You put money in, spin, and the sector it stops on multiplies it: you come out ahead on 13 of 24 sectors (54%, plus the free spin).
+  var BW_SEC = ["1.5", "0.2", "2", "0.5", "1.5", "0.2", "1.5", "3", "0.2", "1.5", "0.5", "2", "0.2", "1.5", "5", "0.2", "1.5", "0.5", "2", "0.2", "1.5", "R", "0.2", "1.5"],
       BW_PAY = { "0.2": 0.2, "0.5": 0.5, "1.5": 1.5, "2": 2, "3": 3, "5": 5, "R": 0 }, BW_COL = { "0.2": "#4a1a2e", "0.5": "#7a3a8a", "1.5": "#1d8fb8", "2": "#2a6bff", "3": "#12a050", "5": "#ffb020", "R": "#ff3fb4" };
   function bwSecName(k) { return k === "R" ? "SPIN AGAIN" : "x" + k; }
   // counter-local metres (origin: middle of the counter top, +z toward the player): a slanted console with six sector pads (back row) and the controls (front row)
@@ -9256,7 +9256,7 @@ body.inlobby { padding-block: 0; }
       var dk = new T.Group(), P = K.screen(1024, 256, 2.4, 0.6, K.tg), ci = 0, cd = 1e9, ws = K.H.wheels;
       dk.position.set(0, WHL.dy, WHL.dz); dk.rotation.x = WHL.th; K.tg.add(dk); K.P = P; P.mesh.position.set(0, 0.58, 0.474);
       K.W = ws.filter(function (w) { return w.tbl === K.mk.tbl; })[0] || ws[0]; K.dealer = K.H.bots.filter(function (b) { return b.kind === "dealer" && b.tbl === K.mk.tbl; })[0];
-      WHL.pads.forEach(function (p) { K.button({ parent: dk, act: p.act, px: p.px, py: 0.112, h: 0.056, pz: p.pz, w: p.w, d: p.d, c: p.col, t: p.key, x: 0, cw: 240, draw: function (L, t, x) { whPadLabel(L, t, x || 0); } }); });
+      WHL.pads.forEach(function (p) { var pb = K.button({ parent: dk, act: p.act, px: p.px, py: 0.112, h: 0.056, pz: p.pz, w: p.w, d: p.d, c: p.col, t: p.key, x: 0, cw: 240, draw: function (L, t, x) { whPadLabel(L, t, x || 0); } }); K.btns.splice(K.btns.indexOf(pb), 1); });   // v137: the odds pads only show the chances: they are not buttons
       WHL.ctl.forEach(function (c) { K.button({ parent: dk, act: c.act, px: c.px, py: 0.112, h: c.act === "spin" ? 0.07 : 0.06, pz: c.pz, w: c.w, d: c.d, c: c.c, t: c.t, x: c.ink }); });
       K.M = padScreen(K, dk, -1.18, -0.44, 1.05, 0.46);
       K.chip = parseInt(store("local", "dd-wh-bet") || "", 10) || casBet || 1000; if (K.chip < BP_MIN) K.chip = BP_MIN; casBet = K.chip;
@@ -9270,7 +9270,7 @@ body.inlobby { padding-block: 0; }
         padKey(K, act.charAt(0) === "k" ? act.slice(1) : act, function () { return K.chip; }, function (v) { K.chip = v; casBet = v; store("local", "dd-wh-bet", String(v)); });
         whInfo(K);
       }
-      else if (act === "spin" || (act.charAt(0) === "s" && BW_PAY[act.slice(1)] != null)) { K.entry = null; whSpin(K); }
+      else if (act === "spin") { K.entry = null; whSpin(K); }
     },
     tick: function (K, dt, now) {
       var W = K.W, s = K.sp, sec = Math.PI / 12, k, e, phi, cur, fb;
