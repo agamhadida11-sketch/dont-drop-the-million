@@ -962,6 +962,16 @@ body.inlobby { padding-block: 0; }
 .mm-menu > .mmi.small.sel { font-family: var(--font-body); }
 @media (prefers-reduced-motion: reduce) { .mm-menu > .mmi { transition: none; } }
 
+/* v129 · entry screen: browsers allow no sound before the first click or key press, so when sound is still blocked
+   the first click lands on this screen and switches the sound on for everything after it */
+.splash { position: fixed; inset: 0; z-index: 95; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; text-align: center; background: radial-gradient(ellipse at 50% 40%, rgba(40, 22, 70, .9), rgba(5, 3, 12, .97)); cursor: pointer; }
+.splash[hidden] { display: none; }
+.splash h2 { margin: 0; font-family: var(--font-display); font-weight: 400; line-height: .95; font-size: clamp(2.6rem, 9vw, 5rem); background: linear-gradient(180deg, #fffbe6, #ffe27a 42%, #f3b93a 70%, #c98a1c); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #3b2105) drop-shadow(0 10px 22px rgba(0, 0, 0, .6)); }
+.splash .go { padding: 14px 34px; border: 0; border-radius: 20px; background: linear-gradient(180deg, #ffe89a, #f3c24f 60%, #e3a92c); color: #2b1b00; font-family: var(--font-display); font-size: clamp(1.3rem, 4vw, 1.8rem); box-shadow: 0 6px 0 #9b7424, 0 0 40px rgba(243, 194, 79, .45); animation: splashPulse 1.6s ease-in-out infinite; }
+.splash small { color: var(--mute); font-weight: 700; }
+@keyframes splashPulse { 50% { transform: scale(1.06); box-shadow: 0 6px 0 #9b7424, 0 0 60px rgba(243, 194, 79, .7); } }
+@media (prefers-reduced-motion: reduce) { .splash .go { animation: none; } }
+
 /* chat box: bottom-left of the screen; new lines light up, then the box fades back so it does not cover the view */
 .chat { position: absolute; left: 12px; bottom: 12px; z-index: 30; width: min(380px, 38%); max-height: 34%; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 12px; background: rgba(8, 5, 18, .62); border: 1px solid rgba(243, 210, 127, .25); color: var(--cash); font-size: .88rem; line-height: 1.35; direction: rtl; pointer-events: auto; transition: opacity .5s, background .5s; }
 .chat.dim { opacity: .45; background: rgba(8, 5, 18, .3); }
@@ -1152,6 +1162,11 @@ body.inlobby { padding-block: 0; }
       </aside>
     </div>
   </section>
+  <div class="splash" id="splash" hidden role="dialog" aria-label="כניסה למשחק">
+    <h2>אל תפיל<br>את המיליון</h2>
+    <button type="button" class="go" id="splashGo">🔊 לחצו כדי להיכנס</button>
+    <small>אפשר גם ללחוץ על כל מקש</small>
+  </div>
   <div class="lbov" id="rulesov" hidden>
     <div class="lbbox rulesbox" role="dialog" aria-modal="true" aria-label="איך משחקים">
       <div class="lbhead"><b>איך משחקים</b><button id="rulesClose" type="button" aria-label="סגירה">✕</button></div>
@@ -10462,7 +10477,29 @@ body.inlobby { padding-block: 0; }
       if (lobby) { start(); board(); syncMute(); room.hidden = true; fr.setAttribute("aria-expanded", "false"); selItem($("solo")); }
       else { stop(); sleepOutput(); }
     }
-    return { onShow: onShow, board: board };
+    // --- entry screen: only when the browser is still blocking sound (no click or key on the page yet)
+    var splash = $("splash");
+    function splashClose(e) {
+      if (splash.hidden) return;
+      if (e) { e.stopImmediatePropagation(); if (e.type === "keydown") e.preventDefault(); }
+      splash.hidden = true; kickAudio();
+      setTimeout(function () { uiSelect(true); }, 30);
+      try { var f = $("solo"); if (f && !f.disabled && !els.lobby.hidden) f.focus({ preventScroll: true }); } catch (x) { /* no focus */ }
+    }
+    function splashShow(force) {
+      try {
+        if (!force && navigator.userActivation && navigator.userActivation.hasBeenActive) return;
+        if (!ensureAudio()) return;
+        if (!force && audioCtx.state === "running") return;   // this browser already allows sound: no need to ask
+        splash.hidden = false;
+        audioCtx.addEventListener("statechange", function () { if (audioCtx.state === "running" && !splash.hidden) splash.hidden = true; });
+      } catch (e) { /* no entry screen */ }
+    }
+    splash.addEventListener("click", splashClose);   // on the full click (not pointerdown), so the click can never fall through to a menu item underneath
+    window.addEventListener("keydown", function (e) { if (!splash.hidden) splashClose(e); }, true);
+    splashShow(false);
+
+    return { onShow: onShow, board: board, splash: splashShow };
   })();
   if (!els.lobby.hidden) { document.body.classList.add("inlobby"); MM.onShow(true); }
 
