@@ -3085,7 +3085,6 @@ body.inlobby { padding-block: 0; }
   function takeAction() {
     var dra = doorAction(); if (dra) return dra;
     var cas = casinoAction(); if (cas) return cas;
-    if (SLV && SLV.alive && !casOpen) return { k: "casino", g: "slots", label: "🎰 SPIN", m: SLV.mk };   // a live slot machine you stepped back from
     if (!canAct()) return null;
     if (readyGate || gateNeeded(doc)) { if (!nearLock(me.x, me.z)) return null; var gm = role === "host" ? doc.gh : doc.gg; return { k: "start", label: gm ? "ממתינים לשחקן השני" : "התחילו" }; }
     var la = lockAction(); if (la) return la;
@@ -3116,7 +3115,6 @@ body.inlobby { padding-block: 0; }
   function currentAction() { return takeAction() || dropAction(); }
   function takeHere() {
     var a = takeAction();
-    if (!a && SLV && SLV.alive && !casOpen) { SLV.press("spin"); return; }   // stepped back from a live slot machine: E / the action button still spins it
     if (a && world && world.poke) world.poke(1);   // the hands only reach out when there is really something to take or press
     if (!a) { if (canAct()) setHint(me.carry > 0 ? "יש לכם כסף בידיים. הניחו אותו עם " + keyLabel(settings.keys.drop) + " או כפתור ההנחה." : "התקרבו לקופה כדי לקחת כסף, או עמדו על פודיום שהנחתם עליו כדי לקחת בחזרה."); return; }
     if (a.k === "casino") { if (a.g === "juke") jukePress(); else if (a.g === "slots" && a.m) { if (SLV) SLV.press("spin"); } else if (KIOS[a.g] && a.m) { if (KIO && KIO.mk === a.m) KIO.press(KIOS[a.g].act); } else if (a.tbl != null && PHYS[a.g]) sitDown(a); else btoast("המשחק הזה עוד לא פתוח.", false); } else if (a.k === "door") openKeypad(a.s); else if (a.k === "start") startGo(); else if (a.k === "lock") onLockClick(); else if (a.k === "bank") pickUp(); else takeBack(a.i);
@@ -4165,9 +4163,11 @@ body.inlobby { padding-block: 0; }
           }
           // slot screens (3 variants)
           var SYMC = ["#ff3b4a", "#ffe14a", "#58e07a", "#4ac8ff", "#d96bff"];
-          TEX.scr0 = ctex(cv(128, 128, function (g) { g.fillStyle = "#0a0a30"; g.fillRect(0, 0, 128, 128); g.fillStyle = "#ffd23f"; g.fillRect(0, 0, 128, 22); g.fillStyle = "#a00"; g.font = "900 17px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("MEGA 777", 64, 12); for (var i = 0; i < 3; i++) { g.fillStyle = "#fff"; g.fillRect(8 + i * 38, 32, 32, 70); g.fillStyle = i === 1 ? "#d00" : "#0a0"; g.font = "900 40px Fredoka, Arial, sans-serif"; g.fillText("7", 24 + i * 38, 68); } g.fillStyle = "#58e07a"; g.fillRect(8, 108, 112, 12); }));
-          TEX.scr1 = ctex(cv(128, 128, function (g) { g.fillStyle = "#1a0830"; g.fillRect(0, 0, 128, 128); g.fillStyle = "#4ac8ff"; g.fillRect(0, 0, 128, 22); g.fillStyle = "#012"; g.font = "900 15px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("DIAMOND", 64, 12); for (var i = 0; i < 3; i++) { g.fillStyle = "#fff"; g.fillRect(8 + i * 38, 32, 32, 70); g.fillStyle = SYMC[(i * 2 + 1) % 5]; g.beginPath(); g.moveTo(24 + i * 38, 44); g.lineTo(38 + i * 38, 66); g.lineTo(24 + i * 38, 92); g.lineTo(10 + i * 38, 66); g.closePath(); g.fill(); } g.fillStyle = "#ffd23f"; g.fillRect(8, 108, 112, 12); }));
-          TEX.scr2 = ctex(cv(128, 128, function (g) { g.fillStyle = "#06240f"; g.fillRect(0, 0, 128, 128); g.fillStyle = "#ff3b4a"; g.fillRect(0, 0, 128, 22); g.fillStyle = "#fff"; g.font = "900 15px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("CHERRY", 64, 12); for (var i = 0; i < 3; i++) { g.fillStyle = "#fff"; g.fillRect(8 + i * 38, 32, 32, 70); g.fillStyle = "#e0102a"; g.beginPath(); g.arc(18 + i * 38, 76, 8, 0, 6.3); g.arc(30 + i * 38, 80, 8, 0, 6.3); g.fill(); g.strokeStyle = "#0a0"; g.lineWidth = 3; g.beginPath(); g.moveTo(18 + i * 38, 68); g.lineTo(26 + i * 38, 48); g.lineTo(30 + i * 38, 72); g.stroke(); } g.fillStyle = "#ff7ac8"; g.fillRect(8, 108, 112, 12); }));
+          // the idle machine screens are painted in the same style as the live screen, so a machine looks the same from any distance
+          TEX.scr0 = ctex(cv(480, 310, function (g, w, h) { slotStatic(g, w, h, 3, 11); }));
+          TEX.scr1 = ctex(cv(640, 512, function (g, w, h) { slotStatic(g, w, h, 5, 23); }));
+          TEX.scr2 = ctex(cv(480, 480, function (g, w, h) { slotStatic(g, w, h, 3, 37); }));
+          TEX.scr3 = ctex(cv(640, 450, function (g, w, h) { slotStatic(g, w, h, 5, 51); }));
           // slot marquees: four lit light-box signs and the idle BET screen share one atlas (pixel cells x, y, w, h); the neon accents are tinted per machine through the vertex colour
           var SLQC = [[0, 0, 512, 208], [512, 0, 512, 208], [0, 208, 512, 208], [512, 208, 512, 208], [0, 416, 512, 174]];
           function slIcon(g, k, cx, cy, r) {
@@ -4601,7 +4601,7 @@ body.inlobby { padding-block: 0; }
               box(0x0a2a16, 0, 2.5, -0.12, 0.8, 0.56, 0.5); prim(G.slotQ[2], "slotTop", 0xffffff, 0, 2.5, 0.14, 0, 0.74, 0.3, 1, true); box(ac, 0, 2.22, 0.13, 0.84, 0.022, 0.022, 0, true); box(ac, 0, 2.78, 0.13, 0.84, 0.022, 0.022, 0, true);
               box(0x0a2a16, 0, 3.02, -0.12, 0.5, 0.5, 0.4); box(ac, 0, 3.02, 0.085, 0.03, 0.4, 0.014, 0, true); box(0x14241c, 0, 3.3, -0.12, 0.36, 0.06, 0.3); ball(0xffd23f, 0, 3.42, -0.12, 0.14, 1, true); slDress(ac, 0.47, 0.95, 2.15, 0.1);
             } else { // deluxe cabinet: a real arched crown (half cylinder standing on the housing) with the ROYAL sign
-              box(0x160a24, 0, 0.5, -0.05, 0.94, 1.0, 0.82); box(0x3a1260, 0, 1.55, -0.2, 0.94, 1.2, 0.6); box(0x050508, 0, 1.64, 0.12, 0.8, 0.58, 0.06); quad("scr0", 0, 1.64, 0.16, 0.74, 0.52, 0); slBezel(ac, 0, 1.64, 0.8, 0.58, 0.152);
+              box(0x160a24, 0, 0.5, -0.05, 0.94, 1.0, 0.82); box(0x3a1260, 0, 1.55, -0.2, 0.94, 1.2, 0.6); box(0x050508, 0, 1.64, 0.12, 0.8, 0.58, 0.06); quad("scr3", 0, 1.64, 0.16, 0.74, 0.52, 0); slBezel(ac, 0, 1.64, 0.8, 0.58, 0.152);
               box(0x23232f, 0, 1.08, 0.2, 0.96, 0.1, 0.52); box(ac, 0, 1.0, 0.46, 0.96, 0.04, 0.04, 0, true); box(0x1a1a24, 0, 0.56, 0.4, 0.5, 0.26, 0.04); box(0xff3fb4, 0, 0.56, 0.425, 0.46, 0.04, 0.01, 0, true);
               prim(G.half, "v", 0x2a0a4a, 0, 2.15, -0.2, 0, 0.47, 0.6, 0.3, false, -Math.PI / 2, 0); prim(G.torH, "v", ac, 0, 2.15, 0.105, 0, 0.47, 0.3, 2, true); prim(G.slotQ[3], "slotTop", 0xffffff, 0, 2.27, 0.108, 0, 0.5, 0.2, 1, true); slDress(ac, 0.47, 0.95, 2.15, 0.1);
             }
@@ -8662,7 +8662,6 @@ body.inlobby { padding-block: 0; }
     SLVS.slice().forEach(function (S) { if (slotDistM(S.mk) > 16 && !S.busy && !(S.free > 0)) slotStop(S); });
     var a = casinoAction(), cur = null;
     if (a && a.g === "slots" && a.m) cur = slotUse(a);
-    else if (SLV && SLV.alive && slotDistM(SLV.mk) < 6) cur = SLV;
     if (cur !== SLV) { SLV = cur; if (cur) { if (!slxEl) { slxEl = cge("div", "", ""); slxEl.id = "slx"; $("game").appendChild(slxEl); } slxEl.style.display = "block"; cur.hint(); } else { if (slxEl) slxEl.style.display = "none"; if (slmEl) slmEl.style.opacity = 0; } }
   } catch (e) { } }, 140);
   PHYS.slots = true;
@@ -9701,6 +9700,22 @@ body.inlobby { padding-block: 0; }
       while (S.alive) { await sleep(400); chk(); }
     });
   };
+  function slotStatic(g, W2, H2, n, seed) {   // a still frame of the live slot screen (same layout, symbols picked from a fixed seed)
+    var SY = ["\uD83C\uDF52", "\uD83C\uDF4B", "\uD83D\uDD14", "\u2B50", "\uD83D\uDC8E", "7"], r = seed;
+    function rn() { r = (r * 9301 + 49297) % 233280; return r / 233280; }
+    var pad = Math.round(W2 * 0.025), top = Math.round(H2 * 0.04), cw = (W2 - pad * 2) / n, ch = (H2 - top * 2) / 3;
+    var bg = g.createRadialGradient(W2 / 2, H2 / 2, 10, W2 / 2, H2 / 2, W2 * 0.75); bg.addColorStop(0, "#2a1458"); bg.addColorStop(1, "#07031a"); g.fillStyle = bg; g.fillRect(0, 0, W2, H2);
+    for (var i = 0; i < n; i++) {
+      var x = pad + i * cw; g.save(); rrect(g, x + 3, top, cw - 6, H2 - top * 2, 12); g.clip();
+      var gr = g.createLinearGradient(0, top, 0, H2 - top); gr.addColorStop(0, "#b9b0d6"); gr.addColorStop(0.18, "#f4f0ff"); gr.addColorStop(0.5, "#ffffff"); gr.addColorStop(0.82, "#f4f0ff"); gr.addColorStop(1, "#b9b0d6"); g.fillStyle = gr; g.fillRect(x, 0, cw, H2);
+      var mid = g.createLinearGradient(0, top + ch, 0, top + ch * 2); mid.addColorStop(0, "rgba(255,226,140,0)"); mid.addColorStop(0.5, "rgba(255,226,140,.22)"); mid.addColorStop(1, "rgba(255,226,140,0)"); g.fillStyle = mid; g.fillRect(x, top + ch, cw, ch);
+      for (var k = 0; k < 3; k++) drawSym(g, SY[Math.floor(rn() * SY.length)], x + cw / 2, top + (k + 0.5) * ch, ch * 0.6);
+      var sh = g.createLinearGradient(0, top, 0, H2 - top); sh.addColorStop(0, "rgba(20,8,50,.6)"); sh.addColorStop(0.24, "rgba(0,0,0,0)"); sh.addColorStop(0.76, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(20,8,50,.6)"); g.fillStyle = sh; g.fillRect(x, 0, cw, H2);
+      var gl = g.createLinearGradient(x, 0, x + cw, 0); gl.addColorStop(0, "rgba(255,255,255,0)"); gl.addColorStop(0.15, "rgba(255,255,255,.35)"); gl.addColorStop(0.3, "rgba(255,255,255,0)"); g.fillStyle = gl; g.fillRect(x, top, cw, (H2 - top * 2) * 0.45);
+      g.restore(); g.strokeStyle = "rgba(255,210,63,.9)"; g.lineWidth = 3; rrect(g, x + 3, top, cw - 6, H2 - top * 2, 12); g.stroke();
+    }
+    [pad * 0.5, W2 - pad * 0.5].forEach(function (x) { var py = H2 / 2; g.fillStyle = "#ffcf3f"; g.beginPath(); g.moveTo(x, py - 9); g.lineTo(x + 6, py); g.lineTo(x, py + 9); g.lineTo(x - 6, py); g.closePath(); g.fill(); });
+  }
   function drawSym(g, sym, cx, cy, z) {
     var r = z * 0.5; g.save(); g.translate(cx, cy); g.lineJoin = "round"; g.lineCap = "round";
     function circ(x, y, rr, f, st) { g.beginPath(); g.arc(x, y, rr, 0, 6.3); g.fillStyle = f; g.fill(); if (st) { g.lineWidth = r * 0.07; g.strokeStyle = st; g.stroke(); } }
