@@ -8510,12 +8510,13 @@ body.inlobby { padding-block: 0; }
   var SLIA = { y: 1.2739, z: 0.1983, w: 0.5, h: 0.17 };
   var SLOTV_P = [{ w: 0.62, h: 0.4, y: 1.62, z: 0.164, reels: 3, lev: true, ia: SLIA }, { w: 0.9, h: 0.72, y: 1.72, z: 0.149, reels: 5, ia: SLIA }, { w: 0.62, h: 0.62, y: 1.64, z: 0.159, reels: 3, lev: true, ia: SLIA }, { w: 0.74, h: 0.52, y: 1.64, z: 0.164, reels: 5, ia: SLIA }];
   var COIN_GEO = null, COIN_MAT = null;
-  var SLV = null, slxEl = null, slmEl = null;
+  var SLV = null, SLVS = [], slxEl = null, slmEl = null;   // SLVS: every live machine near you (each with its own reels and money); SLV: the one you are using
   function slotUse(a) {
-    if (casOpen || SLV) return; var H = world.casApi(), m = a.m, ty = a.ty || 0, sv = SLOTV_P[ty], n = sv.reels;
+    for (var si = 0; si < SLVS.length; si++) if (SLVS[si].mk === a.m) return SLVS[si];
+    var H = world.casApi(), m = a.m, ty = a.ty || 0, sv = SLOTV_P[ty], n = sv.reels;
     var lg = new T.Group(); lg.position.set(m.x, 0, m.z); lg.rotation.y = m.a; lg.scale.setScalar(SLS_P); H.hall.add(lg);
-    var S = SLV = { g: "slots", tg: lg, alive: true, mk: a.m, hall: H.hall }; S.reelsOn = false;
-    function hudMsg(t, kind) { if (!slmEl) { slmEl = cge("div", "", ""); slmEl.id = "slmsg"; $("game").appendChild(slmEl); } slmEl.textContent = t || ""; slmEl.className = kind || ""; slmEl.style.opacity = t ? 1 : 0; clearTimeout(S.mt); if (t) S.mt = setTimeout(function () { slmEl.style.opacity = 0; }, 2600); }
+    var S = { g: "slots", tg: lg, alive: true, mk: a.m, hall: H.hall }; S.reelsOn = false; SLVS.push(S);
+    function hudMsg(t, kind) { if (SLV !== S) return; if (!slmEl) { slmEl = cge("div", "", ""); slmEl.id = "slmsg"; $("game").appendChild(slmEl); } slmEl.textContent = t || ""; slmEl.className = kind || ""; slmEl.style.opacity = t ? 1 : 0; clearTimeout(S.mt); if (t) S.mt = setTimeout(function () { slmEl.style.opacity = 0; }, 2600); }
     // live reel screen
     var W = n === 5 ? 640 : 480, Hh = Math.round(W * sv.h / sv.w); S.cv = document.createElement("canvas"); S.cv.width = W; S.cv.height = Hh; S.g = S.cv.getContext("2d"); S.tex = new T.CanvasTexture(S.cv); S.tex.anisotropy = 4;
     var scr = new T.Mesh(new T.PlaneGeometry(sv.w, sv.h), new T.MeshBasicMaterial({ map: S.tex })); scr.position.set(0, sv.y, sv.z); lg.add(scr);
@@ -8534,8 +8535,7 @@ body.inlobby { padding-block: 0; }
     function glow(bm, o) { var gl = bm && bm.userData.gl; if (gl) gl.material.opacity = o; }
     if (!COIN_GEO) { COIN_GEO = new T.CylinderGeometry(0.034, 0.034, 0.009, 16); COIN_MAT = new T.MeshBasicMaterial({ color: 0xf7c52c }); }
     S.coins = []; S.pile = {}; S.bet = Math.min(1000, Math.max(100, casBet || 100)); S.free = 0; S.last = 0; S.win = 0; S.flash = 0; S.busy = false; S.ty = ty;
-    if (!slxEl) { slxEl = cge("div", "", ""); slxEl.id = "slx"; $("game").appendChild(slxEl); } slxEl.style.display = "block";
-    hudMsg("לחצו על הכפתורים של המכונה (או E לסיבוב)");
+    S.hint = function () { hudMsg("לחצו על הכפתורים של המכונה (או E לסיבוב)"); };
     function drawInfo() {   // neon LED panel: BET, LAST WIN / FREE SPINS LEFT, bonus price
       var g = S.ig, w = S.ic.width, h = S.ic.height, gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#0d0820"); gr.addColorStop(1, "#05030c"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
       g.save(); g.shadowColor = "#3df2ff"; g.shadowBlur = 14; g.strokeStyle = "#3df2ff"; g.lineWidth = 4; rrect(g, 5, 5, w - 10, h - 10, 14); g.stroke(); g.restore();
@@ -8590,7 +8590,7 @@ body.inlobby { padding-block: 0; }
     }
     S.drawScreen = drawScreen; drawInfo(); drawScreen();
     function press(act) {
-      if (!S.alive) return; if (world && world.poke) world.poke(1); var bm = S.btns.filter(function (b) { return b.userData.act === act; })[0]; if (bm) { bm.userData.hold = true; glow(bm, 0.95); setTimeout(function () { bm.userData.hold = false; glow(bm, hov === bm ? 0.35 : 0); }, 170); } tone(act === "spin" ? 520 : 760, 0.05, 0, "square", 0.07);
+      if (!S.alive) return; SLV = S; if (world && world.poke) world.poke(1); var bm = S.btns.filter(function (b) { return b.userData.act === act; })[0]; if (bm) { bm.userData.hold = true; glow(bm, 0.95); setTimeout(function () { bm.userData.hold = false; glow(bm, hov === bm ? 0.35 : 0); }, 170); } tone(act === "spin" ? 520 : 760, 0.05, 0, "square", 0.07);
       if (act === "down") { if (S.busy || S.free > 0) return; var ix = SLOT_BETS.indexOf(S.bet); S.bet = SLOT_BETS[Math.max(0, ix - 1)] || SLOT_BETS[0]; casBet = S.bet; drawInfo(); }
       else if (act === "up") { if (S.busy || S.free > 0) return; var ix2 = SLOT_BETS.indexOf(S.bet); S.bet = SLOT_BETS[Math.min(SLOT_BETS.length - 1, ix2 + 1)]; casBet = S.bet; drawInfo(); }
       else if (act === "bonus") { if (S.busy || S.free > 0) return; var bc = S.bet * 21; if (casBal < bc) { hudMsg("הבונוס עולה " + money(bc) + " – אין מספיק כסף.", "lose"); tone(200, 0.2, 0, "sawtooth", 0.08); return; } casApply(-bc); S.free = 8; S.freeWin = 0; drawInfo(); hudMsg("8 סיבובי בונוס חינם!", "win"); [523, 659, 784, 1046].forEach(function (fq, q) { tone(fq, 0.15, q * 0.07, "triangle", 0.12); }); setTimeout(function () { if (S.alive && !S.busy && S.free > 0) spin(); }, 700); }
@@ -8640,18 +8640,30 @@ body.inlobby { padding-block: 0; }
         var gy = 0.372 + 0.0095 * (S.pile[Math.round(cp.x / 0.045) + "_" + Math.round(cp.z / 0.045)] || 0);   // the coins heap up in the tray
         if (cp.y <= gy) { cp.y = gy; if (Math.abs(c.vy) > 0.35) { c.vy = -c.vy * 0.3; c.vx *= 0.6; c.vz *= 0.5; tone(2200 + Math.random() * 1500, 0.04, 0, "triangle", 0.05); } else { c.rest = true; c.m.rotation.x = 0; c.m.rotation.z = 0; var pk = Math.round(cp.x / 0.045) + "_" + Math.round(cp.z / 0.045); S.pile[pk] = Math.min(6, (S.pile[pk] || 0) + 1); } }
       }
-      if (S.busy || S.winLine || S.flash > 0 || !S.lastDraw || now - S.lastDraw > 60) { S.lastDraw = now; drawScreen(); }
+      if (S.busy || S.winLine || S.flash > 0 || !S.lastDraw || now - S.lastDraw > (SLV === S ? 60 : 2500)) { S.lastDraw = now; drawScreen(); }   // idle machines around you refresh slowly
       requestAnimationFrame(loop);
     })(performance.now());
     function spawnCoin() { var m2 = new T.Mesh(COIN_GEO, COIN_MAT); m2.position.set(rnd(-0.1, 0.1), 0.6, 0.43); lg.add(m2); S.coins.push({ m: m2, vx: rnd(-0.14, 0.14), vy: rnd(0.05, 0.3), vz: rnd(0.08, 0.3), rx: rnd(-8, 8), rz: rnd(-8, 8), rest: false }); tone(1800 + Math.random() * 1800, 0.05, 0, "triangle", 0.05); if (S.coins.length > 150) { var o = S.coins.shift(); lg.remove(o.m); } }
-    sfx("chip");
+    return S;
   }
-  function slotStop() { var S = SLV; if (!S) return; S.alive = false; if (S.cleanup) S.cleanup(); if (S.tg.parent) S.tg.parent.remove(S.tg); if (slxEl) slxEl.style.display = "none"; if (slmEl) slmEl.style.opacity = 0; SLV = null; }
-  function slotDist(m) { var lx = EXIT_Z - me.z, uu = -me.x - XEND; return Math.hypot(lx - m.x, uu - (-30 - m.z)); }   // hall z0 = -30 (ROOMD)
+  function slotStop(S) {
+    S = S || SLV; if (!S) return; S.alive = false; if (S.cleanup) S.cleanup(); if (S.tg.parent) S.tg.parent.remove(S.tg);
+    var i = SLVS.indexOf(S); if (i >= 0) SLVS.splice(i, 1);
+    if (SLV === S) { SLV = null; if (slxEl) slxEl.style.display = "none"; if (slmEl) slmEl.style.opacity = 0; }
+  }
+  function slotDistM(m) { var lx = EXIT_Z - me.z, uu = -me.x - XEND; return Math.hypot(lx - m.x, uu - (-30 - m.z)); }   // hall z0 = -30 (ROOMD)
+  // Every slot machine around you is live: its real screen shows its own reels, you can start one, walk to the next and start it too.
+  // Machines come alive as you get within ~14 m (two per tick, so it never hitches) and switch off past ~18 m unless still spinning.
   setInterval(function () { try {
-    if (!world || !me) return; var a = casOpen ? null : casinoAction(), near = a && a.g === "slots" && a.m;
-    if (near && (!SLV || SLV.mk !== a.m)) { if (SLV && (SLV.busy || SLV.free > 0)) return; slotStop(); slotUse(a); return; }
-    if (SLV && !near) { var far = casOpen || slotDist(SLV.mk) > 6 || -me.x < XEND; if (far && !SLV.busy && !(SLV.free > 0)) slotStop(); }   // step back and it keeps going; the spin (and free spins) always finish and pay
+    if (!world || !me) return; var H = world.casApi(), inHall = -me.x > XEND - 2 && !casOpen;
+    if (!H || !inHall) { SLVS.slice().forEach(function (S) { if (!S.busy && !(S.free > 0)) slotStop(S); }); return; }
+    var made = 0;
+    H.stations.forEach(function (st) { if (made >= 2 || st.g !== "slots" || !st.m) return; if (slotDistM(st.m) < 12 && !SLVS.some(function (S) { return S.mk === st.m; })) { slotUse({ m: st.m, ty: st.ty }); made++; } });
+    SLVS.slice().forEach(function (S) { if (slotDistM(S.mk) > 16 && !S.busy && !(S.free > 0)) slotStop(S); });
+    var a = casinoAction(), cur = null;
+    if (a && a.g === "slots" && a.m) cur = slotUse(a);
+    else if (SLV && SLV.alive && slotDistM(SLV.mk) < 6) cur = SLV;
+    if (cur !== SLV) { SLV = cur; if (cur) { if (!slxEl) { slxEl = cge("div", "", ""); slxEl.id = "slx"; $("game").appendChild(slxEl); } slxEl.style.display = "block"; cur.hint(); } else { if (slxEl) slxEl.style.display = "none"; if (slmEl) slmEl.style.opacity = 0; } }
   } catch (e) { } }, 140);
   PHYS.slots = true;
 
