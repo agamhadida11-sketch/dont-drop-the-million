@@ -1683,11 +1683,11 @@ body.inlobby { padding-block: 0; }
         if (mine) out.push({ id: conn, isMe: true, presence: mine });
         return out;
       },
-      presence: function (o) {
+      presence: function (o, urgent) {   // v147: urgent (a spin, a drop, a deal) goes out at once; moves at most every 40 ms
         mine = clone(o);
         var n = Date.now();
-        if (n - lastPub >= 90) pub();
-        else if (!trail) trail = setTimeout(function () { trail = 0; pub(); }, 90 - (n - lastPub));
+        if (urgent || n - lastPub >= 40) { if (trail) { clearTimeout(trail); trail = 0; } pub(); }
+        else if (!trail) trail = setTimeout(function () { trail = 0; pub(); }, 40 - (n - lastPub));
         return Promise.resolve();
       },
       onPeers: function (f) { cbs.push(f); return function () { cbs = cbs.filter(function (x) { return x !== f; }); }; },
@@ -2212,7 +2212,7 @@ body.inlobby { padding-block: 0; }
   var revT0 = 0, verdictShown = false, hintMsg = "", hintUntil = 0;
   var readyGate = false;
   var otherLookKey = "", timeUpT = 0, TIMER_SEC = 40, betStart = 0, timeoutSent = false, lastTimerSec = -1;
-  var raf = 0, lastT = 0, lastSend = 0, lastSent = "", keys = {};
+  var raf = 0, lastT = 0, lastSend = 0, lastSent = "", lastEvSig = "", keys = {};
   var lastBankTxt = "", lastWhere = "", lastActKey = "", lastCarryTxt = "";
   var padBounce = [0, 0, 0, 0];
   var joyVec = { x: 0, y: 0 }, lookDelta = { x: 0, y: 0 };
@@ -6991,7 +6991,7 @@ body.inlobby { padding-block: 0; }
         if (Math.hypot(px - other.x, pz - other.z) > 8) { B.length = 0; other.x = px; other.z = pz; other.yaw = pyaw; }
         B.push({ t: t, x: px, z: pz, yaw: pyaw }); if (B.length > 40) B.shift();
       }
-      var ox2 = other.x, oz2 = other.z, rt = t - clamp((other.iv || 100) * 1.7, 110, 320);
+      var ox2 = other.x, oz2 = other.z, rt = t - clamp((other.iv || 100) * 1.7, 90, 300);
       while (B.length > 2 && B[1].t <= rt) B.shift();
       if (B.length >= 2 && rt >= B[0].t) {
         var sa = B[0], sb = B[1], sf = clamp((rt - sa.t) / Math.max(1, sb.t - sa.t), 0, 1);
@@ -7102,11 +7102,14 @@ body.inlobby { padding-block: 0; }
     els.flash.style.background = flc; els.flash.style.opacity = fl ? String(fl) : "0";
 
     // presence
-    if (roomNs && t - lastSend > 50) {
-      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig() + "," + slSig() + "," + tbSig() + "," + (me.sit ? 1 : 0);
+    // v147: moves go out every ~35 ms; a new machine event (a slot spin, a plinko ball, a table win) or picking up / putting down money
+    // goes out on this very frame, marked urgent so the connection sends it without waiting its turn
+    var evSig = plkSig() + "|" + slSig() + "|" + tbSig() + "|" + me.carry + "|" + (me.sit ? 1 : 0), urgentEv = evSig !== lastEvSig;
+    if (roomNs && (urgentEv || t - lastSend > 35)) {
+      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + evSig;
       if (snap !== lastSent || t - lastSend > 2000) {
-        lastSent = snap; lastSend = t;
-        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut(), sl: slOut(), tb: tbOut(), s: me.sit ? 1 : 0 }).catch(function () { /* drop */ });
+        lastSent = snap; lastSend = t; lastEvSig = evSig;
+        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut(), sl: slOut(), tb: tbOut(), s: me.sit ? 1 : 0 }, urgentEv).catch(function () { /* drop */ });
       }
     }
     if (code !== "solo" && ref && t - lastFbWrite > 130 && t - lastPeerAt > 2500) {
