@@ -5757,7 +5757,7 @@ body.inlobby { padding-block: 0; }
           // ---------- dealer motion: idle loops by job, hand gestures aimed at a seat, body turn + lean ----------
           function ez(x) { return x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x); }
           function kf(p, ks) { if (p <= ks[0][0]) return ks[0][1]; for (var i = 1; i < ks.length; i++) if (p <= ks[i][0]) { var a = ks[i - 1], b = ks[i]; return a[1] + (b[1] - a[1]) * ez((p - a[0]) / (b[0] - a[0])); } return ks[ks.length - 1][1]; }
-          var GDUR = { deal: 0.46, reach: 0.95, shuffle: 1.7, sweep: 1.0, cheer: 1.4, spin: 1.3 };
+          var GDUR = { deal: 0.62, reach: 0.95, shuffle: 1.7, sweep: 1.0, cheer: 1.4, spin: 1.3 };
           function cue(b, k, o) {
             if (!b) return; o = o || {};
             b.gs = { k: k, t0: performance.now() / 1000, dur: o.dur || GDUR[k] || 0.8, hand: o.hand === "L" ? "L" : "R", yaw: o.yaw || 0, lean: o.lean || 0, th: o.th || 1.3, ph: o.ph || 0, osc: o.osc || 0 };
@@ -5766,7 +5766,7 @@ body.inlobby { padding-block: 0; }
             var k = g.k, L = g.hand === "L", hx = L ? "a0x" : "a1x", hz = L ? "a0z" : "a1z", rx = L ? 0.78 : 0.9, rz = L ? -0.08 : 0.08, ox = L ? "a1x" : "a0x", e, w, wb, os;
             if (k === "deal" || k === "reach" || k === "spin") {
               // one hand goes out toward the target (wind-up first for a quick card toss), the body turns and leans into it
-              if (k === "deal") { w = kf(p, [[0, 0], [0.16, 0.25], [0.4, 1], [0.6, 0.8], [1, 0]]); T[hx] = rx + (g.th - rx) * w - 0.3 * kf(p, [[0, 0], [0.16, 1], [0.34, 0]]); }
+              if (k === "deal") { w = kf(p, [[0, 0], [0.3, 0.2], [0.42, 1], [0.62, 0.85], [1, 0]]); T[hx] = rx + (g.th - rx) * w - 0.32 * kf(p, [[0, 0], [0.22, 1], [0.4, 0]]); }   // v146: pick up (0-0.3), wind back, let go at 0.42, follow through
               else { w = kf(p, [[0, 0], [0.3, 1], [0.7, 1], [1, 0]]); T[hx] = rx + (g.th - rx) * w; if (g.osc) T[hx] += Math.sin(p * 6.2832 * g.osc) * 0.12 * w; }
               T[hz] = rz + (g.ph - rz) * w; wb = kf(p, [[0, 0], [0.4, 1], [0.7, 0.9], [1, 0]]);
               T[ox] += 0.1 * wb; T.yaw = g.yaw * wb; T.lean = 0.015 + g.lean * wb;
@@ -7726,6 +7726,7 @@ body.inlobby { padding-block: 0; }
   function dealerCheer(S) { var d = S && S.dealer, H = world.casApi(); if (!d || !H || !H.cue || !d.o.userData.arm || S.g === "tony") return; d.hold = true; H.cue(d, "cheer"); }
   // a real deal: a fresh card is drawn out of the shoe into the dealer's hand, then pitched low across the felt - it spins flat,
   // turns over in the air when dealt face up, lands and skids a touch. Cards that are collected just slide.
+  var DEAL_MS = 620;   // v146: one dealing gesture (the dealer's arm and the card in its hand move to the same clock)
   async function flyCard(S, card, to, ms, faceUp) {
     var from = card.position.clone(), r0 = card.rotation.y, rz0 = card.rotation.z, rzT = faceUp ? 0 : Math.PI, ry1 = to.ry == null ? r0 : to.ry, fresh = card.userData.fresh;
     card.userData.fresh = false;
@@ -7733,21 +7734,29 @@ body.inlobby { padding-block: 0; }
       await tween(ms || 320, function (k) { var e = ease(k); card.position.set(from.x + (to.x - from.x) * e, to.y + Math.sin(k * Math.PI) * 0.1, from.z + (to.z - from.z) * e); card.rotation.y = r0 + (ry1 - r0) * e; card.rotation.z = rz0 + (rzT - rz0) * e; });
       card.position.set(to.x, to.y, to.z); card.rotation.z = rzT; return;
     }
+    // v146: in step with the dealer's "deal" gesture (started just before by dSwing, DEAL_MS long): the card comes up out of the shoe into
+    // the dealer's hand during the wind-up, waits there a beat, and is let go exactly when the arm stretches out. The flight is one smooth
+    // low arc: it slows as it arrives, spins a little flat, turns over in the middle of the flight when dealt face up, and settles softly.
+    function smooth(k) { return k * k * k * (k * (6 * k - 15) + 10); }
     var f = dealerFrame(S);
-    if (f) {   // out of the shoe into the dealer's hand
-      var hx = f.x + Math.sin(f.hd) * 0.32, hz = f.z + Math.cos(f.hd) * 0.32, hy = Math.max(from.y, to.y) + 0.05;
-      await tween(170, function (k) { var e = ease(k); card.position.set(from.x + (hx - from.x) * e, from.y + (hy - from.y) * e + Math.sin(k * Math.PI) * 0.03, from.z + (hz - from.z) * e); card.rotation.y = r0 + (Math.atan2(to.x - hx, to.z - hz) - r0) * e * 0.5; });
+    if (f) {   // out of the shoe up into the dealer's hand (in front of the chest, a little raised), then held a beat
+      var hx = f.x + Math.sin(f.hd) * 0.34, hz = f.z + Math.cos(f.hd) * 0.34, hy = Math.max(from.y, to.y) + 0.09, aim = Math.atan2(to.x - hx, to.z - hz);
+      await tween(DEAL_MS * 0.3, function (k) { var e = smooth(k); card.position.set(from.x + (hx - from.x) * e, from.y + (hy - from.y) * e + Math.sin(k * Math.PI) * 0.035, from.z + (hz - from.z) * e); card.rotation.y = r0 + (aim - r0) * e * 0.6; card.rotation.x = -0.35 * Math.sin(k * Math.PI * 0.5); });
+      var hy0 = card.position.y;
+      await tween(DEAL_MS * 0.12, function (k) { card.position.y = hy0 + Math.sin(k * Math.PI) * 0.012; card.rotation.x = -0.35 + 0.1 * k; });   // the wind-up: held, a tiny lift
       from = card.position.clone(); r0 = card.rotation.y;
     }
-    var spin = (Math.random() < 0.5 ? -1 : 1) * Math.PI * 2, dx = to.x - from.x, dz = to.z - from.z, dl = Math.hypot(dx, dz) || 1, over = 0.035;
-    await tween(Math.max(300, Math.min(560, (ms || 320) + dl * 120)), function (k) {   // the pitch
-      var e = 1 - Math.pow(1 - k, 2.3), ov = e * (1 + over / dl);
-      card.position.set(from.x + dx * ov, to.y + (from.y - to.y) * (1 - e) + Math.sin(k * Math.PI) * 0.045, from.z + dz * ov);
-      card.rotation.y = r0 + (ry1 - r0) * e + spin * (1 - e) * 0.25; card.rotation.z = rz0 + (rzT - rz0) * Math.min(1, k * 1.5);
+    var rx0 = card.rotation.x, spin = (Math.random() < 0.5 ? -1 : 1) * (0.45 + Math.random() * 0.25), dx = to.x - from.x, dz = to.z - from.z, dl = Math.hypot(dx, dz) || 1, over = 0.03, lift = 0.05 + Math.min(0.06, dl * 0.025);
+    await tween(Math.max(380, Math.min(680, (ms || 320) + 120 + dl * 150)), function (k) {   // the pitch
+      var e = 1 - Math.pow(1 - k, 3), ov = e * (1 + over / dl);   // fast off the hand, gliding in
+      card.position.set(from.x + dx * ov, to.y + (from.y - to.y) * (1 - smooth(k)) + Math.sin(k * Math.PI) * lift, from.z + dz * ov);
+      card.rotation.y = r0 + (ry1 - r0) * e + spin * Math.sin(k * Math.PI) * (1 - k);
+      card.rotation.x = rx0 * (1 - smooth(Math.min(1, k * 2)));   // lies flat soon after it leaves the hand
+      card.rotation.z = rz0 + (rzT - rz0) * smooth(Math.max(0, Math.min(1, (k - 0.2) / 0.6)));   // turns over mid-flight
     });
     var sx = card.position.x, sz = card.position.z;
-    await tween(110, function (k) { var e = ease(k); card.position.x = sx + (to.x - sx) * e; card.position.z = sz + (to.z - sz) * e; card.position.y = to.y; });   // the little skid back into place
-    card.position.set(to.x, to.y, to.z); card.rotation.y = ry1; card.rotation.z = rzT;
+    await tween(150, function (k) { var e = smooth(k); card.position.x = sx + (to.x - sx) * e; card.position.z = sz + (to.z - sz) * e; card.position.y = to.y; });   // a soft settle back into place
+    card.position.set(to.x, to.y, to.z); card.rotation.set(0, ry1, rzT);
   }
   function flipCard(S, card) { var y0 = card.position.y; return tween(300, function (k) { card.rotation.z = Math.PI * (1 - ease(k)); card.position.y = y0 + Math.sin(k * Math.PI) * 0.06; }); }
 
