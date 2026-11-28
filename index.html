@@ -988,6 +988,39 @@ body.inlobby { padding-block: 0; }
   .mm-side .priv > summary { padding: 10px 14px; font-size: .9rem; }
 }
 
+/* v132 · plinko side panel: type or pick the bet, choose risk, rows and how many balls, then DROP (it replaces the bottom bar here) */
+#game.plkpanel #wc .wcmain, #game.plkpanel #wc .wcinfo { display: none !important; }
+.plkp { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); z-index: 27; width: 270px; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 18px; background: rgba(14, 8, 30, .92); border: 1.5px solid rgba(255, 63, 180, .45); box-shadow: 0 20px 50px rgba(0, 0, 0, .6), 0 0 28px rgba(255, 63, 180, .18); color: #fff; direction: rtl; font-family: var(--font-body); pointer-events: auto; }
+.plkp-h { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-display); font-size: 1.25rem; color: #ffd0f0; }
+.plkp-h small { font-family: var(--font-body); font-size: .85rem; color: #9fe9c0; font-weight: 800; direction: ltr; }
+.plkp-lab { font-size: .8rem; font-weight: 800; color: var(--mute); margin-bottom: 5px; display: flex; justify-content: space-between; }
+.plkp-bet { display: flex; gap: 6px; direction: ltr; }
+.plkp-bet input { flex: 1; min-width: 0; padding: 9px 10px; border-radius: 10px; border: 1.5px solid rgba(255, 255, 255, .2); background: rgba(0, 0, 0, .45); color: #fff; font: 800 1.1rem var(--font-body); text-align: center; }
+.plkp-bet input:focus { outline: 2px solid #ff3fb4; outline-offset: 1px; }
+.plkp-bet button, .plkp-seg button, .plkp-chips button { border: 1.5px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .07); color: #fff; border-radius: 10px; font-weight: 800; padding: 8px 10px; font-size: .9rem; }
+.plkp-bet button:hover, .plkp-seg button:hover:not(:disabled), .plkp-chips button:hover { background: rgba(255, 255, 255, .14); }
+.plkp-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 6px; direction: ltr; }
+.plkp-chips button { padding: 6px 2px; font-size: .8rem; }
+.plkp-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.plkp-seg button[aria-pressed="true"] { background: linear-gradient(180deg, #ff6ac8, #d6338f); border-color: #ffb3e0; box-shadow: 0 0 14px rgba(255, 63, 180, .45); }
+.plkp-seg.risk button[data-v="0"][aria-pressed="true"] { background: linear-gradient(180deg, #3fd68a, #17905a); border-color: #9ff0c4; box-shadow: 0 0 14px rgba(63, 214, 138, .45); }
+.plkp-seg.risk button[data-v="1"][aria-pressed="true"] { background: linear-gradient(180deg, #ffc84a, #e08f17); border-color: #ffe3a0; box-shadow: 0 0 14px rgba(255, 200, 74, .45); color: #2a1600; }
+.plkp-seg.risk button[data-v="2"][aria-pressed="true"] { background: linear-gradient(180deg, #ff5a6e, #c4122e); border-color: #ffb0ba; box-shadow: 0 0 14px rgba(255, 90, 110, .5); }
+.plkp-seg button:disabled { opacity: .45; cursor: default; }
+.plkp-go { padding: 14px; border: 0; border-radius: 14px; background: linear-gradient(180deg, #ff7ac8, #d6338f); color: #fff; font-family: var(--font-display); font-size: 1.5rem; box-shadow: 0 5px 0 #7a1650, 0 0 24px rgba(255, 63, 180, .45); }
+.plkp-go:hover { filter: brightness(1.08); } .plkp-go:active { transform: translateY(3px); box-shadow: 0 2px 0 #7a1650; }
+.plkp-go:disabled { opacity: .55; }
+.plkp-info { font-size: .8rem; color: var(--mute); text-align: center; min-height: 1.2em; }
+.plkp-last { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; direction: ltr; min-height: 22px; }
+.plkp-last span { padding: 1px 7px; border-radius: 999px; font-size: .75rem; font-weight: 900; background: rgba(255, 255, 255, .1); }
+.plkp-last span.w { background: rgba(63, 214, 138, .25); color: #9ff0c4; } .plkp-last span.l { background: rgba(255, 90, 110, .2); color: #ffb0ba; }
+.plkp-err { color: #ff9aa8; font-size: .78rem; font-weight: 800; min-height: 1em; }
+@media (max-width: 760px) {
+  .plkp { right: 8px; left: 8px; top: auto; bottom: 8px; transform: none; width: auto; gap: 8px; padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; }
+  .plkp-h, .plkp-go, .plkp-info, .plkp-last, .plkp-err { grid-column: 1 / -1; }
+  .plkp-chips { display: none; } .plkp-go { padding: 10px; font-size: 1.2rem; }
+}
+
 /* v129 · entry screen: browsers allow no sound before the first click or key press, so when sound is still blocked
    the first click lands on this screen and switches the sound on for everything after it */
 .splash { position: fixed; inset: 0; z-index: 95; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; text-align: center; background: radial-gradient(ellipse at 50% 40%, rgba(40, 22, 70, .9), rgba(5, 3, 12, .97)); cursor: pointer; }
@@ -9785,9 +9818,62 @@ body.inlobby { padding-block: 0; }
       var ballCols = [0xffc83a, 0xff4fb8, 0x46e0ff, 0x7dffb0];
       function ballMat(c) { return new T.MeshPhongMaterial({ color: c, specular: 0xffffff, shininess: 120, emissive: new T.Color(c).multiplyScalar(0.28) }); }
       S.refit = function () { frameCam(S, [0, PLKB.YC - 0.1, 0], [[-HW - 0.1, yBot + 0.2, 0.1], [HW + 0.1, yBot + 0.2, 0.1], [-HW, yTop, 0], [HW, yTop, 0]], -0.12, 0, 1.0); }; S.refit();
-      function info() { S.setInfo(R + " ROWS · RISK " + PLK.RISKN[risk], S.msg || "", last.length ? "LAST " + last.slice(0, 5).map(plkFmt).join("  ") : ""); S.setBet(DEN[S.ci]); }
+      var pBet = parseInt(store("local", "dd-plk-bet") || "", 10) || DEN[S.ci] || 1000, nBalls = 1, PP = null;   // v132: the side panel's bet, balls per drop
+      function info() { S.setInfo(R + " ROWS · RISK " + PLK.RISKN[risk], S.msg || "", last.length ? "LAST " + last.slice(0, 5).map(plkFmt).join("  ") : ""); S.setBet(pBet); panelSync(); }
       var rBtn = $("wcUndo");
-      function setBtns() { S.setX("RISK: " + PLK.RISKN[risk], !flying.length); if (rBtn) { rBtn.style.display = ""; rBtn.textContent = R + " ROWS"; rBtn.style.opacity = flying.length ? 0.5 : 1; } }
+      function setBtns() { S.setX("RISK: " + PLK.RISKN[risk], !flying.length); if (rBtn) { rBtn.style.display = ""; rBtn.textContent = R + " ROWS"; rBtn.style.opacity = flying.length ? 0.5 : 1; } panelSync(); }
+      // ---- side panel ----
+      function panelSync() {
+        if (!PP) return;
+        PP.bal.textContent = money(casBal);
+        if (document.activeElement !== PP.inp) PP.inp.value = String(pBet);
+        PP.risk.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === risk)); b.disabled = flying.length > 0; });
+        PP.rows.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === R)); b.disabled = flying.length > 0; });
+        PP.balls.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === nBalls)); });
+        PP.lock.textContent = flying.length ? "אפשר לשנות סיכון ושורות כשכל הכדורים נחתו" : "";
+        PP.go.textContent = nBalls > 1 ? "הפל ×" + nBalls : "הפל";
+        PP.go.disabled = casBal < pBet;
+        PP.last.innerHTML = ""; last.slice(0, 8).forEach(function (m) { var s = cge("span", m > 1 ? "w" : m < 1 ? "l" : "", plkFmt(m)); PP.last.appendChild(s); });
+      }
+      function setBet(v, fromInput) {
+        v = Math.floor(Number(v) || 0);
+        var err = "";
+        if (v < 10) { err = "ההימור המינימלי הוא 10"; v = 10; }
+        if (v > 1000000) { err = "ההימור המקסימלי הוא 1,000,000"; v = 1000000; }
+        pBet = v; store("local", "dd-plk-bet", String(v));
+        if (PP) { PP.err.textContent = err; if (!fromInput) PP.inp.value = String(v); }
+        S.setBet(pBet); panelSync();
+      }
+      function buildPanel() {
+        var p = cge("div", "plkp", ""); p.setAttribute("role", "group"); p.setAttribute("aria-label", "הגדרות פלינקו");
+        p.innerHTML = '<div class="plkp-h"><span>🔺 פלינקו</span><small class="money" data-r="bal"></small></div>'
+          + '<div><div class="plkp-lab"><span>סכום הימור</span></div><div class="plkp-bet"><button type="button" data-a="half">½</button><input type="text" inputmode="numeric" aria-label="סכום הימור" data-r="inp"><button type="button" data-a="dbl">2×</button><button type="button" data-a="max">MAX</button></div>'
+          + '<div class="plkp-chips"><button type="button" data-c="100">100</button><button type="button" data-c="1000">1K</button><button type="button" data-c="10000">10K</button><button type="button" data-c="100000">100K</button></div><div class="plkp-err" data-r="err"></div></div>'
+          + '<div><div class="plkp-lab"><span>סיכון</span></div><div class="plkp-seg risk"><button type="button" data-k="risk" data-v="0">נמוך</button><button type="button" data-k="risk" data-v="1">בינוני</button><button type="button" data-k="risk" data-v="2">גבוה</button></div></div>'
+          + '<div><div class="plkp-lab"><span>שורות</span></div><div class="plkp-seg"><button type="button" data-k="rows" data-v="8">8</button><button type="button" data-k="rows" data-v="12">12</button><button type="button" data-k="rows" data-v="16">16</button></div></div>'
+          + '<div><div class="plkp-lab"><span>כדורים בכל הפלה</span></div><div class="plkp-seg"><button type="button" data-k="balls" data-v="1">1</button><button type="button" data-k="balls" data-v="5">5</button><button type="button" data-k="balls" data-v="10">10</button></div></div>'
+          + '<button type="button" class="plkp-go" data-r="go">הפל</button><div class="plkp-info" data-r="lock"></div><div class="plkp-last" data-r="last" aria-label="תוצאות אחרונות"></div>';
+        $("game").appendChild(p); $("game").classList.add("plkpanel");
+        function q(s) { return p.querySelector(s); }
+        PP = { el: p, bal: q('[data-r="bal"]'), inp: q('[data-r="inp"]'), err: q('[data-r="err"]'), go: q('[data-r="go"]'), lock: q('[data-r="lock"]'), last: q('[data-r="last"]'),
+          risk: [].slice.call(p.querySelectorAll('[data-k="risk"]')), rows: [].slice.call(p.querySelectorAll('[data-k="rows"]')), balls: [].slice.call(p.querySelectorAll('[data-k="balls"]')) };
+        p.addEventListener("pointerdown", function (e) { e.stopPropagation(); });   // clicks on the panel never drop a ball on the board behind it
+        p.addEventListener("keydown", function (e) { e.stopPropagation(); if (e.key === "Enter" && e.target === PP.inp) { setBet(PP.inp.value); PP.inp.blur(); } });
+        PP.inp.addEventListener("input", function () { var d = PP.inp.value.replace(/[^0-9]/g, ""); if (d !== PP.inp.value) PP.inp.value = d; PP.err.textContent = d ? "" : "הקלידו סכום"; });
+        PP.inp.addEventListener("change", function () { setBet(PP.inp.value); });
+        p.addEventListener("click", function (e) {
+          var b = e.target.closest("button"); if (!b || b.disabled) return;
+          var a = b.dataset.a, c = b.dataset.c, k = b.dataset.k, v = +b.dataset.v;
+          if (a === "half") setBet(pBet / 2); else if (a === "dbl") setBet(pBet * 2); else if (a === "max") setBet(Math.min(1000000, casBal));
+          else if (c) setBet(+c);
+          else if (k === "risk" && v !== risk) { risk = v; buildRows(); paint(); setBtns(); info(); }
+          else if (k === "rows" && v !== R) { R = v; buildRows(); paint(); setBtns(); info(); }
+          else if (k === "balls") { nBalls = v; panelSync(); }
+          else if (b === PP.go) dropMany();
+          sfx("chip");
+        });
+        panelSync();
+      }
       S.onX = function () { if (flying.length) { S.pop("WAIT", "BALLS STILL FALLING", "lose"); return; } risk = (risk + 1) % 3; buildRows(); paint(); setBtns(); sfx("chip"); info(); };
       S.onUndo = function () { if (flying.length) { S.pop("WAIT", "BALLS STILL FALLING", "lose"); return; } R = PLK.ROWS[(PLK.ROWS.indexOf(R) + 1) % PLK.ROWS.length]; buildRows(); paint(); setBtns(); sfx("chip"); info(); };
       setBtns(); S.setGo("DROP", true);
@@ -9820,24 +9906,35 @@ body.inlobby { padding-block: 0; }
         var t = now / 1000; ledP.color.setHSL((0.9 + Math.sin(t * 0.7) * 0.05) % 1, 1, 0.6); ledC.color.setHSL(0.5 + Math.sin(t * 0.9) * 0.04, 1, 0.55);
         requestAnimationFrame(fx);
       })(tPrev);
+      var queued = 0;
+      function dropMany() {   // the side panel's ball count: several balls go in one after another, a beat apart
+        if (queued) return;
+        var n = Math.max(1, nBalls), i = 0;
+        if (casBal < pBet) { if (PP) PP.err.textContent = "אין מספיק כסף להימור הזה"; S.pop("NO CHIPS", "NOT ENOUGH CHIPS", "lose"); sfx("lose"); return; }
+        queued = n;
+        (function one() { if (!S.alive || i >= n || !drop()) { queued = 0; panelSync(); return; } i++; queued = n - i; if (i < n) setTimeout(one, 160); else { queued = 0; panelSync(); } })();
+      }
       function drop() {
-        var bet = DEN[S.ci]; if (casBal < bet) { S.pop("NO CHIPS", "NOT ENOUGH CHIPS", "lose"); sfx("lose"); return; }
-        if (flying.length >= 20) { S.pop("WAIT", "MAX 20 BALLS", "lose"); return; }
+        var bet = pBet; if (casBal < bet) { if (PP) PP.err.textContent = "אין מספיק כסף להימור הזה"; S.pop("NO CHIPS", "NOT ENOUGH CHIPS", "lose"); sfx("lose"); return false; }
+        if (flying.length >= 20) { S.pop("WAIT", "MAX 20 BALLS", "lose"); return false; }
+        if (PP) PP.err.textContent = "";
         casApply(-bet); sfx("chip");
         var seed = (Math.random() * 4294967296) >>> 0, st = plkBall(L, seed), colr = ballCols[seed % 4];
         var o = new T.Mesh(new T.SphereGeometry(L.rb, 28, 20), ballMat(colr)); o.position.set(st.x, st.y, ZP); tg.add(o); var gl = glowSprite("pp", GLOW_P, L.rb * 5, o); gl.material.opacity = 0.35;
         var sh = new T.Mesh(new T.PlaneGeometry(L.rb * 4, L.rb * 4), shM); tg.add(sh);
         var b = { bet: bet, risk: risk, R: R, st: st, o: o, sh: sh, done: false, acc: 0 }; flying.push(b); setBtns();
         PLK_OUT.push({ id: clientId + ":" + seed, tbl: S.id, R: R, seed: seed, at: Date.now() });   // your friend sees this ball fall on this machine
-        S.msg = ""; info();
+        S.msg = ""; info(); return true;
       }
-      S.onGo = drop;
-      wcInput(S, function () { drop(); });
-      keyH = function (e) { if ((e.key === " " || e.key === "e" || e.key === "E" || e.key === "Enter") && !e.repeat) { e.preventDefault(); drop(); } };
+      S.onGo = dropMany;
+      buildPanel();
+      wcInput(S, function () { dropMany(); });
+      keyH = function (e) { if (PP && PP.el.contains(document.activeElement)) return; if ((e.key === " " || e.key === "e" || e.key === "E" || e.key === "Enter") && !e.repeat) { e.preventDefault(); dropMany(); } };
       document.addEventListener("keydown", keyH);
       var prevClean = S.cleanup;
       S.cleanup = function () {   // leaving with balls in the air: they are finished instantly (same physics) and paid
         alive = false; lookOff(); document.removeEventListener("keydown", keyH);
+        if (PP) { PP.el.remove(); PP = null; } $("game").classList.remove("plkpanel");
         flying.slice().forEach(function (b) { while (!b.st.done) plkStep(L, b.st, null); settle(b); });
         prevClean && prevClean();
       };
