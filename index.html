@@ -7313,22 +7313,25 @@ body.inlobby { padding-block: 0; }
   var RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
   function cardAtlas() {
     if (CARD_TEX) return CARD_TEX;
-    var cw = 128, ch = 180, c = document.createElement("canvas"); c.width = cw * 13; c.height = ch * 5; var g = c.getContext("2d"), r, s;
+    var cw = 128, ch = 180, K = 2, c = document.createElement("canvas"); c.width = cw * 13 * K; c.height = ch * 5 * K; var g = c.getContext("2d"), r, s;   // drawn at 2x for crisp cards
     var PIPS = { 1: [[0.5, 0.5]], 2: [[0.5, 0.2], [0.5, 0.8]], 3: [[0.5, 0.2], [0.5, 0.5], [0.5, 0.8]], 4: [[0.3, 0.2], [0.7, 0.2], [0.3, 0.8], [0.7, 0.8]], 5: [[0.3, 0.2], [0.7, 0.2], [0.5, 0.5], [0.3, 0.8], [0.7, 0.8]], 6: [[0.3, 0.2], [0.7, 0.2], [0.3, 0.5], [0.7, 0.5], [0.3, 0.8], [0.7, 0.8]], 7: [[0.3, 0.2], [0.7, 0.2], [0.5, 0.35], [0.3, 0.5], [0.7, 0.5], [0.3, 0.8], [0.7, 0.8]], 8: [[0.3, 0.2], [0.7, 0.2], [0.5, 0.35], [0.3, 0.5], [0.7, 0.5], [0.5, 0.65], [0.3, 0.8], [0.7, 0.8]], 9: [[0.3, 0.18], [0.7, 0.18], [0.3, 0.39], [0.7, 0.39], [0.5, 0.5], [0.3, 0.61], [0.7, 0.61], [0.3, 0.82], [0.7, 0.82]], 10: [[0.3, 0.18], [0.7, 0.18], [0.5, 0.28], [0.3, 0.39], [0.7, 0.39], [0.3, 0.61], [0.7, 0.61], [0.5, 0.72], [0.3, 0.82], [0.7, 0.82]] };
     for (s = 0; s < 4; s++) for (r = 0; r < 13; r++) {
-      var x0 = r * cw, y0 = s * ch, red = s === 1 || s === 2, col = red ? "#c4122e" : "#14141c";
+      g.save(); g.translate(r * cw * K, s * ch * K); g.scale(K, K); var x0 = 0, y0 = 0, red = s === 1 || s === 2, col = red ? "#d0102a" : "#101018";
       g.fillStyle = "#fbf8ef"; g.fillRect(x0, y0, cw, ch); g.strokeStyle = "#cfc6ae"; g.lineWidth = 3; g.strokeRect(x0 + 1.5, y0 + 1.5, cw - 3, ch - 3);
-      g.fillStyle = col; g.textAlign = "center"; g.textBaseline = "middle"; g.font = "bold " + (r === 9 ? 30 : 36) + "px Fredoka, Arial, sans-serif"; g.fillText(RANKS[r], x0 + 19, y0 + 24); suitPath(g, s, x0 + 19, y0 + 52, 9);
-      g.save(); g.translate(x0 + cw - 19, y0 + ch - 24); g.rotate(Math.PI); g.font = "bold " + (r === 9 ? 30 : 36) + "px Fredoka, Arial, sans-serif"; g.fillText(RANKS[r], 0, 0); g.restore(); g.save(); g.translate(x0 + cw - 19, y0 + ch - 52); g.rotate(Math.PI); suitPath(g, s, 0, 0, 9); g.restore();
+      g.fillStyle = col; g.textAlign = "center"; g.textBaseline = "middle"; g.font = "bold " + (r === 9 ? 38 : 46) + "px Fredoka, Arial, sans-serif"; g.fillText(RANKS[r], x0 + 21, y0 + 27); suitPath(g, s, x0 + 21, y0 + 58, 11);
+      g.save(); g.translate(x0 + cw - 21, y0 + ch - 27); g.rotate(Math.PI); g.font = "bold " + (r === 9 ? 38 : 46) + "px Fredoka, Arial, sans-serif"; g.fillText(RANKS[r], 0, 0); g.restore(); g.save(); g.translate(x0 + cw - 21, y0 + ch - 58); g.rotate(Math.PI); suitPath(g, s, 0, 0, 11); g.restore();
       var n = r + 1;
       if (n >= 11) { g.strokeStyle = col; g.lineWidth = 3; g.strokeRect(x0 + 30, y0 + 22, cw - 60, ch - 44); g.fillStyle = red ? "#f6dfe2" : "#e1e1ea"; g.fillRect(x0 + 31, y0 + 23, cw - 62, ch - 46); g.fillStyle = col; g.font = "bold 62px Fredoka, Arial, sans-serif"; g.fillText(RANKS[r], x0 + cw / 2, y0 + ch / 2 - 6); suitPath(g, s, x0 + cw / 2 - 20, y0 + ch / 2 + 44, 11); suitPath(g, s, x0 + cw / 2 + 20, y0 + ch / 2 - 44, 11); }
       else if (n === 1) { suitPath(g, s, x0 + cw / 2, y0 + ch / 2, 30); }
       else { PIPS[n].forEach(function (p) { var px = x0 + 30 + p[0] * (cw - 60), py = y0 + 24 + p[1] * (ch - 48); if (p[1] > 0.55) { g.save(); g.translate(px, py); g.rotate(Math.PI); suitPath(g, s, 0, 0, 13); g.restore(); } else suitPath(g, s, px, py, 13); }); }
+      g.restore();
     }
     // back (row 4, col 0) and jokers unused
-    g.fillStyle = "#1a2a7a"; g.fillRect(0, 4 * ch, cw, ch); g.strokeStyle = "#f4f0e6"; g.lineWidth = 6; g.strokeRect(6, 4 * ch + 6, cw - 12, ch - 12); g.strokeStyle = "#d8b25a"; g.lineWidth = 2;
-    for (var i = -8; i < 12; i++) { g.beginPath(); g.moveTo(8, 4 * ch + 8 + i * 16); g.lineTo(cw - 8, 4 * ch + 8 + i * 16 + 100); g.stroke(); g.beginPath(); g.moveTo(8, 4 * ch + 8 + i * 16 + 100); g.lineTo(cw - 8, 4 * ch + 8 + i * 16); g.stroke(); }
-    g.fillStyle = "#1a2a7a"; g.beginPath(); g.arc(cw / 2, 4 * ch + ch / 2, 22, 0, 6.3); g.fill(); g.strokeStyle = "#d8b25a"; g.lineWidth = 3; g.stroke();
+    g.save(); g.translate(0, 4 * ch * K); g.scale(K, K); g.beginPath(); g.rect(0, 0, cw, ch); g.clip();
+    g.fillStyle = "#1a2a7a"; g.fillRect(0, 0, cw, ch); g.strokeStyle = "#f4f0e6"; g.lineWidth = 6; g.strokeRect(6, 6, cw - 12, ch - 12); g.strokeStyle = "#d8b25a"; g.lineWidth = 2;
+    for (var i = -8; i < 12; i++) { g.beginPath(); g.moveTo(8, 8 + i * 16); g.lineTo(cw - 8, 8 + i * 16 + 100); g.stroke(); g.beginPath(); g.moveTo(8, 8 + i * 16 + 100); g.lineTo(cw - 8, 8 + i * 16); g.stroke(); }
+    g.fillStyle = "#1a2a7a"; g.beginPath(); g.arc(cw / 2, ch / 2, 22, 0, 6.3); g.fill(); g.strokeStyle = "#d8b25a"; g.lineWidth = 3; g.stroke();
+    g.restore();
     CARD_TEX = new T.CanvasTexture(c); CARD_TEX.anisotropy = 8; return CARD_TEX;
   }
   var CARD_MAT = null;
@@ -7475,7 +7478,17 @@ body.inlobby { padding-block: 0; }
         if (dealer.cards.length) { if (S.reveal) { var dv = pbjVal(dealer.cards); l = "DEALER " + dv.t + (dv.t > 21 ? " BUST" : ""); } else { var up = dealer.cards[0]; l = "DEALER " + (up[0] === 0 ? 11 : rv(up[0])) + " + ?"; } }
         if (me.hands.length && me.hands[0].cards.length) r = "YOU " + me.hands.map(function (h) { var v = pbjVal(h.cards); return v.t + (me.hands.length === 1 && v.soft && v.t < 21 ? " SOFT" : ""); }).join(" | ");
         S.setInfo(l, S.msg || "", r);
+        // big round badges right by the cards: your total (each hand) and the dealer's (shows "?" for the hidden card)
+        var want = []; me.hands.forEach(function (hd, h) { if (!hd.cards.length) return; var v = pbjVal(hd.cards), c = handCenter(me, h); want.push({ k: "m" + h, x: c.x - me.sin * 0.26, z: c.z - me.cos * 0.26, t: v.t > 21 ? "BUST" : (v.soft && v.t < 21 ? (v.t - 10) + "/" + v.t : String(v.t)), col: v.t > 21 ? "#ff4a5e" : v.t === 21 ? "#3dff9a" : "#ffd23f" }); });
+        if (dealer.cards.length) { var dt = S.reveal ? pbjVal(dealer.cards).t : null, up = dealer.cards[0]; want.push({ k: "d", x: 0, z: 0.42 + 0.17, t: S.reveal ? (dt > 21 ? "BUST" : String(dt)) : (up[0] === 0 ? "11" : String(rv(up[0]))) + "+?", col: S.reveal && dt > 21 ? "#ff4a5e" : "#9fe9ff" }); }
+        Object.keys(badges).forEach(function (k) { if (!want.some(function (w) { return w.k === k; })) { tg.remove(badges[k].sp); delete badges[k]; } });
+        want.forEach(function (w) {
+          var b = badges[w.k]; if (!b) { var cv = document.createElement("canvas"); cv.width = 256; cv.height = 128; var sp = new T.Sprite(new T.SpriteMaterial({ map: new T.CanvasTexture(cv), depthTest: false, transparent: true })); sp.renderOrder = 25; sp.scale.set(0.3, 0.15, 1); tg.add(sp); b = badges[w.k] = { sp: sp, cv: cv, t: null }; }
+          b.sp.position.set(w.x, 1.08, w.z);
+          if (b.t !== w.t + w.col) { b.t = w.t + w.col; var g = b.cv.getContext("2d"); g.clearRect(0, 0, 256, 128); g.fillStyle = "rgba(8,6,20,.88)"; rrect(g, 8, 14, 240, 100, 50); g.fill(); g.lineWidth = 6; g.strokeStyle = w.col; rrect(g, 8, 14, 240, 100, 50); g.stroke(); g.fillStyle = w.col; g.font = "700 " + (w.t.length > 4 ? 52 : 70) + "px Fredoka, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(w.t, 128, 68); b.sp.material.map.needsUpdate = true; }
+        });
       }
+      var badges = {};
       async function draw() { if (window.__bjForce && window.__bjForce.length) return window.__bjForce.shift(); if (shoe.length < 60) { S.msg = "SHUFFLING"; info(); shoe = mkShoe(6); await sleep(700); chk(); } return shoe.pop(); }
       async function dealCard(owner, hd, faceUp) {
         var c = await draw(), m = getCard(c[0], c[1], tg); m.scale.setScalar(csc(owner)); m.position.set(SHOE.x, SHOE.y, SHOE.z); m.rotation.z = Math.PI; var list = hd ? hd.cards : dealer.cards, objs = hd ? hd.objs : dealer.objs;
