@@ -8511,16 +8511,20 @@ body.inlobby { padding-block: 0; }
   var SLOTV_P = [{ w: 0.62, h: 0.4, y: 1.62, z: 0.164, reels: 3, lev: true, ia: SLIA }, { w: 0.9, h: 0.72, y: 1.72, z: 0.149, reels: 5, ia: SLIA }, { w: 0.62, h: 0.62, y: 1.64, z: 0.159, reels: 3, lev: true, ia: SLIA }, { w: 0.74, h: 0.52, y: 1.64, z: 0.164, reels: 5, ia: SLIA }];
   var COIN_GEO = null, COIN_MAT = null;
   var SLV = null, SLVS = [], slxEl = null, slmEl = null;   // SLVS: every live machine near you (each with its own reels and money); SLV: the one you are using
-  function slotUse(a) {
-    for (var si = 0; si < SLVS.length; si++) if (SLVS[si].mk === a.m) return SLVS[si];
+  // lite: every machine in the hall shows its own real reels on its screen (a half-size canvas, drawn only when it changes, no buttons);
+  // when you come close it becomes a full machine with the same reels, bet and last win (from = the session it replaces)
+  function slotUse(a, lite, from) {
+    for (var si = 0; si < SLVS.length; si++) if (SLVS[si].mk === a.m) { var ex = SLVS[si]; if (lite || !ex.lite) return ex; slotStop(ex); from = ex; break; }
     var H = world.casApi(), m = a.m, ty = a.ty || 0, sv = SLOTV_P[ty], n = sv.reels;
     var lg = new T.Group(); lg.position.set(m.x, 0, m.z); lg.rotation.y = m.a; lg.scale.setScalar(SLS_P); H.hall.add(lg);
-    var S = { g: "slots", tg: lg, alive: true, mk: a.m, hall: H.hall }; S.reelsOn = false; SLVS.push(S);
+    var S = { g: "slots", tg: lg, alive: true, mk: a.m, hall: H.hall, lite: !!lite, ty: ty }; S.reelsOn = false; SLVS.push(S);
     function hudMsg(t, kind) { if (SLV !== S) return; if (!slmEl) { slmEl = cge("div", "", ""); slmEl.id = "slmsg"; $("game").appendChild(slmEl); } slmEl.textContent = t || ""; slmEl.className = kind || ""; slmEl.style.opacity = t ? 1 : 0; clearTimeout(S.mt); if (t) S.mt = setTimeout(function () { slmEl.style.opacity = 0; }, 2600); }
     // live reel screen
-    var W = n === 5 ? 640 : 480, Hh = Math.round(W * sv.h / sv.w); S.cv = document.createElement("canvas"); S.cv.width = W; S.cv.height = Hh; S.g = S.cv.getContext("2d"); S.tex = new T.CanvasTexture(S.cv); S.tex.anisotropy = 4;
+    var W = (n === 5 ? 640 : 480) / (lite ? 2 : 1), Hh = Math.round(W * sv.h / sv.w); S.cv = document.createElement("canvas"); S.cv.width = W; S.cv.height = Hh; S.g = S.cv.getContext("2d"); S.tex = new T.CanvasTexture(S.cv); S.tex.anisotropy = 4;
     var scr = new T.Mesh(new T.PlaneGeometry(sv.w, sv.h), new T.MeshBasicMaterial({ map: S.tex })); scr.position.set(0, sv.y, sv.z); lg.add(scr);
     S.n = n; S.L = 30; S.reels = []; for (var i = 0; i < n; i++) { var st = []; for (var k = 0; k < S.L; k++) st.push(slotPick()); S.reels.push({ p: Math.random() * 30, strip: st, spin: false, v: 0, stopAt: 0, tgt: 0, easing: null }); }
+    if (from && from.reels) { S.reels = from.reels; S.reels.forEach(function (r) { r.spin = false; r.easing = null; }); }
+    if (lite) { S.bet = from ? from.bet : 1000; S.win = from ? from.win || 0 : 0; S.free = 0; S.busy = false; S.winLine = false; S.flash = 0; S.hint = function () { }; S.press = function () { }; drawScreen(); return S; }
     // info panel (bet / win)
     S.ic = document.createElement("canvas"); S.ic.width = 512; S.ic.height = Math.round(512 * sv.ia.h / sv.ia.w); S.ig = S.ic.getContext("2d"); S.itex = new T.CanvasTexture(S.ic);
     var ip = new T.Mesh(new T.PlaneGeometry(sv.ia.w, sv.ia.h), new T.MeshBasicMaterial({ map: S.itex })); ip.position.set(0, sv.ia.y, sv.ia.z); ip.rotation.x = -0.6; lg.add(ip);
@@ -8534,7 +8538,7 @@ body.inlobby { padding-block: 0; }
     if (sv.lev) { var lv = new T.Mesh(new T.BoxGeometry(0.22, 0.62, 0.22), hitM); lv.position.set(0.58, 1.72, 0); lv.userData.act = "spin"; lg.add(lv); S.spots.push(lv); }
     function glow(bm, o) { var gl = bm && bm.userData.gl; if (gl) gl.material.opacity = o; }
     if (!COIN_GEO) { COIN_GEO = new T.CylinderGeometry(0.034, 0.034, 0.009, 16); COIN_MAT = new T.MeshBasicMaterial({ color: 0xf7c52c }); }
-    S.coins = []; S.pile = {}; S.bet = Math.min(1000, Math.max(100, casBet || 100)); S.free = 0; S.last = 0; S.win = 0; S.flash = 0; S.busy = false; S.ty = ty;
+    S.coins = []; S.pile = {}; S.bet = Math.min(1000, Math.max(100, casBet || 100)); S.free = 0; S.last = 0; S.win = 0; S.flash = 0; S.busy = false; S.ty = ty; if (from) { S.bet = from.bet || S.bet; S.win = from.win || 0; }
     S.hint = function () { hudMsg("לחצו על הכפתורים של המכונה (או E לסיבוב)"); };
     function drawInfo() {   // neon LED panel: BET, LAST WIN / FREE SPINS LEFT, bonus price
       var g = S.ig, w = S.ic.width, h = S.ic.height, gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#0d0820"); gr.addColorStop(1, "#05030c"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
@@ -8652,16 +8656,20 @@ body.inlobby { padding-block: 0; }
     if (SLV === S) { SLV = null; if (slxEl) slxEl.style.display = "none"; if (slmEl) slmEl.style.opacity = 0; }
   }
   function slotDistM(m) { var lx = EXIT_Z - me.z, uu = -me.x - XEND; return Math.hypot(lx - m.x, uu - (-30 - m.z)); }   // hall z0 = -30 (ROOMD)
-  // Every slot machine around you is live: its real screen shows its own reels, you can start one, walk to the next and start it too.
-  // Machines come alive as you get within ~14 m (two per tick, so it never hitches) and switch off past ~18 m unless still spinning.
+  // Every slot machine in the hall always shows its own real reels. Near you (~12 m) a machine is fully live (buttons, sounds,
+  // coins); farther away it keeps its reels, bet and last win on a lighter screen. Machines are switched on a few per tick, so it never hitches.
   setInterval(function () { try {
-    if (!world || !me) return; var H = world.casApi(), inHall = -me.x > XEND - 2 && !casOpen;
-    if (!H || !inHall) { SLVS.slice().forEach(function (S) { if (!S.busy && !(S.free > 0)) slotStop(S); }); return; }
-    var made = 0;
-    H.stations.forEach(function (st) { if (made >= 2 || st.g !== "slots" || !st.m) return; if (slotDistM(st.m) < 12 && !SLVS.some(function (S) { return S.mk === st.m; })) { slotUse({ m: st.m, ty: st.ty }); made++; } });
-    SLVS.slice().forEach(function (S) { if (slotDistM(S.mk) > 16 && !S.busy && !(S.free > 0)) slotStop(S); });
-    var a = casinoAction(), cur = null;
-    if (a && a.g === "slots" && a.m) cur = slotUse(a);
+    if (!world || !me) return; var H = world.casApi(); if (!H || !H.stations) return;
+    var inHall = -me.x > XEND - 2 && !casOpen, madeL = 0, madeF = 0;
+    H.stations.forEach(function (st) {
+      if (st.g !== "slots" || !st.m) return; var ex = null; for (var i = 0; i < SLVS.length; i++) if (SLVS[i].mk === st.m) { ex = SLVS[i]; break; }
+      var near = inHall && slotDistM(st.m) < 12;
+      if (!ex) { if (near && madeF < 2) { slotUse({ m: st.m, ty: st.ty }); madeF++; } else if (madeL < 4) { slotUse({ m: st.m, ty: st.ty }, true); madeL++; } }
+      else if (ex.lite && near && madeF < 2) { slotUse({ m: st.m, ty: st.ty }); madeF++; }
+      else if (!ex.lite && !near && !ex.busy && !(ex.free > 0) && (!inHall || slotDistM(st.m) > 16) && madeL < 4) { slotStop(ex); slotUse({ m: st.m, ty: st.ty }, true, ex); madeL++; }
+    });
+    var a = inHall ? casinoAction() : null, cur = null;
+    if (a && a.g === "slots" && a.m) { cur = slotUse(a); if (cur && cur.lite) cur = null; }
     if (cur !== SLV) { SLV = cur; if (cur) { if (!slxEl) { slxEl = cge("div", "", ""); slxEl.id = "slx"; $("game").appendChild(slxEl); } slxEl.style.display = "block"; cur.hint(); } else { if (slxEl) slxEl.style.display = "none"; if (slmEl) slmEl.style.opacity = 0; } }
   } catch (e) { } }, 140);
   PHYS.slots = true;
