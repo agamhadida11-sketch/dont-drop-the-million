@@ -10321,11 +10321,30 @@ body.inlobby { padding-block: 0; }
     // --- sounds: a soft tick when the pointer (or keyboard focus) lands on something, a bright two-note "chink" when you pick it
     var lastHov = 0, lastPtr = 0;
     // hover: "soft bubble" (the player picked it from a sound board): a short round pop, a sine sliding up 320→620 Hz through a low-pass filter
-    function uiHover() {
-      var n = performance.now(); if (n - lastHov < 60) return; lastHov = n;
-      if (muted || settings.sfx <= 0 || !ensureAudio() || audioCtx.state !== "running") return;
+    // Why it sometimes stayed silent before: (1) a 60 ms "rest" between pops swallowed the pop when you slid quickly from one item to the next;
+    // (2) when nothing had played for a while, many headphones/speakers (Bluetooth and USB especially) go to sleep and eat the first ~0.1 s of sound,
+    // which is the whole pop. Now every new item gets its pop, the pop starts a hair later, and a far-below-hearing hum keeps the output awake on the menus.
+    var keepAlive = null;
+    function wakeOutput() {
+      if (keepAlive || !audioCtx) return;
       try {
-        var t = audioCtx.currentTime + 0.005, o = audioCtx.createOscillator(), g = audioCtx.createGain(), f = audioCtx.createBiquadFilter();
+        var len = audioCtx.sampleRate, buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate), d = buf.getChannelData(0);
+        for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        var src = audioCtx.createBufferSource(), g = audioCtx.createGain();
+        src.buffer = buf; src.loop = true; g.gain.value = 0.00003;   // about -90 dB: nobody can hear it, but the device sees a live signal
+        src.connect(g); g.connect(audioCtx.destination); src.start();
+        keepAlive = { src: src, g: g };
+      } catch (e) { keepAlive = null; }
+    }
+    function sleepOutput() { if (!keepAlive) return; try { keepAlive.src.stop(); keepAlive.src.disconnect(); keepAlive.g.disconnect(); } catch (e) { /* already stopped */ } keepAlive = null; }
+    function uiHover() {
+      var n = performance.now(); if (n - lastHov < 6) return; lastHov = n;   // only stops a double pop from the same move (mouse + focus)
+      if (muted || settings.sfx <= 0 || !ensureAudio()) return;
+      if (audioCtx.state === "suspended") { try { audioCtx.resume(); } catch (e) { /* needs a click first */ } }
+      if (audioCtx.state === "closed") return;
+      if (!els.lobby.hidden || !$("settings").hidden) wakeOutput();
+      try {
+        var t = audioCtx.currentTime + 0.02, o = audioCtx.createOscillator(), g = audioCtx.createGain(), f = audioCtx.createBiquadFilter();
         f.type = "lowpass"; f.frequency.value = 1500;
         o.type = "sine"; o.frequency.setValueAtTime(320, t); o.frequency.exponentialRampToValueAtTime(620, t + 0.06);
         g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.165, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
@@ -10336,11 +10355,14 @@ body.inlobby { padding-block: 0; }
     var SCOPE = "#lobby, #settings, .lbov, #wait, #end, .top, .invbar";
     var ITEM = "button, summary, [role=tab], input[type=checkbox], .sw button";
     function itemOf(t) { var el = t && t.closest ? t.closest(ITEM) : null; return el && !el.disabled && el.closest(SCOPE) ? el : null; }
+    var hovEl = null;   // the item the mouse is on now: a pop plays each time this changes to a new item
     document.addEventListener("pointerover", function (e) {
       if (!canHover || e.pointerType === "touch") return;
-      var el = itemOf(e.target); if (!el || (e.relatedTarget && el.contains(e.relatedTarget))) return;
-      uiHover();
+      var el = itemOf(e.target);
+      if (el === hovEl) return;
+      hovEl = el; if (el) uiHover();
     });
+    document.addEventListener("pointerout", function (e) { if (hovEl && (!e.relatedTarget || !hovEl.contains(e.relatedTarget))) hovEl = null; });
     document.addEventListener("pointerdown", function () { lastPtr = performance.now(); }, true);
     document.addEventListener("focusin", function (e) { if (performance.now() - lastPtr < 400) return; if (itemOf(e.target)) uiHover(); });
     document.addEventListener("click", function (e) { var el = itemOf(e.target); if (el) uiSelect(el.id === "solo" ||el.classList.contains("pz-go") || el.id === "create" || el.id === "join"); }, true);
@@ -10438,7 +10460,7 @@ body.inlobby { padding-block: 0; }
     function onShow(lobby) {
       on = lobby;
       if (lobby) { start(); board(); syncMute(); room.hidden = true; fr.setAttribute("aria-expanded", "false"); selItem($("solo")); }
-      else stop();
+      else { stop(); sleepOutput(); }
     }
     return { onShow: onShow, board: board };
   })();
