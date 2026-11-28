@@ -8557,6 +8557,7 @@ body.inlobby { padding-block: 0; }
         var r = S.reels[i], x = pad + i * cw;
         g.save(); rrect(g, x + 3, top, cw - 6, H2 - top * 2, 12); g.clip();
         var gr = g.createLinearGradient(0, top, 0, H2 - top); gr.addColorStop(0, "#b9b0d6"); gr.addColorStop(0.18, "#f4f0ff"); gr.addColorStop(0.5, "#ffffff"); gr.addColorStop(0.82, "#f4f0ff"); gr.addColorStop(1, "#b9b0d6"); g.fillStyle = gr; g.fillRect(x, 0, cw, H2);
+        var mid = g.createLinearGradient(0, top + ch, 0, top + ch * 2); mid.addColorStop(0, "rgba(255,226,140,0)"); mid.addColorStop(0.5, "rgba(255,226,140,.22)"); mid.addColorStop(1, "rgba(255,226,140,0)"); g.fillStyle = mid; g.fillRect(x, top + ch, cw, ch);   // the middle row is gently lit
         var fl = Math.floor(r.p), fr2 = r.p - fl; g.textAlign = "center"; g.textBaseline = "middle";
         for (var k = -1; k <= 3; k++) {
           var sym = r.strip[(((fl + k) % S.L) + S.L) % S.L], y = top + (k - fr2 + 0.5) * ch, hi = S.winLine && !r.spin && k === 1;
@@ -8572,10 +8573,9 @@ body.inlobby { padding-block: 0; }
         g.restore();
         g.save(); g.strokeStyle = "rgba(255,210,63,.9)"; g.lineWidth = 3; rrect(g, x + 3, top, cw - 6, H2 - top * 2, 12); g.stroke(); g.restore();
       }
-      // payline with glow and arrows at both ends
-      var py = H2 / 2, lc = S.winLine ? (Math.floor(now / 120) % 2 ? "#ffe27a" : "#ff3f6a") : "#ff3f6a";
-      g.save(); g.shadowColor = lc; g.shadowBlur = S.winLine ? 22 : 10; g.strokeStyle = lc; g.lineWidth = S.winLine ? 6 : 3; g.globalAlpha = S.winLine ? 1 : 0.8; g.beginPath(); g.moveTo(pad, py); g.lineTo(W2 - pad, py); g.stroke();
-      g.fillStyle = lc; [[2, 1], [W2 - 2, -1]].forEach(function (a) { g.beginPath(); g.moveTo(a[0], py - 12); g.lineTo(a[0] + a[1] * 14, py); g.lineTo(a[0], py + 12); g.closePath(); g.fill(); }); g.restore();
+      // no drawn payline: the middle row is marked by small gold jewels on both sides; they light up on a win
+      var py = H2 / 2, on = S.winLine && Math.floor(now / 140) % 2;
+      [pad * 0.5, W2 - pad * 0.5].forEach(function (x) { g.save(); g.shadowColor = "#ffd23f"; g.shadowBlur = on ? 18 : 8; g.fillStyle = on ? "#fff3b0" : "#ffcf3f"; g.beginPath(); g.moveTo(x, py - 9); g.lineTo(x + 6, py); g.lineTo(x, py + 9); g.lineTo(x - 6, py); g.closePath(); g.fill(); g.restore(); });
       if (S.flash > 0) { g.save(); g.shadowColor = "#ffd23f"; g.shadowBlur = 30; g.strokeStyle = "rgba(255,226,122," + Math.min(1, S.flash) + ")"; g.lineWidth = 10; rrect(g, 6, 6, W2 - 12, H2 - 12, 18); g.stroke(); g.restore(); }
       if (S.winLine && S.win > 0) {   // WIN banner over the bottom row
         var bw = W2 * 0.56, bh = H2 * 0.2, bx = (W2 - bw) / 2, by = H2 - top - bh - 6, pl = 0.5 + 0.5 * Math.sin(now / 140);
