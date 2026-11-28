@@ -1489,7 +1489,7 @@ body.inlobby { padding-block: 0; }
 (function () {
   if (window.claude || /(^|\.)(claude\.ai|claudeusercontent\.com|anthropic\.com)$/i.test(location.hostname)) return;
   var qp = new URLSearchParams(location.search);
-  var BROKERS = qp.get("broker") ? [qp.get("broker")] : ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt"];
+  var BROKERS = qp.get("broker") ? [qp.get("broker")] : ["wss://broker.hivemq.com:8884/mqtt", "wss://broker.emqx.io:8084/mqtt"];   // v145: HiveMQ first (it keeps saved room data for late joiners and is faster); EMQX lost it
   var NS = qp.get("ns") || "ddtm-k7q2/v1";
   var enc = new TextEncoder(), dec = new TextDecoder();
   function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
@@ -1679,7 +1679,7 @@ body.inlobby { padding-block: 0; }
       id: name,
       peers: function () {
         var n = Date.now(), out = [];
-        Object.keys(peers).forEach(function (id) { if (n - peers[id].at < 7000) out.push({ id: id, isMe: false, presence: peers[id].presence }); else { delete peers[id]; } });
+        Object.keys(peers).forEach(function (id) { if (n - peers[id].at < 7000) out.push({ id: id, isMe: false, presence: peers[id].presence, at: peers[id].at }); else { delete peers[id]; } });   // at: when this peer was last heard (the game picks the freshest)
         if (mine) out.push({ id: conn, isMe: true, presence: mine });
         return out;
       },
@@ -6950,11 +6950,17 @@ body.inlobby { padding-block: 0; }
     var oId = role === "host" ? d.guestId : d.hostId;
     var peer = null;
     if (roomNs) {
-      var ps = roomNs.peers();
+      // v145: pick the freshest matching entry (an exact client match first). After a reconnect the old entry lingers for a few seconds,
+      // and taking the first one found showed your friend where they were seconds ago
+      var ps = roomNs.peers(), best = null, bestScore = -Infinity;
       for (var i = 0; i < ps.length; i++) {
         var p = ps[i];
-        if (!p.isMe && p.presence && p.presence.cl && (p.presence.cl === oId || p.presence.role === other.r)) { peer = p.presence; break; }
+        if (!p.isMe && p.presence && p.presence.cl && (p.presence.cl === oId || p.presence.role === other.r)) {
+          var sc = (p.presence.cl === oId ? 1e13 : 0) + (p.at || 0);
+          if (sc > bestScore) { bestScore = sc; best = p; }
+        }
       }
+      if (best) peer = best.presence;
     }
     if (peer) { lastPeerAt = performance.now(); if (peer.pk) { try { plkRemote(peer.pk); } catch (e) { /* cosmetic */ } } if (peer.sl) { try { slRemote(peer.sl); } catch (e) { /* cosmetic */ } } if (peer.tb) { try { tbRemote(peer.tb); } catch (e) { /* cosmetic */ } }  }
     else if (code !== "solo" && d["pos_" + other.r] && d["pos_" + other.r].t !== lastFbT) {
@@ -6976,15 +6982,24 @@ body.inlobby { padding-block: 0; }
     if (peer && other.fall === 0) {
       var px = Number(peer.x), pz = Number(peer.z), pyaw = Number(peer.yaw) || 0;
       var skey = px + "," + pz + "," + pyaw + "," + (peer.j || 0) + "," + (peer.cr || 0);
+      // v145: smooth remote movement. Updates arrive unevenly over the network, so instead of rushing to each new one we keep a short
+      // buffer of timed positions and show your friend a moment in the past (about 1.7 update gaps, 0.11-0.32 s), sliding evenly between them
+      var B = other.buf || (other.buf = []);
       if (skey !== other.sk) {
-        other.dur = clamp(other.lastAt ? t - other.lastAt : 120, 60, 420); other.lastAt = t; other.t0 = t; other.sk = skey;
-        other.fx = other.x; other.fz = other.z; other.fyaw = other.yaw; other.tx = px; other.tz = pz; other.tyaw = other.yaw + angDiff(pyaw, other.yaw);
+        other.sk = skey; if (other.lastAt) { var gap = clamp(t - other.lastAt, 20, 600); other.iv = other.iv ? other.iv * 0.85 + gap * 0.15 : gap; } other.lastAt = t;
         other.tj = Number(peer.j) || 0; other.tcr = Number(peer.cr) || 0; other.sit = peer.s ? 1 : 0;
-        if (Math.hypot(px - other.x, pz - other.z) > 8) { other.fx = px; other.fz = pz; }
+        if (Math.hypot(px - other.x, pz - other.z) > 8) { B.length = 0; other.x = px; other.z = pz; other.yaw = pyaw; }
+        B.push({ t: t, x: px, z: pz, yaw: pyaw }); if (B.length > 40) B.shift();
       }
-      var ox2 = other.x, oz2 = other.z, pr = clamp((t - other.t0) / other.dur, 0, 1);
-      other.x = other.fx + (other.tx - other.fx) * pr; other.z = other.fz + (other.tz - other.fz) * pr;
-      other.yaw = other.fyaw + (other.tyaw - other.fyaw) * pr;
+      var ox2 = other.x, oz2 = other.z, rt = t - clamp((other.iv || 100) * 1.7, 110, 320);
+      while (B.length > 2 && B[1].t <= rt) B.shift();
+      if (B.length >= 2 && rt >= B[0].t) {
+        var sa = B[0], sb = B[1], sf = clamp((rt - sa.t) / Math.max(1, sb.t - sa.t), 0, 1);
+        other.x = sa.x + (sb.x - sa.x) * sf; other.z = sa.z + (sb.z - sa.z) * sf; other.yaw = sa.yaw + angDiff(sb.yaw, sa.yaw) * sf;
+      } else if (B.length) {   // nothing to slide between yet (or the friend stopped): ease onto the nearest known spot
+        var sn = rt < B[0].t ? B[0] : B[B.length - 1], ek = Math.min(1, dt * 10);
+        other.x += (sn.x - other.x) * ek; other.z += (sn.z - other.z) * ek; other.yaw += angDiff(sn.yaw, other.yaw) * ek;
+      }
       other.jy += (other.tj - other.jy) * Math.min(1, dt * 14); other.cr += (other.tcr - other.cr) * Math.min(1, dt * 12);
       var om = Math.hypot(other.x - ox2, other.z - oz2);
       other.spd = other.spd * 0.7 + (om / Math.max(dt, 0.001)) * 0.3;
