@@ -1015,6 +1015,31 @@ body.inlobby { padding-block: 0; }
 .plkp-last span { padding: 1px 7px; border-radius: 999px; font-size: .75rem; font-weight: 900; background: rgba(255, 255, 255, .1); }
 .plkp-last span.w { background: rgba(63, 214, 138, .25); color: #9ff0c4; } .plkp-last span.l { background: rgba(255, 90, 110, .2); color: #ffb0ba; }
 .plkp-err { color: #ff9aa8; font-size: .78rem; font-weight: 800; min-height: 1em; }
+/* v134 · bigger panels with a bet keypad: chunky number keys, a red C, a dark screen with the limits and the amount in glowing green,
+   and gold quick buttons (MIN / ¼ / ½ / ALL) */
+.plkp { width: 400px; padding: 18px; gap: 14px; font-size: 1.02rem; top: 68px; transform: none; max-height: calc(100% - 84px); overflow-y: auto; scrollbar-width: thin; }
+.plkp-h { font-size: 1.45rem; } .plkp-h small { font-size: .95rem; }
+.plkp-lab { font-size: .88rem; }
+.plkp-seg button { padding: 10px; font-size: 1rem; }
+.plkp-go { padding: 16px; font-size: 1.7rem; }
+.bp { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px; direction: ltr; padding: 10px; border-radius: 16px; background: #0a0710; border: 2px solid #000; box-shadow: inset 0 2px 10px rgba(0, 0, 0, .7); }
+.bp-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.bp-keys button { height: 48px; border: 0; border-radius: 12px; background: linear-gradient(180deg, #fff5e6, #e9dcc6); color: #2a1f14; font: 900 1.25rem var(--font-body); box-shadow: 0 4px 0 #a8977c, inset 0 -2px 0 rgba(0, 0, 0, .08); transition: transform .06s, box-shadow .06s; }
+.bp-keys button:hover { background: linear-gradient(180deg, #ffffff, #f2e6d2); }
+.bp-keys button:active { transform: translateY(3px); box-shadow: 0 1px 0 #a8977c; }
+.bp-keys button.c { background: linear-gradient(180deg, #ff5a4e, #d42a20); color: #fff; box-shadow: 0 4px 0 #7a140e, 0 0 14px rgba(255, 70, 50, .4); }
+.bp-keys button[data-pk="000"] { font-size: 1rem; }
+.bp-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.bp-scr { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 10px; border-radius: 12px; background: #050407; border: 2px solid #1d1a24; text-align: center; overflow: hidden; }
+.bp-scr small { color: #e8e8e8; font: 700 .72rem/1.35 "Courier New", monospace; letter-spacing: .03em; }
+.bp-scr b { color: #3dff7a; font: 900 2.5rem/1 "Courier New", monospace; letter-spacing: -.02em; text-shadow: 0 0 10px rgba(61, 255, 122, .7), 0 0 22px rgba(61, 255, 122, .35); white-space: nowrap; }
+.bp-scr b.bad { color: #ff5a6e; text-shadow: 0 0 10px rgba(255, 90, 110, .7); }
+.bp-q { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.bp-q button { height: 42px; border: 0; border-radius: 12px; background: linear-gradient(180deg, #ffd65a, #f0a81c); color: #3a2200; font: 900 1rem var(--font-body); box-shadow: 0 4px 0 #9b6a10, 0 0 12px rgba(255, 190, 40, .3); transition: transform .06s, box-shadow .06s; }
+.bp-q button:hover { filter: brightness(1.08); }
+.bp-q button:active { transform: translateY(3px); box-shadow: 0 1px 0 #9b6a10; }
+@media (max-height: 760px) { .bp-keys button { height: 40px; } .bp-q button { height: 36px; } .plkp { gap: 10px; padding: 14px; } .plkp-go { padding: 12px; } }
+
 /* v133 · the wheel uses the same panel in gold */
 .whp { border-color: rgba(255, 210, 63, .5); box-shadow: 0 20px 50px rgba(0, 0, 0, .6), 0 0 28px rgba(255, 210, 63, .2); }
 .whp .plkp-h { color: #ffe27a; }
@@ -1026,7 +1051,7 @@ body.inlobby { padding-block: 0; }
 .whp-leave { border: 1.5px solid rgba(255, 255, 255, .2); background: transparent; color: var(--mute); border-radius: 10px; padding: 7px; font-weight: 800; font-size: .88rem; }
 .whp-leave:hover { color: #fff; border-color: rgba(255, 255, 255, .4); }
 @media (max-width: 760px) {
-  .whp-odds, .whp-leave { grid-column: 1 / -1; }
+  .whp-odds, .whp-leave, .plkp-betwrap { grid-column: 1 / -1; }
   .plkp { right: 8px; left: 8px; top: auto; bottom: 8px; transform: none; width: auto; gap: 8px; padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; }
   .plkp-h, .plkp-go, .plkp-info, .plkp-last, .plkp-err { grid-column: 1 / -1; }
   .plkp-chips { display: none; } .plkp-go { padding: 10px; font-size: 1.2rem; }
@@ -9101,12 +9126,46 @@ body.inlobby { padding-block: 0; }
     WHL.ctl.forEach(function (c) { var b = K.byAct[c.act]; b.material.color.setHex(c.c); if (K.spinning) b.material.color.multiplyScalar(0.3); });
     whInfo(K); whPanelSync(K);
   }
+  // ---- v134: the bet keypad shared by the plinko and wheel panels: number keys, C and 000, a screen with the limits and the amount,
+  // and quick MIN / ¼ / ½ / ALL buttons. Keys are typed into an entry; any amount from the minimum up is applied as the bet right away ----
+  var BP_MIN = 10, BP_MAX = 1000000;
+  function betPadHTML() {
+    var keys = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { return '<button type="button" data-pk="' + n + '">' + n + '</button>'; }).join("")
+      + '<button type="button" data-pk="C" class="c" aria-label="ניקוי">C</button><button type="button" data-pk="0">0</button><button type="button" data-pk="000">000</button>';
+    return '<div class="bp"><div class="bp-keys">' + keys + '</div><div class="bp-side"><div class="bp-scr"><small>Min: ₪' + BP_MIN + '<br>Max: ₪' + BP_MAX.toLocaleString("en-US") + '</small><b data-r="amt">₪0</b></div>'
+      + '<div class="bp-q"><button type="button" data-pq="min">MIN</button><button type="button" data-pq="q4">¼</button><button type="button" data-pq="q2">½</button><button type="button" data-pq="all">ALL</button></div></div></div>';
+  }
+  function betPadWire(root, get, set, errEl) {
+    var amt = root.querySelector('[data-r="amt"]'), entry = null;   // entry: what is being typed (null = just show the current bet)
+    function render() {
+      var v = entry === null ? get() : (+entry || 0), low = entry !== null && v < BP_MIN;
+      amt.textContent = "₪" + v.toLocaleString("en-US"); amt.classList.toggle("bad", low);
+      amt.style.fontSize = ""; var fs = parseFloat(getComputedStyle(amt).fontSize) || 40, room = amt.parentElement.clientWidth - 14;   // shrink until the amount fits the little screen
+      while (room > 0 && amt.scrollWidth > room && fs > 13) { fs -= 1.5; amt.style.fontSize = fs + "px"; }
+      if (errEl) errEl.textContent = low ? "ההימור המינימלי הוא ₪" + BP_MIN : "";
+    }
+    root.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return; var k = b.dataset.pk, q = b.dataset.pq;
+      if (k != null) {
+        if (k === "C") entry = "";
+        else { entry = ((entry === null ? "" : entry) + k).replace(/^0+/, ""); if (entry.length > 7) entry = entry.slice(0, 7); }
+        var v = +entry || 0; if (v > BP_MAX) { v = BP_MAX; entry = String(BP_MAX); }
+        if (v >= BP_MIN) set(v);
+      } else if (q) {
+        entry = null;
+        set(q === "min" ? BP_MIN : Math.max(BP_MIN, Math.min(BP_MAX, Math.floor(q === "q4" ? casBal / 4 : q === "q2" ? casBal / 2 : casBal))));
+      }
+      render();
+    });
+    render();
+    return { render: render, done: function () { entry = null; render(); } };
+  }
   // ---- v133: the wheel's side panel (same look as plinko). You stand at the wheel, so E / a click on the wheel opens it and frees the mouse;
   // walking away or "leave" closes it and hands the mouse back to looking around ----
   function whPanelSync(K) {
     var P = K.panel; if (!P) return;
     P.bal.textContent = money(casBal);
-    if (document.activeElement !== P.inp) P.inp.value = String(K.chip);
+    if (P.pad) P.pad.render();
     P.go.disabled = K.spinning || (!K.free && casBal < K.chip);
     P.go.textContent = K.spinning ? "מסתובב..." : K.free ? "↻ סיבוב חינם" : "סובבו";
     P.last.innerHTML = ""; (K.hist || []).slice(0, 8).forEach(function (k) { var m = BW_PAY[k], s = cge("span", k === "R" ? "" : m > 1 ? "w" : "l", k === "R" ? "↻" : "x" + k); P.last.appendChild(s); });
@@ -9115,32 +9174,29 @@ body.inlobby { padding-block: 0; }
     v = Math.floor(Number(v) || 0); var err = "";
     if (v < 10) { err = "ההימור המינימלי הוא 10"; v = 10; }
     if (v > 1000000) { err = "ההימור המקסימלי הוא 1,000,000"; v = 1000000; }
-    K.chip = v; casBet = v; if (K.panel) { K.panel.err.textContent = err; K.panel.inp.value = String(v); } whInfo(K); whPanelSync(K);
+    K.chip = v; casBet = v; if (K.panel) { K.panel.err.textContent = err; } whInfo(K); whPanelSync(K);
   }
   function whPanelOpen(K) {
     if (K.panel) return;
     var p = cge("div", "plkp whp", ""), odds = ["5", "3", "2", "1.5", "0.5", "0.2", "R"].map(function (k) { var n = BW_SEC.filter(function (q) { return q === k; }).length; return '<span style="border-color:' + BW_COL[k] + '"><b>' + (k === "R" ? "↻" : "x" + k) + '</b> ' + n + '/24</span>'; }).join("");
     p.setAttribute("role", "group"); p.setAttribute("aria-label", "לוח ההימורים של הגלגל");
     p.innerHTML = '<div class="plkp-h"><span>🎡 גלגל המזל</span><small class="money" data-r="bal"></small></div>'
-      + '<div><div class="plkp-lab"><span>סכום הימור</span></div><div class="plkp-bet"><button type="button" data-a="half">½</button><input type="text" inputmode="numeric" aria-label="סכום הימור" data-r="inp"><button type="button" data-a="dbl">2×</button><button type="button" data-a="max">MAX</button></div>'
-      + '<div class="plkp-chips"><button type="button" data-c="100">100</button><button type="button" data-c="1000">1K</button><button type="button" data-c="10000">10K</button><button type="button" data-c="100000">100K</button></div><div class="plkp-err" data-r="err"></div></div>'
+      + '<div class="plkp-betwrap"><div class="plkp-lab"><span>סכום הימור</span></div>' + betPadHTML() + '<div class="plkp-err" data-r="err"></div></div>'
       + '<div><div class="plkp-lab"><span>על הגלגל</span><span>זוכים ב-11 מתוך 24</span></div><div class="whp-odds">' + odds + '</div></div>'
       + '<button type="button" class="plkp-go" data-r="go">סובבו</button>'
       + '<button type="button" class="whp-leave" data-a="leave">עזיבת הגלגל</button>'
       + '<div class="plkp-info">E = סיבוב</div><div class="plkp-last" data-r="last" aria-label="תוצאות אחרונות"></div>';
     $("game").appendChild(p);
     function q(s) { return p.querySelector(s); }
-    var P = K.panel = { el: p, bal: q('[data-r="bal"]'), inp: q('[data-r="inp"]'), err: q('[data-r="err"]'), go: q('[data-r="go"]'), last: q('[data-r="last"]') };
+    var P = K.panel = { el: p, bal: q('[data-r="bal"]'), err: q('[data-r="err"]'), go: q('[data-r="go"]'), last: q('[data-r="last"]') };
     p.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
-    p.addEventListener("keydown", function (e) { if (e.target === P.inp) { e.stopPropagation(); if (e.key === "Enter") { whSetBet(K, P.inp.value); P.inp.blur(); } } });
-    P.inp.addEventListener("input", function () { var d = P.inp.value.replace(/[^0-9]/g, ""); if (d !== P.inp.value) P.inp.value = d; P.err.textContent = d ? "" : "הקלידו סכום"; });
-    P.inp.addEventListener("change", function () { whSetBet(K, P.inp.value); });
+    // no text box any more, so E still spins after you click the panel
+    P.pad = betPadWire(p.querySelector(".bp"), function () { return K.chip; }, function (v) { whSetBet(K, v); }, P.err);
     p.addEventListener("click", function (e) {
-      var b = e.target.closest("button"); if (!b || b.disabled) return; var a = b.dataset.a, c = b.dataset.c;
+      var b = e.target.closest("button"); if (!b || b.disabled) return; var a = b.dataset.a;
+      if (b.dataset.pk != null || b.dataset.pq) { sfx("chip"); return; }   // keypad keys are handled by the keypad itself
       if (K.spinning && b !== P.go && a !== "leave") return;
-      if (a === "half") whSetBet(K, K.chip / 2); else if (a === "dbl") whSetBet(K, K.chip * 2); else if (a === "max") whSetBet(K, Math.min(1000000, casBal));
-      else if (c) whSetBet(K, +c);
-      else if (a === "leave") { whPanelClose(K); if (window.tryLock) tryLock(); return; }
+      if (a === "leave") { whPanelClose(K); if (window.tryLock) tryLock(); return; }
       else if (b === P.go) { whSpin(K); return; }
       sfx("chip");
     });
@@ -9890,7 +9946,7 @@ body.inlobby { padding-block: 0; }
       function panelSync() {
         if (!PP) return;
         PP.bal.textContent = money(casBal);
-        if (document.activeElement !== PP.inp) PP.inp.value = String(pBet);
+        if (PP.pad) PP.pad.render();
         PP.risk.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === risk)); b.disabled = flying.length > 0; });
         PP.rows.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === R)); b.disabled = flying.length > 0; });
         PP.balls.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === nBalls)); });
@@ -9905,32 +9961,29 @@ body.inlobby { padding-block: 0; }
         if (v < 10) { err = "ההימור המינימלי הוא 10"; v = 10; }
         if (v > 1000000) { err = "ההימור המקסימלי הוא 1,000,000"; v = 1000000; }
         pBet = v; store("local", "dd-plk-bet", String(v));
-        if (PP) { PP.err.textContent = err; if (!fromInput) PP.inp.value = String(v); }
+        if (PP) { PP.err.textContent = err; if (PP.pad && !fromInput) PP.pad.render(); }
         S.setBet(pBet); panelSync();
       }
       function buildPanel() {
         var p = cge("div", "plkp", ""); p.setAttribute("role", "group"); p.setAttribute("aria-label", "הגדרות פלינקו");
         p.innerHTML = '<div class="plkp-h"><span>🔺 פלינקו</span><small class="money" data-r="bal"></small></div>'
-          + '<div><div class="plkp-lab"><span>סכום הימור</span></div><div class="plkp-bet"><button type="button" data-a="half">½</button><input type="text" inputmode="numeric" aria-label="סכום הימור" data-r="inp"><button type="button" data-a="dbl">2×</button><button type="button" data-a="max">MAX</button></div>'
-          + '<div class="plkp-chips"><button type="button" data-c="100">100</button><button type="button" data-c="1000">1K</button><button type="button" data-c="10000">10K</button><button type="button" data-c="100000">100K</button></div><div class="plkp-err" data-r="err"></div></div>'
+          + '<div class="plkp-betwrap"><div class="plkp-lab"><span>סכום הימור</span></div>' + betPadHTML() + '<div class="plkp-err" data-r="err"></div></div>'
           + '<div><div class="plkp-lab"><span>סיכון</span></div><div class="plkp-seg risk"><button type="button" data-k="risk" data-v="0">נמוך</button><button type="button" data-k="risk" data-v="1">בינוני</button><button type="button" data-k="risk" data-v="2">גבוה</button></div></div>'
           + '<div><div class="plkp-lab"><span>שורות</span></div><div class="plkp-seg"><button type="button" data-k="rows" data-v="8">8</button><button type="button" data-k="rows" data-v="12">12</button><button type="button" data-k="rows" data-v="16">16</button></div></div>'
           + '<div><div class="plkp-lab"><span>כדורים בכל הפלה</span></div><div class="plkp-seg"><button type="button" data-k="balls" data-v="1">1</button><button type="button" data-k="balls" data-v="5">5</button><button type="button" data-k="balls" data-v="10">10</button></div></div>'
           + '<button type="button" class="plkp-go" data-r="go">הפל</button><div class="plkp-info" data-r="lock"></div><div class="plkp-last" data-r="last" aria-label="תוצאות אחרונות"></div>';
         $("game").appendChild(p); $("game").classList.add("plkpanel");
         function q(s) { return p.querySelector(s); }
-        PP = { el: p, bal: q('[data-r="bal"]'), inp: q('[data-r="inp"]'), err: q('[data-r="err"]'), go: q('[data-r="go"]'), lock: q('[data-r="lock"]'), last: q('[data-r="last"]'),
+        PP = { el: p, bal: q('[data-r="bal"]'), err: q('[data-r="err"]'), go: q('[data-r="go"]'), lock: q('[data-r="lock"]'), last: q('[data-r="last"]'),
           risk: [].slice.call(p.querySelectorAll('[data-k="risk"]')), rows: [].slice.call(p.querySelectorAll('[data-k="rows"]')), balls: [].slice.call(p.querySelectorAll('[data-k="balls"]')) };
         p.addEventListener("pointerdown", function (e) { e.stopPropagation(); });   // clicks on the panel never drop a ball on the board behind it
-        p.addEventListener("keydown", function (e) { e.stopPropagation(); if (e.key === "Enter" && e.target === PP.inp) { setBet(PP.inp.value); PP.inp.blur(); } });
-        PP.inp.addEventListener("input", function () { var d = PP.inp.value.replace(/[^0-9]/g, ""); if (d !== PP.inp.value) PP.inp.value = d; PP.err.textContent = d ? "" : "הקלידו סכום"; });
-        PP.inp.addEventListener("change", function () { setBet(PP.inp.value); });
+        // no text box any more, so Space / E still drop after you click the panel
+        PP.pad = betPadWire(p.querySelector(".bp"), function () { return pBet; }, function (v) { setBet(v, true); }, PP.err);
         p.addEventListener("click", function (e) {
           var b = e.target.closest("button"); if (!b || b.disabled) return;
-          var a = b.dataset.a, c = b.dataset.c, k = b.dataset.k, v = +b.dataset.v;
-          if (a === "half") setBet(pBet / 2); else if (a === "dbl") setBet(pBet * 2); else if (a === "max") setBet(Math.min(1000000, casBal));
-          else if (c) setBet(+c);
-          else if (k === "risk" && v !== risk) { risk = v; buildRows(); paint(); setBtns(); info(); }
+          var k = b.dataset.k, v = +b.dataset.v;
+          if (b.dataset.pk != null || b.dataset.pq) { sfx("chip"); return; }   // keypad keys are handled by the keypad itself
+          if (k === "risk" && v !== risk) { risk = v; buildRows(); paint(); setBtns(); info(); }
           else if (k === "rows" && v !== R) { R = v; buildRows(); paint(); setBtns(); info(); }
           else if (k === "balls") { nBalls = v; panelSync(); }
           else if (b === PP.go) dropMany();
@@ -9973,7 +10026,7 @@ body.inlobby { padding-block: 0; }
       var queued = 0;
       function dropMany() {   // the side panel's ball count: several balls go in one after another, a beat apart
         if (queued) return;
-        var n = Math.max(1, nBalls), i = 0;
+        var n = Math.max(1, nBalls), i = 0; if (PP && PP.pad) PP.pad.done();
         if (casBal < pBet) { if (PP) PP.err.textContent = "אין מספיק כסף להימור הזה"; S.pop("NO CHIPS", "NOT ENOUGH CHIPS", "lose"); sfx("lose"); return; }
         queued = n;
         (function one() { if (!S.alive || i >= n || !drop()) { queued = 0; panelSync(); return; } i++; queued = n - i; if (i < n) setTimeout(one, 160); else { queued = 0; panelSync(); } })();
@@ -9993,7 +10046,7 @@ body.inlobby { padding-block: 0; }
       S.onGo = dropMany;
       buildPanel();
       wcInput(S, function () { dropMany(); });
-      keyH = function (e) { if (PP && PP.el.contains(document.activeElement)) return; if ((e.key === " " || e.key === "e" || e.key === "E" || e.key === "Enter") && !e.repeat) { e.preventDefault(); dropMany(); } };
+      keyH = function (e) { if ((e.key === " " || e.key === "e" || e.key === "E" || e.key === "Enter") && !e.repeat) { e.preventDefault(); dropMany(); } };
       document.addEventListener("keydown", keyH);
       var prevClean = S.cleanup;
       S.cleanup = function () {   // leaving with balls in the air: they are finished instantly (same physics) and paid
