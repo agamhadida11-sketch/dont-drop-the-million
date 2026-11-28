@@ -6677,8 +6677,8 @@ body.inlobby { padding-block: 0; }
         dampTo(cam, "hx", clamp(-latV * 0.0072, -0.07, 0.07), dtf, 11); dampTo(cam, "hz", clamp(fwdV * 0.0032, -0.03, 0.03), dtf, 11); dampTo(cam, "hy", clamp(-cam.vyS * 0.009, -0.07, 0.06), dtf, 11);
         var spp = sipT >= 0 ? clamp((t - sipT) / 1000, 0, 1) : 1; if (spp >= 1) sipT = -1; var sl = sipT >= 0 ? Math.sin(spp * Math.PI) : 0;
         var pkp = pokeT >= 0 ? clamp((t - pokeT) / (pokeP ? 620 : 420), 0, 1) : 1; if (pkp >= 1) pokeT = -1; var pa = pokeT >= 0 ? Math.sin(pkp * Math.PI) : 0;
-        // the hands keep their own swing phase: slower than the steps, and slower still when running (no jumps when you speed up)
-        var dph = cam.lph == null ? 0 : ph - cam.lph; cam.lph = ph; if (Math.abs(dph) > 2) dph = 0; cam.hph = (cam.hph || 0) + dph * (0.62 - 0.2 * rn);
+        // the hands keep their own swing phase: slower than the steps (v143: when running they swing a bit faster than before, still smooth)
+        var dph = cam.lph == null ? 0 : ph - cam.lph; cam.lph = ph; if (Math.abs(dph) > 2) dph = 0; cam.hph = (cam.hph || 0) + dph * (0.62 - 0.06 * rn);
         vmHands.forEach(function (h) {
           var ph2 = cam.hph + (h.s > 0 ? Math.PI : 0); h.g.scale.setScalar(0.82);   // the hands swing a little slower than the steps feel, so they never look frantic
           if (pokeP && pokeT >= 0 && h.s === pokeS) { pokeHand(h, t); return; }
