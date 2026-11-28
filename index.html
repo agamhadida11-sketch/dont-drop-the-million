@@ -189,6 +189,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--brass); out
 #tg .tgb.bhit, #tg .tgb.bstand, #tg .tgb.bdbl, #tg .tgb.bsplit { min-width: 150px; padding: 16px 28px; font-size: 1.3rem; border-width: 3px; border-radius: 10px; box-shadow: 0 5px 0 rgba(0,0,0,.55); }
 #tg .tgb:hover { filter: brightness(1.18); transform: translateY(-1px); } #tg .tgb:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.55); }
 #game.seated .act{display:none!important}
+#game.stand .joy{bottom:150px}
 #hb{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:12;display:flex;gap:6px;padding:6px;background:rgba(5,3,10,.84);border:1px solid rgba(255,255,255,.16);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.65);touch-action:manipulation;direction:ltr}
 #hb[hidden],#hbChips[hidden],#hbMap[hidden]{display:none}
 .hbs{position:relative;width:56px;height:56px;border-radius:8px;border:2px solid rgba(255,255,255,.18);background:rgba(22,18,34,.9);color:#fff;font:700 10px Fredoka,system-ui,Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
@@ -6732,7 +6733,7 @@ body.inlobby { padding-block: 0; }
         if (!p.isMe && p.presence && p.presence.cl && (p.presence.cl === oId || p.presence.role === other.r)) { peer = p.presence; break; }
       }
     }
-    if (peer) { lastPeerAt = performance.now(); if (peer.pk) { try { plkRemote(peer.pk); } catch (e) { /* cosmetic */ } } if (peer.sl) { try { slRemote(peer.sl); } catch (e) { /* cosmetic */ } } }
+    if (peer) { lastPeerAt = performance.now(); if (peer.pk) { try { plkRemote(peer.pk); } catch (e) { /* cosmetic */ } } if (peer.sl) { try { slRemote(peer.sl); } catch (e) { /* cosmetic */ } } if (peer.tb) { try { tbRemote(peer.tb); } catch (e) { /* cosmetic */ } } }
     else if (code !== "solo" && d["pos_" + other.r] && d["pos_" + other.r].t !== lastFbT) {
       lastFbT = d["pos_" + other.r].t; lastFbAt = performance.now();
     }
@@ -6864,10 +6865,10 @@ body.inlobby { padding-block: 0; }
 
     // presence
     if (roomNs && t - lastSend > 50) {
-      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig() + "," + slSig();
+      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig() + "," + slSig() + "," + tbSig();
       if (snap !== lastSent || t - lastSend > 2000) {
         lastSent = snap; lastSend = t;
-        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut(), sl: slOut() }).catch(function () { /* drop */ });
+        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut(), sl: slOut(), tb: tbOut() }).catch(function () { /* drop */ });
       }
     }
     if (code !== "solo" && ref && t - lastFbWrite > 130 && t - lastPeerAt > 2500) {
@@ -6899,8 +6900,8 @@ body.inlobby { padding-block: 0; }
     }
   });
   els.cv.addEventListener("pointerdown", function (e) {
-    if (casOpen) return; // seated at a table: the cursor stays free for clicking / dragging on the table
-    if (e.pointerType === "mouse" && canLock) { if (!pLocked) { try { els.cv.requestPointerLock(); } catch (x) { /* ignore */ } } return; }
+    if (casOpen && !(TS && TS.stand)) return; // seated at a table: the cursor stays free for clicking / dragging on the table
+    if (e.pointerType === "mouse" && canLock && !casOpen) { if (!pLocked) { try { els.cv.requestPointerLock(); } catch (x) { /* ignore */ } } return; }
     if (lookId !== null) return;
     lookId = e.pointerId; lookLast = { x: e.clientX, y: e.clientY };
     try { els.cv.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ }
@@ -7398,10 +7399,11 @@ body.inlobby { padding-block: 0; }
   function botsOfTable(id) { var H = world.casApi(); return H.bots.filter(function (b) { return b.tbl === id; }); }
   function sitDown(a) {
     if (casOpen) return; var H = world.casApi(), tb = H.tables[a.tbl], maker = PHYS[a.g]; if (!tb || !maker) { btoast("המשחק הזה עוד לא פתוח.", false); return; }
-    hudBuild(); casOpen = true; $("game").classList.add("seated"); keys = {}; casBusy = false; cgCur = { title: a.g, close: leaveTable };
+    var stand = a.g !== "billiards" && a.g !== "tony";   // every table but pool (it needs the top view) is played from your own eyes, standing at it
+    hudBuild(); casOpen = true; $("game").classList.add("seated"); $("game").classList.toggle("stand", stand); if (!stand) keys = {}; casBusy = false; cgCur = { title: a.g, close: leaveTable };
     var tg = new T.Group(); tg.position.set(tb.x, 0, tb.z); tg.rotation.y = tb.a; tg.scale.setScalar(tb.s || 1); H.hall.add(tg);
     var seatBots = botsOfTable(a.tbl).filter(function (b) { return b.kind === "seat"; }), dealerBot = botsOfTable(a.tbl).filter(function (b) { return b.kind === "dealer"; })[0] || null;
-    TS = { g: a.g, tb: tb, tg: tg, id: a.tbl, alive: true, bots: seatBots, dealer: dealerBot, hall: H.hall, hidden: [], cancelWait: null, seats: [] }; tb.inUse = true; if (tb.boardG) tb.boardG.visible = false;
+    TS = { g: a.g, stand: stand, st: a, tb: tb, tg: tg, id: a.tbl, alive: true, bots: seatBots, dealer: dealerBot, hall: H.hall, hidden: [], cancelWait: null, seats: [] }; tb.inUse = true; if (tb.boardG) tb.boardG.visible = false;
     // which stool is nearest to the player?
     var cam = world.cameraPos(), best = 0, bd = 1e9; tb.seats.forEach(function (s, i) { var w = tg.localToWorld(new V3(s[0], 0.6, s[1])), d = w.distanceTo(cam); if (d < bd) { bd = d; best = i; } });
     TS.mySeat = best; var c = Math.cos(tb.a), sn = Math.sin(tb.a);
@@ -7413,11 +7415,13 @@ body.inlobby { padding-block: 0; }
       TS.seats.push({ i: i, lx: s[0], lz: s[1], bot: bot, me: i === best, spot: null });
       if (i === best && bot) { bot.hide = true; bot.o.visible = false; TS.hidden.push(bot); }
     });
-    H.hall.children.forEach(function (o) { if (o.userData && o.userData.shaft) o.visible = false; }); world.setHands(false); tcOn = true; tcP = null; world.setCamFn(camHook); try { document.exitPointerLock && document.exitPointerLock(); } catch (e) { } $("tg").hidden = false; hudBal(); hudMsg(""); TS.balT = setInterval(hudBal, 400);
+    if (!stand) { H.hall.children.forEach(function (o) { if (o.userData && o.userData.shaft) o.visible = false; }); world.setHands(false); tcOn = true; tcP = null; world.setCamFn(camHook); }
+    else TS.walkT = setInterval(function () { if (!TS || !TS.alive || !me) return; var lx = EXIT_Z - me.z, uu = -me.x - XEND; if (Math.hypot(lx - tb.x, uu - (-30 - tb.z)) > 5.2) closeCasino(); }, 250);   // walk away from the table and you are out (bets still settle)
+    try { document.exitPointerLock && document.exitPointerLock(); } catch (e) { } $("tg").hidden = false; hudBal(); hudMsg(""); TS.balT = setInterval(hudBal, 400);
     sfx("chip"); maker(TS).then(function () { }, function (e) { if (window.console) console.error(e); });
   }
   function leaveTable() {
-    if (!TS) return; var S = TS; S.alive = false; if (S.tb) { S.tb.inUse = false; if (S.tb.boardG) S.tb.boardG.visible = true; } if (S.cancelWait) S.cancelWait(); clearInterval(S.balT); tcOn = false; world.setCamFn(null); tcP = null; world.setHands(true);
+    if (!TS) return; var S = TS; S.alive = false; clearInterval(S.walkT); $("game").classList.remove("stand"); if (S.tb) { S.tb.inUse = false; if (S.tb.boardG) S.tb.boardG.visible = true; } if (S.cancelWait) S.cancelWait(); clearInterval(S.balT); tcOn = false; world.setCamFn(null); tcP = null; world.setHands(true);
     S.hall.children.forEach(function (o) { if (o.userData && o.userData.shaft) o.visible = true; }); if (S.cleanup) S.cleanup(); cardPool.slice().forEach(freeCard); S.tg.traverse(function (o) { if (o.userData && o.userData.di != null) chipFree[o.userData.di].push(o); }); if (S.tg.parent) S.tg.parent.remove(S.tg);
     S.hidden.forEach(function (b) { b.hide = false; }); if (S.dealer) { S.dealer.hold = false; S.dealer.gs = null; S.dealer.face = 0; S.dealer.talk = false; } if ($("tg")) $("tg").hidden = true; $("game").classList.remove("seated"); TS = null; casOpen = false; cgCur = null;
   }
@@ -8587,6 +8591,14 @@ body.inlobby { padding-block: 0; }
   var SLIA = { y: 1.2739, z: 0.1983, w: 0.5, h: 0.17 };
   var SLOTV_P = [{ w: 0.62, h: 0.4, y: 1.62, z: 0.164, reels: 3, lev: true, ia: SLIA }, { w: 0.9, h: 0.72, y: 1.72, z: 0.149, reels: 5, ia: SLIA }, { w: 0.62, h: 0.62, y: 1.64, z: 0.159, reels: 3, lev: true, ia: SLIA }, { w: 0.74, h: 0.52, y: 1.64, z: 0.164, reels: 5, ia: SLIA }];
   var COIN_GEO = null, COIN_MAT = null;
+  var TB_OUT = [], TB_SEEN = {}, tbSeq = 0;
+  function tbSig() { return TB_OUT.length ? TB_OUT[TB_OUT.length - 1].id : ""; }
+  function tbOut() { var now = Date.now(); TB_OUT = TB_OUT.filter(function (o) { return now - o.at < 5000; }); return TB_OUT.map(function (o) { return [o.id, o.t, o.a, o.b, o.k]; }); }
+  function tbRemote(list) {   // a friend's results at a table float above that table here
+    if (!Array.isArray(list) || !world || !world.casApi) return; var H = world.casApi(); if (!H || !H.tables) return;
+    list.forEach(function (e) { if (!Array.isArray(e) || TB_SEEN[e[0]]) return; TB_SEEN[e[0]] = 1; var tb = H.tables[e[1]]; if (!tb) return;
+      var col = e[4] === "win" ? "#3dff9a" : e[4] === "lose" ? "#ff8aa0" : "#ffe27a"; floatText(H.hall, String(e[2]), tb.x, 2.3, tb.z, col, 0.42); if (e[3]) setTimeout(function () { floatText(H.hall, String(e[3]), tb.x, 2.0, tb.z, "#ffffff", 0.26); }, 120); if (e[4] === "win") pling(1100, 0.05); });
+  }
   var SL_OUT = [], SL_SEEN = {}, slSeq = 0;
   function slSig() { return SL_OUT.length ? SL_OUT[SL_OUT.length - 1].id : ""; }
   function slOut() { var now = Date.now(); SL_OUT = SL_OUT.filter(function (o) { return now - o.at < 6000; }); return SL_OUT.map(function (o) { return [o.id, o.i, o.b, o.f]; }); }
@@ -9214,7 +9226,7 @@ body.inlobby { padding-block: 0; }
     S.setInfo = function (l, m, r) { var a = $("wcL"), b = $("wcM"), c = $("wcR"); if (!a) return; a.textContent = l || ""; b.textContent = m || ""; c.textContent = r || ""; };
     S.setBet = function (t) { var e = $("wcBetRow"); if (e) e.innerHTML = t == null ? "" : "BET <b>" + t.toLocaleString() + "</b>"; };
     S.setGo = function (t, on, cls) { var g = $("wcGo"); if (!g) return; g.textContent = t || ""; g.disabled = !on; g.className = "wcb wcgo " + (cls || ""); g.style.display = t ? "" : "none"; };
-    S.pop = function (a, b, kind) { var p = $("wcPop"); if (!p) return; p.innerHTML = "<b>" + a + "</b><small>" + b + "</small>"; p.className = "show " + (kind || ""); clearTimeout(S.popT); S.popT = setTimeout(function () { p.className = ""; }, 2000); };
+    S.pop = function (a, b, kind) { if (TS === S && S.alive) TB_OUT.push({ id: clientId + ":" + (++tbSeq), t: S.id, a: String(a).slice(0, 24), b: String(b || "").slice(0, 28), k: kind || "", at: Date.now() }); var p = $("wcPop"); if (!p) return; p.innerHTML = "<b>" + a + "</b><small>" + b + "</small>"; p.className = "show " + (kind || ""); clearTimeout(S.popT); S.popT = setTimeout(function () { p.className = ""; }, 2000); };
     S.big = function (t) { var e = $("wcBig"); if (e) e.textContent = t == null ? "" : t; };
     S.onQ = function (e) { if (e.key === "q" || e.key === "Q") { e.preventDefault(); closeCasino(); } }; document.addEventListener("keydown", S.onQ);
     S.hudClean = function () { clearInterval(S.hudT); clearTimeout(S.popT); document.removeEventListener("keydown", S.onQ); var w = $("wc"); if (w) w.remove(); if ($("tgBar")) $("tgBar").style.display = ""; if ($("tgMsg")) $("tgMsg").style.display = ""; };
@@ -9258,9 +9270,12 @@ body.inlobby { padding-block: 0; }
       } catch (e) { /* cosmetic */ }
       fn(ev);
     };
-    $("game").addEventListener("pointerdown", S.onPtr, true);
+    var down = null, tapD = function (ev) { if (!S.alive) return; var t = ev.target; if (t && t.closest && t.closest("#wc,#tg,button,.joy")) { down = null; return; } down = { x: ev.clientX, y: ev.clientY, t: performance.now(), ev: ev }; },
+        tapU = function (ev) { if (!down) return; var d = down; down = null; if (Math.hypot(ev.clientX - d.x, ev.clientY - d.y) < 12 && performance.now() - d.t < 450) S.onPtr(d.ev); };
+    if (S.stand) { $("game").addEventListener("pointerdown", tapD, true); $("game").addEventListener("pointerup", tapU, true); }
+    else $("game").addEventListener("pointerdown", S.onPtr, true);
     S.onResize = function () { if (S.refit) S.refit(); }; window.addEventListener("resize", S.onResize);
-    var prev = S.hudClean; S.cleanup = function () { prev(); $("game").removeEventListener("pointerdown", S.onPtr, true); window.removeEventListener("resize", S.onResize); };
+    var prev = S.hudClean; S.cleanup = function () { prev(); $("game").removeEventListener("pointerdown", S.onPtr, true); $("game").removeEventListener("pointerdown", tapD, true); $("game").removeEventListener("pointerup", tapU, true); window.removeEventListener("resize", S.onResize); };
   }
   // ---------- ROULETTE ----------
   var ROU_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
@@ -9867,7 +9882,8 @@ body.inlobby { padding-block: 0; }
     L.forEach(function (c) { var b = document.createElement("button"); b.type = "button"; b.textContent = c === "x" ? "⌫" : c === "esc" ? "סגור" : c; if (c === "x" || c === "esc") b.className = "x"; b.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); kpPress(c); }); g.appendChild(b); });
   })();
   window.addEventListener("keydown", function (e) {
-    if (casOpen) { if (e.key === "Escape") closeCasino(); return; }
+    if (casOpen && e.key === "Escape") { closeCasino(); return; }
+    if (casOpen && !(TS && TS.stand)) return;
     if (kpOpen) { e.preventDefault(); if (e.key >= "0" && e.key <= "9") kpPress(e.key); else if (e.key === "Backspace") kpPress("x"); else if (e.key === "Escape") kpPress("esc"); else if (e.key === "Enter") kpPress("ok"); return; }
     if (els.game.hidden || !$("settings").hidden) return;
     var tg = e.target, tn = tg && tg.tagName;
