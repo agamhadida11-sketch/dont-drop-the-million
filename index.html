@@ -3094,6 +3094,7 @@ body.inlobby { padding-block: 0; }
     return null;
   }
   function dropAction() {
+    var cas0 = casinoAction(); if (cas0 && cas0.g === "plinko") return { k: "plkbet", label: "💰 " + plkHallBet.toLocaleString() };
     if (!canAct() || me.carry <= 0 || gateNeeded(doc)) return null;
     var pi = padReach(me.x, me.z);
     if (pi >= 0) return { k: "pad", i: pi, label: "הניחו" };
@@ -3117,10 +3118,11 @@ body.inlobby { padding-block: 0; }
     var a = takeAction();
     if (a && world && world.poke) world.poke(1);   // the hands only reach out when there is really something to take or press
     if (!a) { if (canAct()) setHint(me.carry > 0 ? "יש לכם כסף בידיים. הניחו אותו עם " + keyLabel(settings.keys.drop) + " או כפתור ההנחה." : "התקרבו לקופה כדי לקחת כסף, או עמדו על פודיום שהנחתם עליו כדי לקחת בחזרה."); return; }
-    if (a.k === "casino") { if (a.g === "juke") jukePress(); else if (a.g === "slots" && a.m) { if (SLV) SLV.press("spin"); } else if (KIOS[a.g] && a.m) { if (KIO && KIO.mk === a.m) KIO.press(KIOS[a.g].act); } else if (a.tbl != null && PHYS[a.g]) sitDown(a); else btoast("המשחק הזה עוד לא פתוח.", false); } else if (a.k === "door") openKeypad(a.s); else if (a.k === "start") startGo(); else if (a.k === "lock") onLockClick(); else if (a.k === "bank") pickUp(); else takeBack(a.i);
+    if (a.k === "casino") { if (a.g === "plinko" && a.tbl != null) { if (world && world.casApi()) { var tb0 = world.casApi().tables[a.tbl]; if (tb0) world.poke(1, new T.Vector3(tb0.x, PLKB.YC + 1.2, tb0.z)); } plkHallDrop(a.tbl); } else if (a.g === "juke") jukePress(); else if (a.g === "slots" && a.m) { if (SLV) SLV.press("spin"); } else if (KIOS[a.g] && a.m) { if (KIO && KIO.mk === a.m) KIO.press(KIOS[a.g].act); } else if (a.tbl != null && PHYS[a.g]) sitDown(a); else btoast("המשחק הזה עוד לא פתוח.", false); } else if (a.k === "door") openKeypad(a.s); else if (a.k === "start") startGo(); else if (a.k === "lock") onLockClick(); else if (a.k === "bank") pickUp(); else takeBack(a.i);
   }
   function dropHere() {
     var a = dropAction();
+    if (a && a.k === "plkbet") { plkHallBetStep(); return; }
     if (!a) { if (canAct()) setHint(me.carry > 0 ? "עמדו על פודיום כדי להניח, או ליד הקופה כדי להחזיר." : "אין כסף בידיים. קחו כסף מהקופה עם " + keyLabel(settings.keys.act) + "."); return; }
     if (a.k === "pad") placeOn(a.i);
     else { if (world) world.fly("hand2bank", 0, Math.ceil(me.carry / UNIT), role); me.carry = 0; soundDrop(); setHint("החזרת את הכסף לקופה."); if (doc) updateUi(doc); }
@@ -6730,7 +6732,7 @@ body.inlobby { padding-block: 0; }
         if (!p.isMe && p.presence && p.presence.cl && (p.presence.cl === oId || p.presence.role === other.r)) { peer = p.presence; break; }
       }
     }
-    if (peer) { lastPeerAt = performance.now(); if (peer.pk) { try { plkRemote(peer.pk); } catch (e) { /* cosmetic */ } } }
+    if (peer) { lastPeerAt = performance.now(); if (peer.pk) { try { plkRemote(peer.pk); } catch (e) { /* cosmetic */ } } if (peer.sl) { try { slRemote(peer.sl); } catch (e) { /* cosmetic */ } } }
     else if (code !== "solo" && d["pos_" + other.r] && d["pos_" + other.r].t !== lastFbT) {
       lastFbT = d["pos_" + other.r].t; lastFbAt = performance.now();
     }
@@ -6862,10 +6864,10 @@ body.inlobby { padding-block: 0; }
 
     // presence
     if (roomNs && t - lastSend > 50) {
-      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig();
+      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig() + "," + slSig();
       if (snap !== lastSent || t - lastSend > 2000) {
         lastSent = snap; lastSend = t;
-        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut() }).catch(function () { /* drop */ });
+        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut(), sl: slOut() }).catch(function () { /* drop */ });
       }
     }
     if (code !== "solo" && ref && t - lastFbWrite > 130 && t - lastPeerAt > 2500) {
@@ -7232,17 +7234,36 @@ body.inlobby { padding-block: 0; }
   var PLK_OUT = [], PLK_SEEN = {}, PLK_GHOSTS = [], plkGhostRaf = 0;
   function plkSig() { return PLK_OUT.length ? PLK_OUT[PLK_OUT.length - 1].id : ""; }
   function plkOut() { var now = Date.now(); PLK_OUT = PLK_OUT.filter(function (o) { return now - o.at < 6000; }); return PLK_OUT.map(function (o) { return [o.id, o.tbl, o.R, o.seed]; }); }
+  var PLK_BETS = [100, 500, 1000, 5000, 10000, 50000, 100000], plkHallBet = 1000;
+  function plkHallMsg(t, kind) { var e = $("slmsg"); if (!e) { e = cge("div", "", ""); e.id = "slmsg"; $("game").appendChild(e); } e.textContent = t; e.className = kind || ""; e.style.opacity = 1; clearTimeout(plkHallMsg.t); plkHallMsg.t = setTimeout(function () { e.style.opacity = 0; }, 2400); }
+  function plkHallBetStep() { var i = PLK_BETS.indexOf(plkHallBet); plkHallBet = PLK_BETS[(i + 1) % PLK_BETS.length]; sfx("chip"); plkHallMsg("🔺 Plinko · BET " + plkHallBet.toLocaleString()); }
+  // walk up and press: the ball drops on the hall machine itself (12 rows, medium risk, as painted on it) and pays where it lands
+  function plkHallDrop(tbl) {
+    if (casBal < plkHallBet) { plkHallMsg("אין מספיק כסף · BET " + plkHallBet.toLocaleString(), "lose"); sfx("lose"); return; }
+    var mine = PLK_GHOSTS.filter(function (g) { return g.own; }).length; if (mine >= 20) return;
+    casApply(-plkHallBet); sfx("chip"); var seed = (Math.random() * 4294967296) >>> 0;
+    PLK_OUT.push({ id: clientId + ":" + seed, tbl: tbl, R: 12, seed: seed, at: Date.now() });
+    plkSpawn(tbl, 12, seed, { bet: plkHallBet, risk: 1 });
+    plkHallMsg("🔺 BET " + plkHallBet.toLocaleString());
+  }
   function plkRemote(list) {
     if (!Array.isArray(list) || !world || !world.casApi) return; var H = world.casApi(); if (!H || !H.tables) return;
     list.forEach(function (e) {
       if (!Array.isArray(e) || PLK_SEEN[e[0]]) return; PLK_SEEN[e[0]] = 1; var tb = H.tables[e[1]], R = +e[2]; if (!tb || PLK.ROWS.indexOf(R) < 0) return;
-      var grp = new T.Group(); grp.position.set(tb.x, 0, tb.z); grp.rotation.y = tb.a; grp.scale.setScalar(tb.s || 1); H.hall.add(grp);
-      var L = plkLayout(R), m = new T.Mesh(new T.SphereGeometry(L.rb, 20, 14), new T.MeshPhongMaterial({ color: 0x46e0ff, emissive: 0x124050, specular: 0xffffff, shininess: 120 }));
-      grp.add(m); PLK_GHOSTS.push({ g: grp, m: m, L: L, b: plkBall(L, e[3] >>> 0), acc: 0 });
+      plkSpawn(e[1], R, e[3] >>> 0, null);
     });
+  }
+  function plkSpawn(tbl, R, seed, own) {   // a ball on the hall machine: yours (own: bet + risk, paid on landing) or a friend's
+    var H = world.casApi(), tb = H && H.tables[tbl]; if (!tb) return;
+    var grp = new T.Group(); grp.position.set(tb.x, 0, tb.z); grp.rotation.y = tb.a; grp.scale.setScalar(tb.s || 1); H.hall.add(grp);
+    var L = plkLayout(R), col = own ? [0xffc83a, 0xff4fb8, 0x7dffb0][seed % 3] : 0x46e0ff, m = new T.Mesh(new T.SphereGeometry(L.rb, 20, 14), new T.MeshPhongMaterial({ color: col, emissive: new T.Color(col).multiplyScalar(0.3), specular: 0xffffff, shininess: 120 }));
+    grp.add(m); PLK_GHOSTS.push({ g: grp, m: m, L: L, b: plkBall(L, seed), acc: 0, own: own, tbl: tbl });
+    plkGhostRun();
+  }
+  function plkGhostRun() {
     if (PLK_GHOSTS.length && !plkGhostRaf) { var last = performance.now(); plkGhostRaf = requestAnimationFrame(function step(now) {
       var dt = Math.min(0.1, (now - last) / 1000); last = now;
-      PLK_GHOSTS.slice().forEach(function (gh) { gh.acc += dt; while (gh.acc >= PLK_DT && !gh.b.done) { gh.acc -= PLK_DT; plkStep(gh.L, gh.b, null); } gh.m.position.set(gh.b.x, gh.b.y, 0.03); if (gh.b.done) { gh.done = (gh.done || 0) + dt; if (gh.done > 0.6) { gh.g.parent && gh.g.parent.remove(gh.g); PLK_GHOSTS.splice(PLK_GHOSTS.indexOf(gh), 1); } } });
+      PLK_GHOSTS.slice().forEach(function (gh) { var hits = []; gh.acc += dt; while (gh.acc >= PLK_DT && !gh.b.done) { gh.acc -= PLK_DT; plkStep(gh.L, gh.b, hits); } if (hits.length && gh.own && (!gh.lh || performance.now() - gh.lh > 90)) { gh.lh = performance.now(); pling(600 + Math.random() * 400, 0.03); } gh.m.position.set(gh.b.x, gh.b.y, 0.03); if (gh.b.done && !gh.paid) { gh.paid = 1; var mult = plkMult(gh.L.R, gh.own ? gh.own.risk : 1)[gh.b.k], bxp = (gh.b.k - gh.L.R / 2) * gh.L.SX; floatText(gh.g, plkFmt(mult), bxp, gh.L.BY + 0.3, 0.2, mult >= 1 ? "#ffd23f" : "#ff9aa8", 0.18); if (gh.own) { var pay = Math.round(gh.own.bet * mult), net = pay - gh.own.bet; if (pay > 0) casApply(pay); plkHallMsg((net >= 0 ? "+" : "") + net.toLocaleString() + " · " + plkFmt(mult), net > 0 ? "win" : "lose"); if (net > 0 && mult >= 3) winFx(net, gh.own.bet, "plinko"); else if (net > 0) pling(1320, 0.08); } } if (gh.b.done) { gh.done = (gh.done || 0) + dt; if (gh.done > 0.6) { gh.g.parent && gh.g.parent.remove(gh.g); PLK_GHOSTS.splice(PLK_GHOSTS.indexOf(gh), 1); } } });
       plkGhostRaf = PLK_GHOSTS.length ? requestAnimationFrame(step) : 0;
     }); }
   }
@@ -8566,6 +8587,13 @@ body.inlobby { padding-block: 0; }
   var SLIA = { y: 1.2739, z: 0.1983, w: 0.5, h: 0.17 };
   var SLOTV_P = [{ w: 0.62, h: 0.4, y: 1.62, z: 0.164, reels: 3, lev: true, ia: SLIA }, { w: 0.9, h: 0.72, y: 1.72, z: 0.149, reels: 5, ia: SLIA }, { w: 0.62, h: 0.62, y: 1.64, z: 0.159, reels: 3, lev: true, ia: SLIA }, { w: 0.74, h: 0.52, y: 1.64, z: 0.164, reels: 5, ia: SLIA }];
   var COIN_GEO = null, COIN_MAT = null;
+  var SL_OUT = [], SL_SEEN = {}, slSeq = 0;
+  function slSig() { return SL_OUT.length ? SL_OUT[SL_OUT.length - 1].id : ""; }
+  function slOut() { var now = Date.now(); SL_OUT = SL_OUT.filter(function (o) { return now - o.at < 6000; }); return SL_OUT.map(function (o) { return [o.id, o.i, o.b, o.f]; }); }
+  function slRemote(list) {   // a friend's spins replay on the same machines here
+    if (!Array.isArray(list) || !world || !world.casApi) return; var H = world.casApi(); if (!H || !H.stations) return; var sts = H.stations.filter(function (x) { return x.g === "slots"; });
+    list.forEach(function (e) { if (!Array.isArray(e) || SL_SEEN[e[0]]) return; SL_SEEN[e[0]] = 1; var st = sts[e[1]]; if (!st || !Array.isArray(e[3])) return; var S = slotUse({ m: st.m, ty: st.ty }); if (S && S.remoteSpin) S.remoteSpin(e[3].map(function (c) { return c.map(function (q) { return (SLOT_SYM[q] || SLOT_SYM[0])[0]; }); }), +e[2] || 0); });
+  }
   var SLV = null, SLVS = [], slxEl = null, slmEl = null;   // SLVS: every live machine near you (each with its own reels and money); SLV: the one you are using
   // lite: every machine in the hall shows its own real reels on its screen (a half-size canvas, drawn only when it changes, no buttons);
   // when you come close it becomes a full machine with the same reels, bet and last win (from = the session it replaces)
@@ -8657,6 +8685,11 @@ body.inlobby { padding-block: 0; }
       else if (act === "spin") spin();
     }
     S.press = press;
+    S.remoteSpin = function (fin, bet) {   // a friend spun this machine: same reels and result, no money changes hands here
+      if (S.busy) return; S.remote = true; S.bet = bet || S.bet; S.busy = true; S.win = 0; S.winLine = false; S.flash = 0; drawInfo();
+      var t0 = performance.now(), stopT = []; for (var i = 0; i < n; i++) { var r = S.reels[i]; r.spin = true; r.easing = null; r.v = 26 + i * 2; stopT.push(t0 + 900 + i * (n === 5 ? 380 : 520)); }
+      S.fin = fin; S.stopT = stopT; S.stopped = 0;
+    };
     function spin() {
       if (S.busy) return; if (!(S.free > 0) && casBal < S.bet) { hudMsg("אין מספיק כסף להימור הזה – הורידו הימור.", "lose"); tone(200, 0.2, 0, "sawtooth", 0.08); return; }
       if (S.free > 0) { S.free--; S.wasFree = true; } else { casApply(-S.bet); S.wasFree = false; } S.busy = true; S.win = 0; S.winLine = false; S.flash = 0; drawInfo(); hudMsg("");
@@ -8664,11 +8697,13 @@ body.inlobby { padding-block: 0; }
       var t0 = performance.now(), stopT = []; for (i = 0; i < n; i++) { var r = S.reels[i]; r.spin = true; r.easing = null; r.v = 26 + i * 2; stopT.push(t0 + 900 + i * (n === 5 ? 380 : 520)); }
       S.spinTimer = setInterval(function () { tone(300 + Math.random() * 120, 0.025, 0, "square", 0.03); }, 85);
       S.fin = fin; S.stopT = stopT; S.stopped = 0;
+      try { var H0 = world.casApi(), idx = H0.stations.filter(function (x) { return x.g === "slots"; }).map(function (x) { return x.m; }).indexOf(S.mk); if (idx >= 0) SL_OUT.push({ id: clientId + ":" + (++slSeq), i: idx, b: S.bet, f: fin.map(function (c) { return c.map(function (sy) { for (var q = 0; q < SLOT_SYM.length; q++) if (SLOT_SYM[q][0] === sy) return q; return 0; }); }), at: Date.now() }); } catch (e) { /* only for friends */ }
     }
     function settleSpin() {
       clearInterval(S.spinTimer); var f = S.fin.map(function (c) { return c[1]; }), mult = slotMult(f[0], f[1], f[2]);
       if (n === 5 && f[0] === f[1] && f[1] === f[2]) { if (f[3] === f[0]) mult *= 2.5; if (f[3] === f[0] && f[4] === f[0]) mult *= 2.4; }
       var win = Math.round(S.bet * mult); S.win = win; S.busy = false;
+      if (S.remote) { S.remote = false; if (win > 0) { S.winLine = true; S.flash = 1; S.coinN = Math.min(60, Math.round(6 + Math.min(mult, 120) * 0.5)); S.coinT = performance.now(); setTimeout(function () { S.winLine = false; }, 3200); } drawInfo(); return; }
       if (win > 0) { casApply(win); S.freeWin = (S.freeWin || 0) + win; S.winLine = true; S.flash = 1; var big = mult >= 35; hudMsg((win > S.bet ? "זכיתם " + money(win - S.bet) + "! 🎉" : "הימור חוזר"), "win"); var sstk = S.wasFree ? 0 : S.bet; if (win > sstk) winFx(win - sstk, S.bet, "slot"); S.coinN = Math.min(110, Math.round(8 + Math.min(mult, 120) * 0.9)); S.coinT = performance.now(); setTimeout(function () { S.winLine = false; }, 3200); }
       else { hudMsg("לא הפעם – נסו שוב!", "lose"); tone(220, 0.25, 0, "sawtooth", 0.07); tone(165, 0.3, 0.15, "sawtooth", 0.07); }
       drawInfo(); if (S.free > 0) setTimeout(function () { if (S.alive && !S.busy && S.free > 0) spin(); }, 1400); else if (S.freeWin > 0) { var fw = S.freeWin; S.freeWin = 0; hudMsg("בונוס הסתיים: " + money(fw), "win"); }
