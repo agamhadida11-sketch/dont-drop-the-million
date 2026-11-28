@@ -6145,7 +6145,7 @@ body.inlobby { padding-block: 0; }
     var vmBundle = new T.Group(); vmBundle.position.set(0, -0.42, -0.95); vmBundle.scale.setScalar(0.36); vmBundle.visible = false; vm.add(vmBundle);
     // hotbar held items: chip stack and a drink glass
     var vmHeld = new T.Group(); vmHeld.position.set(0, -0.42, -0.95); vmHeld.visible = false; vm.add(vmHeld);
-    var heldKind = 0, sipT = -1, pokeT = -1, pokeS = 1, chipGrp = new T.Group(), glassGrp = new T.Group(), liqM = lam(0xff6a3a); vmHeld.add(chipGrp); vmHeld.add(glassGrp);
+    var heldKind = 0, sipT = -1, pokeT = -1, pokeS = 1, pokeP = null, pokeL = new T.Vector3(), pokeDir = new T.Vector3(), pokeQ = new T.Quaternion(), FWD = new T.Vector3(0, 0, -1), chipGrp = new T.Group(), glassGrp = new T.Group(), liqM = lam(0xff6a3a); vmHeld.add(chipGrp); vmHeld.add(glassGrp);
     (function () {
       var cc = [0xe8e8f0, 0xc4122e, 0x1f5fd0, 0x12945a, 0x2a2a34, 0x7a1fa8, 0xf08a10];
       [[-0.13, 5, 1], [0.03, 7, 3], [0.17, 4, 5]].forEach(function (st, si) {
@@ -6448,11 +6448,22 @@ body.inlobby { padding-block: 0; }
         // the hands trail the body: sideways when you sidestep, back when you run, and they float up and down around a jump
         dampTo(cam, "hx", clamp(-latV * 0.0072, -0.07, 0.07), dtf, 11); dampTo(cam, "hz", clamp(fwdV * 0.0032, -0.03, 0.03), dtf, 11); dampTo(cam, "hy", clamp(-cam.vyS * 0.009, -0.07, 0.06), dtf, 11);
         var spp = sipT >= 0 ? clamp((t - sipT) / 1000, 0, 1) : 1; if (spp >= 1) sipT = -1; var sl = sipT >= 0 ? Math.sin(spp * Math.PI) : 0;
-        var pkp = pokeT >= 0 ? clamp((t - pokeT) / 420, 0, 1) : 1; if (pkp >= 1) pokeT = -1; var pa = pokeT >= 0 ? Math.sin(pkp * Math.PI) : 0;
+        var pkp = pokeT >= 0 ? clamp((t - pokeT) / (pokeP ? 620 : 420), 0, 1) : 1; if (pkp >= 1) pokeT = -1; var pa = pokeT >= 0 ? Math.sin(pkp * Math.PI) : 0;
         // the hands keep their own swing phase: slower than the steps, and slower still when running (no jumps when you speed up)
         var dph = cam.lph == null ? 0 : ph - cam.lph; cam.lph = ph; if (Math.abs(dph) > 2) dph = 0; cam.hph = (cam.hph || 0) + dph * (0.62 - 0.2 * rn);
         vmHands.forEach(function (h) {
           var ph2 = cam.hph + (h.s > 0 ? Math.PI : 0);   // the hands swing a little slower than the steps feel, so they never look frantic
+          if (pokeP && pokeT >= 0 && h.s === pokeS) {   // pressing a real button: the hand travels from the shoulder to the button, the index finger points, pushes it in and comes back
+            pokeL.copy(pokeP); vm.worldToLocal(pokeL);
+            var sh0 = new T.Vector3(h.s * 0.32, -0.42, 0.05), ein = pkp < 0.45 ? ease(pkp / 0.45) : pkp < 0.62 ? 1 : 1 - ease((pkp - 0.62) / 0.38), push = pkp >= 0.45 && pkp < 0.62 ? Math.sin((pkp - 0.45) / 0.17 * Math.PI) * 0.03 : 0;
+            pokeDir.copy(pokeL).sub(sh0); var dl = pokeDir.length(); pokeDir.normalize();
+            var tip = 0.36, reach = Math.max(0, dl - tip + push) * ein;   // the arm extends straight out from the shoulder toward the button
+            h.g.visible = ein > 0.12; h.g.position.copy(sh0).addScaledVector(pokeDir, reach);
+            pokeQ.setFromUnitVectors(FWD, pokeDir); h.g.quaternion.copy(pokeQ); h.g.rotateZ(-h.s * 0.25); h.g.rotateX(0.12 * (1 - ein));
+            h.f.forEach(function (f, k) { f.rotation.x = f.userData.rx - (k === 0 ? 0.05 : 1.35 + k * 0.08); }); h.tg.rotation.x = h.tr.x - 0.8;
+            return;
+          }
+          if (pokeP && h.s !== pokeS && pokeT >= 0) { h.g.visible = false; return; }
           var swing = Math.sin(ph2), lift = Math.max(0, Math.cos(ph2));
           var idle = Math.sin(t / 1100 + h.s) * 0.008 * (1 - wa);
           if (me.carry > 0 || heldKind) {
@@ -6496,7 +6507,7 @@ body.inlobby { padding-block: 0; }
       },
       setHeld: function (k, col, fill) { heldKind = k | 0; if (col != null) liqM.color.setHex(col); var l = glassGrp.userData.liq; if (fill != null && l) { var f = Math.max(0.06, fill); l.scale.y = f; l.position.y = 0.0 + 0.085 * f; } },
       sip: function () { sipT = performance.now(); },
-      poke: function (s) { pokeT = performance.now(); pokeS = s || 1; },
+      poke: function (s, at) { pokeT = performance.now(); pokeP = at ? at.clone() : null; if (pokeP) { camera.updateMatrixWorld(); pokeL.copy(pokeP); vm.worldToLocal(pokeL); pokeS = pokeL.x >= 0 ? 1 : -1; } else pokeS = s || 1; },   // at: a world point (a real button) the finger goes to and presses
       exitDoor: function (sd, on) { if (exits[sd]) exits[sd].tgt = on ? 1 : 0; },
       guardPass: function (on) { if (gd) gd.tgt = on ? 1 : 0; },
       casUpdate: function (t, mx, mz) { if (casHall) casHall.update(t, mx, mz); },
@@ -8594,7 +8605,7 @@ body.inlobby { padding-block: 0; }
     }
     S.drawScreen = drawScreen; drawInfo(); drawScreen();
     function press(act) {
-      if (!S.alive) return; SLV = S; if (world && world.poke) world.poke(1); var bm = S.btns.filter(function (b) { return b.userData.act === act; })[0]; if (bm) { bm.userData.hold = true; glow(bm, 0.95); setTimeout(function () { bm.userData.hold = false; glow(bm, hov === bm ? 0.35 : 0); }, 170); } tone(act === "spin" ? 520 : 760, 0.05, 0, "square", 0.07);
+      if (!S.alive) return; SLV = S; var bm = S.btns.filter(function (b) { return b.userData.act === act; })[0]; if (world && world.poke) world.poke(1, bm ? bm.getWorldPosition(new T.Vector3()) : null); if (bm) { bm.userData.hold = true; glow(bm, 0.95); setTimeout(function () { bm.userData.hold = false; glow(bm, hov === bm ? 0.35 : 0); }, 170); } tone(act === "spin" ? 520 : 760, 0.05, 0, "square", 0.07);
       if (act === "down") { if (S.busy || S.free > 0) return; var ix = SLOT_BETS.indexOf(S.bet); S.bet = SLOT_BETS[Math.max(0, ix - 1)] || SLOT_BETS[0]; casBet = S.bet; drawInfo(); }
       else if (act === "up") { if (S.busy || S.free > 0) return; var ix2 = SLOT_BETS.indexOf(S.bet); S.bet = SLOT_BETS[Math.min(SLOT_BETS.length - 1, ix2 + 1)]; casBet = S.bet; drawInfo(); }
       else if (act === "bonus") { if (S.busy || S.free > 0) return; var bc = S.bet * 21; if (casBal < bc) { hudMsg("הבונוס עולה " + money(bc) + " – אין מספיק כסף.", "lose"); tone(200, 0.2, 0, "sawtooth", 0.08); return; } casApply(-bc); S.free = 8; S.freeWin = 0; drawInfo(); hudMsg("8 סיבובי בונוס חינם!", "win"); [523, 659, 784, 1046].forEach(function (fq, q) { tone(fq, 0.15, q * 0.07, "triangle", 0.12); }); setTimeout(function () { if (S.alive && !S.busy && S.free > 0) spin(); }, 700); }
@@ -8714,7 +8725,7 @@ body.inlobby { padding-block: 0; }
     cvs.addEventListener("pointerdown", K.onDown, true); cvs.addEventListener("pointermove", K.onMove, true); window.addEventListener("keydown", K.onKey);
     K.cleanup = function () { cvs.removeEventListener("pointerdown", K.onDown, true); cvs.removeEventListener("pointermove", K.onMove, true); window.removeEventListener("keydown", K.onKey); clearInterval(K.hovT); };
     if (!slxEl) { slxEl = cge("div", "", ""); slxEl.id = "slx"; $("game").appendChild(slxEl); } slxEl.style.display = "block";
-    K.press = function (act) { if (!K.alive) return; if (world && world.poke) world.poke(1); var bm = K.byAct[act]; if (bm) { bm.position.y = bm.userData.y0 - 0.022; setTimeout(function () { bm.position.y = bm.userData.y0; }, 140); } D.press(K, act); };
+    K.press = function (act) { if (!K.alive) return; var bm = K.byAct[act]; if (world && world.poke) world.poke(1, bm ? bm.getWorldPosition(new T.Vector3()) : null); if (bm) { bm.position.y = bm.userData.y0 - 0.022; setTimeout(function () { bm.position.y = bm.userData.y0; }, 140); } D.press(K, act); };
     try { D.build(K); } catch (e) { kioStop(); return; }
     var tPrev = performance.now();
     (function loop(now) { if (!K.alive) return; var dt = Math.min(0.05, (now - tPrev) / 1000); tPrev = now; try { if (D.tick) D.tick(K, dt, now); } catch (e) { } K.raf = requestAnimationFrame(loop); })(performance.now());
