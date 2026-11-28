@@ -927,6 +927,47 @@ body.inlobby { padding-block: 0; }
 #game.locked .lockhint, #game.nolock .lockhint, #game.seated .lockhint { display: none; }
 @media (hover: none), (pointer: coarse) { .lockhint { display: none; } }
 @media (prefers-reduced-motion: reduce) { .lockhint { animation: none; } }
+
+/* v127 · the stage fills the whole screen on every device (no empty bands above and below);
+   the pot, answers and lock button float over it, and every message the game has for the player goes to the chat box */
+#game:not([hidden]) { padding: 0; gap: 0; }
+#game .stage { position: absolute; inset: 0; border: 0; border-radius: 0; min-height: 0; box-shadow: none; }
+#game .meta, #game .pot .lab { display: none; }
+#game .pot { position: absolute; top: 10px; left: 126px; z-index: 6; padding: 0 14px; border-radius: 999px; background: rgba(10, 6, 36, .85); border: 1.5px solid rgba(243, 194, 79, .5); pointer-events: none; }
+#game .pot .big { font-size: 1.15rem; }
+#game .stage .qov { top: 8px; width: min(52%, 600px); font-size: clamp(.85rem, 1.6vw, 1.15rem); padding: 4px 12px; }
+#game .answers { position: absolute; top: 54px; left: 50%; transform: translateX(-50%); z-index: 6; width: min(62%, 720px); pointer-events: none; }
+#game .ans { background: rgba(10, 6, 36, .78); }
+#game .stage .timer { top: 52px; left: auto; right: 14px; transform: none; width: 46px; height: 46px; font-size: 19px; animation-name: tpulseL; }
+#game .stage .timer:not(.low):not(.crit) { animation: none; }
+@keyframes tpulseL { 50% { transform: scale(1.14); } }
+#game .deck { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 6; width: auto; max-width: min(60%, 520px); gap: 4px; pointer-events: none; align-items: center; }
+#game .deck .bottom { flex-direction: row; align-items: center; justify-content: center; gap: 6px; }
+#game .deck .bottom > *, #game .chips > * { pointer-events: auto; }
+#game .hint, #game .verdict, #game .btoast, #game .gatetip { display: none !important; }
+#game .primary { padding: 7px 16px; font-size: .92rem; white-space: nowrap; }
+#game.offstage .deck, #game.offstage .answers, #game.offstage .pot { display: none; }
+@media (max-width: 640px) { #game .pot { top: 68px; left: 10px; } #game .pot .big { font-size: 1rem; } #game .answers { top: 104px; width: calc(100% - 120px); grid-template-columns: repeat(2, minmax(0, 1fr)); } #game .stage .qov { width: calc(100% - 140px); } }
+
+/* chat box: bottom-left of the screen; new lines light up, then the box fades back so it does not cover the view */
+.chat { position: absolute; left: 12px; bottom: 12px; z-index: 30; width: min(380px, 38%); max-height: 34%; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 12px; background: rgba(8, 5, 18, .62); border: 1px solid rgba(243, 210, 127, .25); color: var(--cash); font-size: .88rem; line-height: 1.35; direction: rtl; pointer-events: auto; transition: opacity .5s, background .5s; }
+.chat.dim { opacity: .45; background: rgba(8, 5, 18, .3); }
+.chat:hover { opacity: 1; background: rgba(8, 5, 18, .72); }
+.chat-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 800; font-size: .78rem; color: var(--gold-2); letter-spacing: .03em; }
+.chat-head button { border: 0; background: none; color: var(--mute); font-size: .85rem; padding: 0 4px; }
+.chat-log { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; scrollbar-width: thin; }
+.chat-log li { padding: 3px 8px; border-radius: 8px; background: rgba(255, 255, 255, .05); overflow-wrap: anywhere; animation: chatIn .25s ease-out; }
+.chat-log li b { color: var(--gold-2); font-weight: 800; margin-inline-end: 4px; }
+.chat-log li.ok { border-inline-start: 3px solid var(--win); }
+.chat-log li.bad { border-inline-start: 3px solid var(--loss); }
+.chat-log li.info { border-inline-start: 3px solid rgba(243, 210, 127, .7); }
+.chat-log li small { color: var(--mute); font-size: .72rem; margin-inline-start: 6px; }
+@keyframes chatIn { from { transform: translateY(6px); opacity: 0; } }
+.chat.min .chat-log { display: none; }
+.chat[hidden] { display: none; }
+#game.seated .chat { bottom: auto; top: 60px; }
+@media (hover: none) and (pointer: coarse) { .chat { bottom: 146px; width: min(300px, 55%); font-size: .8rem; max-height: 26%; } }
+@media (prefers-reduced-motion: reduce) { .chat-log li { animation: none; } }
 </style>
 
 <div id="app" dir="rtl" lang="he">
@@ -1150,6 +1191,10 @@ body.inlobby { padding-block: 0; }
       <div class="lockhint" aria-hidden="true">🖱️ לחצו על המסך כדי להסתכל עם העכבר</div>
       <div class="gatetip" id="gateTip" hidden></div>
       <div class="btoast" id="btoast" hidden></div>
+      <div class="chat dim" id="chat" role="log" aria-live="polite" aria-label="הודעות המשחק">
+        <div class="chat-head"><span>💬 צ׳אט</span><button type="button" id="chatMin" aria-label="מזעור הצ׳אט" aria-expanded="true">—</button></div>
+        <ol class="chat-log" id="chatLog"></ol>
+      </div>
       <div class="cashpill money" id="cashPill">💰 </div>
       <div class="cg" id="cg" hidden>
         <div class="cgbox">
@@ -10379,6 +10424,41 @@ body.inlobby { padding-block: 0; }
     return { onShow: onShow, board: board };
   })();
   if (!els.lobby.hidden) { document.body.classList.add("inlobby"); MM.onShow(true); }
+
+  // ---------- v127: chat box for game messages ----------
+  // The old message spots (hint line, verdict, toast, gate tip) stay in the page and keep being written by the game code;
+  // we just watch them and post every new message into the chat instead of showing them on the screen.
+  window.CHAT = (function () {
+    var box = $("chat"), log = $("chatLog"), recent = [], dimT = 0;
+    function hhmm() { var d = new Date(); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+    function say(text, kind, who) {
+      text = String(text || "").replace(/\s+/g, " ").trim(); if (!text) return;
+      var now = Date.now();
+      recent = recent.filter(function (r) { return now - r.t < 12000; });
+      if (recent.some(function (r) { return r.x === text; })) return;   // the same line again within 12 s: skip
+      recent.push({ x: text, t: now });
+      var li = document.createElement("li"), b = document.createElement("b"), s = document.createElement("span"), sm = document.createElement("small");
+      li.className = kind || "info"; b.textContent = (who || "המשחק") + ":"; s.textContent = text; sm.textContent = hhmm();
+      li.appendChild(b); li.appendChild(s); li.appendChild(sm); log.appendChild(li);
+      while (log.children.length > 40) log.removeChild(log.firstChild);
+      log.scrollTop = log.scrollHeight;
+      box.classList.remove("dim"); clearTimeout(dimT); dimT = setTimeout(function () { box.classList.add("dim"); }, 7000);
+    }
+    function kindOf(el) { var c = el.className || ""; return /\b(bad|lose)\b/.test(c) ? "bad" : /\b(ok|win)\b/.test(c) ? "ok" : "info"; }
+    function watch(el, getKind) {
+      if (!el) return;
+      var last = "";
+      function check() { var t = el.hidden ? "" : (el.textContent || "").trim(); if (t && t !== last) say(t, getKind ? getKind(el) : kindOf(el)); last = t; }
+      new MutationObserver(check).observe(el, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ["hidden", "class"] });
+    }
+    watch(els.hint); watch(els.verdict, function () { return /איבדתם|אבדו/.test(els.verdict.textContent) ? "bad" : "ok"; });
+    watch($("btoast")); watch($("gateTip"));
+    // red notes (connection problems and the like) also reach the chat while you are on the stage
+    watch(els.note, function () { return "bad"; });
+    $("chatMin").addEventListener("click", function () { var m = box.classList.toggle("min"); this.textContent = m ? "+" : "—"; this.setAttribute("aria-expanded", String(!m)); this.setAttribute("aria-label", m ? "פתיחת הצ׳אט" : "מזעור הצ׳אט"); });
+    box.addEventListener("pointerdown", function (e) { e.stopPropagation(); });   // clicking the chat must not grab the mouse for looking around
+    return { say: say };
+  })();
 
   // ---------- hotbar (slots 1-4): hands / chips + chip count / drink / mini-map ----------
   var HB = { sel: 0, drink: null, el: null, slots: [], toastEl: null, chipEl: null, mapEl: null, mapCv: null, mapBase: null, chipHtml: "" };
