@@ -962,6 +962,32 @@ body.inlobby { padding-block: 0; }
 .mm-menu > .mmi.small.sel { font-family: var(--font-body); }
 @media (prefers-reduced-motion: reduce) { .mm-menu > .mmi { transition: none; } }
 
+/* v130 · main menu uses the full screen width: the menu is big and sits at the right edge, the leaderboard is smaller at the left edge */
+@media (min-width: 860px) {
+  body.inlobby #app { max-width: none; }
+  .mm { grid-template-columns: minmax(0, 1fr) minmax(250px, 320px); gap: 5vw; padding-inline: clamp(4px, 2.5vw, 48px); }
+  .mm-main { justify-self: start; width: min(100%, 780px); max-width: none; padding: 38px 48px 30px; gap: 18px; }
+  .mm-side { justify-self: end; width: 100%; }
+  /* sizes follow the screen's width and height, so the whole menu fits without scrolling */
+  .mm { padding-block: clamp(4px, .9vh, 14px); }
+  .mm-main { padding: clamp(16px, 2.6vh, 34px) 48px clamp(14px, 2.2vh, 28px); gap: clamp(8px, 1.4vh, 16px); }
+  .mm-stack { width: clamp(72px, 9.5vh, 140px); }
+  .mm-logo h1 span:first-child { font-size: clamp(2.4rem, min(6.2vw, 6.4vh), 5.2rem); }
+  .mm-logo h1 span:last-child { font-size: clamp(3rem, min(8vw, 8vh), 6.8rem); }
+  .mm-badge { padding: 6px 22px; } .mm-badge b { font-size: clamp(1.25rem, 2.6vh, 1.6rem); } .mm-badge span { font-size: .95rem; }
+  .mm-main .acct-card.ready { padding: 10px 16px; }
+  .mm-menu { gap: clamp(0px, .5vh, 6px); }
+  .mm-menu > .mmi { font-size: clamp(1.35rem, min(2.9vw, 3.3vh), 2.6rem); padding: 4px 26px 6px; margin-inline-start: -26px; }
+  .mm-menu > .mmi.small { font-size: clamp(1rem, 2vh, 1.2rem); }
+  .mm-keys { margin-top: 0; }
+  .mm-room { max-width: 640px; }
+  .mm-panel { padding: 14px 14px 10px; }
+  .mm-ptitle { font-size: 1.1rem; margin-bottom: 8px; }
+  .mm-top li { font-size: .9rem; padding: 5px 7px; }
+  .mm-me { font-size: .9rem; padding: 7px 9px; }
+  .mm-side .priv > summary { padding: 10px 14px; font-size: .9rem; }
+}
+
 /* v129 · entry screen: browsers allow no sound before the first click or key press, so when sound is still blocked
    the first click lands on this screen and switches the sound on for everything after it */
 .splash { position: fixed; inset: 0; z-index: 95; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; text-align: center; background: radial-gradient(ellipse at 50% 40%, rgba(40, 22, 70, .9), rgba(5, 3, 12, .97)); cursor: pointer; }
@@ -10330,7 +10356,7 @@ body.inlobby { padding-block: 0; }
   // ---------- v125: main menu ----------
   window.MM = (function () {
     var bg = $("mmBg"), ctx = bg ? bg.getContext("2d") : null, bills = [], anim = 0, lastF = 0, on = false, W = 0, H = 0, dpr = 1;
-    var still = false; try { still = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { /* motion ok */ }
+    var calm = false; try { calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { /* motion ok */ }
     var canHover = true; try { canHover = window.matchMedia("(hover: hover)").matches; } catch (e) { /* assume a mouse */ }
 
     // --- sounds: a soft tick when the pointer (or keyboard focus) lands on something, a bright two-note "chink" when you pick it
@@ -10461,15 +10487,16 @@ body.inlobby { padding-block: 0; }
         ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x - 30, 0); ctx.lineTo(x + 30, 0); ctx.lineTo(x + W * 0.22, H); ctx.lineTo(x - W * 0.22, H); ctx.closePath(); ctx.fill();
       });
       bills.forEach(function (b, i) {
-        if (!still) { b.sw += dt; b.y += b.vy * dt; b.x += (b.vx + Math.sin(b.sw * 1.3) * 18) * dt; b.r += b.vr * dt * 0.6; b.f += b.vf * dt; }
+        var k = calm ? 0.55 : 1;   // Windows "animation effects" off: the money still falls, just slower and calmer
+        b.sw += dt * k; b.y += b.vy * dt * k; b.x += (b.vx + Math.sin(b.sw * 1.3) * 18) * dt * k; b.r += b.vr * dt * 0.6 * k; b.f += b.vf * dt * (calm ? 0.45 : 1);
         if (b.y > H + 60 || b.x < -80 || b.x > W + 80) bills[i] = newBill(false);
         drawBill(b);
       });
-      if (!still && !document.hidden) anim = requestAnimationFrame(frame);
+      if (!document.hidden) anim = requestAnimationFrame(frame);
     }
     function start() { if (!ctx) return; resize(); if (!bills.length) seed(); lastF = 0; if (!anim) anim = requestAnimationFrame(frame); }
     function stop() { if (anim) cancelAnimationFrame(anim); anim = 0; }
-    window.addEventListener("resize", function () { if (!on) return; var w0 = W; resize(); if (Math.abs(W - w0) > 200) seed(); if (still) { stop(); start(); } });
+    window.addEventListener("resize", function () { if (!on) return; var w0 = W; resize(); if (Math.abs(W - w0) > 200) seed(); });
     document.addEventListener("visibilitychange", function () { if (on && !document.hidden) { stop(); start(); } });
 
     function onShow(lobby) {
