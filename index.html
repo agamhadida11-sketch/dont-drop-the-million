@@ -3304,7 +3304,7 @@ body.inlobby { padding-block: 0; }
     var a = takeAction();
     if (a && world && world.poke) world.poke(1);   // the hands only reach out when there is really something to take or press
     if (!a) { if (canAct()) setHint(me.carry > 0 ? "יש לכם כסף בידיים. הניחו אותו עם " + keyLabel(settings.keys.drop) + " או כפתור ההנחה." : "התקרבו לקופה כדי לקחת כסף, או עמדו על פודיום שהנחתם עליו כדי לקחת בחזרה."); return; }
-    if (a.k === "casino") { if (a.g === "plinko" && a.tbl != null) { if (world && world.casApi()) { var tb0 = world.casApi().tables[a.tbl]; if (tb0) world.poke(1, new T.Vector3(tb0.x, PLKB.YC + 1.2, tb0.z)); } plkHallDrop(a.tbl); } else if (a.g === "juke") jukePress(); else if (a.g === "slots" && a.m) { if (SLV) SLV.press("spin"); } else if (KIOS[a.g] && a.m) { if (KIO && KIO.mk === a.m) KIO.press(KIOS[a.g].act); } else if (a.tbl != null && PHYS[a.g]) sitDown(a); else btoast("המשחק הזה עוד לא פתוח.", false); } else if (a.k === "door") openKeypad(a.s); else if (a.k === "start") startGo(); else if (a.k === "lock") onLockClick(); else if (a.k === "bank") pickUp(); else takeBack(a.i);
+    if (a.k === "casino") { if (a.g === "plinko" && a.tbl != null) { if (world && world.casApi()) { var tb0 = world.casApi().tables[a.tbl]; if (tb0) world.poke(1, new T.Vector3(tb0.x, PLKB.YC + 1.2, tb0.z)); } if (!PLKH.P) { PLKH.dismissed = null; plkHallOpen(a.tbl); } else plkHallDropMany(); } else if (a.g === "juke") jukePress(); else if (a.g === "slots" && a.m) { if (SLV) SLV.press("spin"); } else if (KIOS[a.g] && a.m) { if (KIO && KIO.mk === a.m) KIO.press(KIOS[a.g].act); } else if (a.tbl != null && PHYS[a.g]) sitDown(a); else btoast("המשחק הזה עוד לא פתוח.", false); } else if (a.k === "door") openKeypad(a.s); else if (a.k === "start") startGo(); else if (a.k === "lock") onLockClick(); else if (a.k === "bank") pickUp(); else takeBack(a.i);
   }
   function dropHere() {
     var a = dropAction();
@@ -7449,15 +7449,85 @@ body.inlobby { padding-block: 0; }
   var PLK_BETS = [100, 500, 1000, 5000, 10000, 50000, 100000], plkHallBet = 1000;
   function plkHallMsg(t, kind) { var e = $("slmsg"); if (!e) { e = cge("div", "", ""); e.id = "slmsg"; $("game").appendChild(e); } e.textContent = t; e.className = kind || ""; e.style.opacity = 1; clearTimeout(plkHallMsg.t); plkHallMsg.t = setTimeout(function () { e.style.opacity = 0; }, 2400); }
   function plkHallBetStep() { var i = PLK_BETS.indexOf(plkHallBet); plkHallBet = PLK_BETS[(i + 1) % PLK_BETS.length]; sfx("chip"); plkHallMsg("🔺 Plinko · BET " + plkHallBet.toLocaleString()); }
-  // walk up and press: the ball drops on the hall machine itself (12 rows, medium risk, as painted on it) and pays where it lands
+  // walk up and press: the ball drops on the hall machine itself (rows and risk as painted on it) and pays where it lands
   function plkHallDrop(tbl) {
-    if (casBal < plkHallBet) { plkHallMsg("אין מספיק כסף · BET " + plkHallBet.toLocaleString(), "lose"); sfx("lose"); return; }
-    var mine = PLK_GHOSTS.filter(function (g) { return g.own; }).length; if (mine >= 20) return;
+    if (casBal < plkHallBet) { plkHallMsg("אין מספיק כסף · BET " + plkHallBet.toLocaleString(), "lose"); if (PLKH.P) PLKH.P.err.textContent = "אין מספיק כסף להימור הזה"; sfx("lose"); return false; }
+    var mine = PLK_GHOSTS.filter(function (g) { return g.own; }).length; if (mine >= 20) return false;
     casApply(-plkHallBet); sfx("chip"); var seed = (Math.random() * 4294967296) >>> 0;
-    PLK_OUT.push({ id: clientId + ":" + seed, tbl: tbl, R: 12, seed: seed, at: Date.now() });
-    plkSpawn(tbl, 12, seed, { bet: plkHallBet, risk: 1 });
-    plkHallMsg("🔺 BET " + plkHallBet.toLocaleString());
+    PLK_OUT.push({ id: clientId + ":" + seed, tbl: tbl, R: PLKH.R, seed: seed, at: Date.now() });
+    plkSpawn(tbl, PLKH.R, seed, { bet: plkHallBet, risk: PLKH.risk });
+    plkHallMsg("🔺 BET " + plkHallBet.toLocaleString()); plkHallSync();
+    return true;
   }
+  // ---- v135: the panel at the hall plinko machine. It opens by itself when you walk up (and frees the mouse for clicking),
+  // closes when you walk away (the mouse goes back to looking around). Risk and rows repaint the machine so its cups show the right multipliers ----
+  var PLKH = { P: null, tbl: null, risk: 1, R: 12, n: 1, queued: 0, dismissed: null, hist: [], texs: null };
+  plkHallBet = parseInt(store("local", "dd-plk-bet") || "", 10) || plkHallBet;
+  function plkHallMine() { return PLK_GHOSTS.filter(function (g) { return g.own && !g.b.done; }).length; }
+  function plkHallRepaint() {
+    try {
+      var H = world.casApi(); if (!H || !H.hall) return;
+      if (!PLKH.texs) { PLKH.texs = []; H.hall.traverse(function (o) { var mp = o.material && o.material.map, im = mp && mp.image; if (im && im.width === 1050 && im.height === 1150 && PLKH.texs.indexOf(mp) < 0) PLKH.texs.push(mp); }); }
+      PLKH.texs.forEach(function (tx) { var c = tx.image, g = c.getContext("2d"); g.clearRect(0, 0, c.width, c.height); plkPaint(g, c.width, c.height, PLKH.risk, PLKH.R, true); tx.needsUpdate = true; });
+    } catch (e) { /* the machine keeps its old paint */ }
+  }
+  function plkHallSync() {
+    var P = PLKH.P; if (!P) return; var busy = plkHallMine() > 0;
+    P.bal.textContent = money(casBal); if (P.pad) P.pad.render();
+    P.risk.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === PLKH.risk)); b.disabled = busy; });
+    P.rows.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === PLKH.R)); b.disabled = busy; });
+    P.balls.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === PLKH.n)); });
+    P.lock.textContent = busy ? "אפשר לשנות סיכון ושורות כשכל הכדורים נחתו" : "";
+    P.go.textContent = PLKH.n > 1 ? "הפל ×" + PLKH.n : "הפל"; P.go.disabled = casBal < plkHallBet;
+    P.last.innerHTML = ""; PLKH.hist.slice(0, 8).forEach(function (m) { P.last.appendChild(cge("span", m > 1 ? "w" : m < 1 ? "l" : "", plkFmt(m))); });
+  }
+  function plkHallDropMany() {
+    if (PLKH.queued || PLKH.tbl == null) return; var n = Math.max(1, PLKH.n), i = 0, tbl = PLKH.tbl; if (PLKH.P && PLKH.P.pad) PLKH.P.pad.done();
+    PLKH.queued = n; (function one() { if (i >= n || !plkHallDrop(tbl)) { PLKH.queued = 0; plkHallSync(); return; } i++; if (i < n) setTimeout(one, 160); else { PLKH.queued = 0; plkHallSync(); } })();
+  }
+  function plkHallOpen(tbl) {
+    if (PLKH.P) return; PLKH.tbl = tbl;
+    var p = cge("div", "plkp", ""); p.setAttribute("role", "group"); p.setAttribute("aria-label", "הגדרות פלינקו");
+    p.innerHTML = '<div class="plkp-h"><span>🔺 פלינקו</span><small class="money" data-r="bal"></small></div>'
+      + '<div class="plkp-betwrap"><div class="plkp-lab"><span>סכום הימור</span></div>' + betPadHTML() + '<div class="plkp-err" data-r="err"></div></div>'
+      + '<div><div class="plkp-lab"><span>סיכון</span></div><div class="plkp-seg risk"><button type="button" data-k="risk" data-v="0">נמוך</button><button type="button" data-k="risk" data-v="1">בינוני</button><button type="button" data-k="risk" data-v="2">גבוה</button></div></div>'
+      + '<div><div class="plkp-lab"><span>שורות</span></div><div class="plkp-seg"><button type="button" data-k="rows" data-v="8">8</button><button type="button" data-k="rows" data-v="12">12</button><button type="button" data-k="rows" data-v="16">16</button></div></div>'
+      + '<div><div class="plkp-lab"><span>כדורים בכל הפלה</span></div><div class="plkp-seg"><button type="button" data-k="balls" data-v="1">1</button><button type="button" data-k="balls" data-v="5">5</button><button type="button" data-k="balls" data-v="10">10</button></div></div>'
+      + '<button type="button" class="plkp-go" data-r="go">הפל</button><button type="button" class="whp-leave" data-a="leave">סגירת הלוח</button>'
+      + '<div class="plkp-info" data-r="lock"></div><div class="plkp-last" data-r="last" aria-label="תוצאות אחרונות"></div>';
+    $("game").appendChild(p);
+    function q(s) { return p.querySelector(s); }
+    var P = PLKH.P = { el: p, bal: q('[data-r="bal"]'), err: q('[data-r="err"]'), go: q('[data-r="go"]'), lock: q('[data-r="lock"]'), last: q('[data-r="last"]'),
+      risk: [].slice.call(p.querySelectorAll('[data-k="risk"]')), rows: [].slice.call(p.querySelectorAll('[data-k="rows"]')), balls: [].slice.call(p.querySelectorAll('[data-k="balls"]')) };
+    p.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
+    P.pad = betPadWire(p.querySelector(".bp"), function () { return plkHallBet; }, function (v) { plkHallBet = v; store("local", "dd-plk-bet", String(v)); plkHallSync(); }, P.err);
+    p.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b || b.disabled) return;
+      if (b.dataset.pk != null || b.dataset.pq) { sfx("chip"); return; }
+      var k = b.dataset.k, v = +b.dataset.v;
+      if (b.dataset.a === "leave") { PLKH.dismissed = PLKH.tbl; plkHallClose(); return; }
+      if (k === "risk" && v !== PLKH.risk) { PLKH.risk = v; plkHallRepaint(); }
+      else if (k === "rows" && v !== PLKH.R) { PLKH.R = v; plkHallRepaint(); }
+      else if (k === "balls") PLKH.n = v;
+      else if (b === P.go) { plkHallDropMany(); return; }
+      sfx("chip"); plkHallSync();
+    });
+    window.__kioFree = true; try { if (document.pointerLockElement) document.exitPointerLock(); } catch (x) { /* already free */ }
+    plkHallSync();
+  }
+  function plkHallClose() {
+    if (!PLKH.P) return; PLKH.P.el.remove(); PLKH.P = null; PLKH.tbl = null;
+    setTimeout(function () { window.__kioFree = false; }, 300); if (window.tryLock) tryLock();
+  }
+  setInterval(function () {
+    try {
+      var a = casOpen ? null : casinoAction(), near = a && a.g === "plinko" && a.tbl != null ? a.tbl : null;
+      if (near == null) PLKH.dismissed = null;
+      if (near != null && !PLKH.P && PLKH.dismissed !== near && $("settings").hidden) plkHallOpen(near);
+      else if (PLKH.P && near !== PLKH.tbl) plkHallClose();
+      if (PLKH.P) plkHallSync();
+    } catch (e) { /* not in the hall */ }
+  }, 250);
   function plkRemote(list) {
     if (!Array.isArray(list) || !world || !world.casApi) return; var H = world.casApi(); if (!H || !H.tables) return;
     list.forEach(function (e) {
@@ -7475,7 +7545,7 @@ body.inlobby { padding-block: 0; }
   function plkGhostRun() {
     if (PLK_GHOSTS.length && !plkGhostRaf) { var last = performance.now(); plkGhostRaf = requestAnimationFrame(function step(now) {
       var dt = Math.min(0.1, (now - last) / 1000); last = now;
-      PLK_GHOSTS.slice().forEach(function (gh) { var hits = []; gh.acc += dt; while (gh.acc >= PLK_DT && !gh.b.done) { gh.acc -= PLK_DT; plkStep(gh.L, gh.b, hits); } if (hits.length && gh.own && (!gh.lh || performance.now() - gh.lh > 90)) { gh.lh = performance.now(); pling(600 + Math.random() * 400, 0.03); } gh.m.position.set(gh.b.x, gh.b.y, 0.03); if (gh.b.done && !gh.paid) { gh.paid = 1; var mult = plkMult(gh.L.R, gh.own ? gh.own.risk : 1)[gh.b.k], bxp = (gh.b.k - gh.L.R / 2) * gh.L.SX; if (!gh.own && mult > 1) { sparks(gh.g, bxp, gh.L.BY + 0.1, 0.15, 16, "pw", "p", 0.8, 700, 2.2, 0.08); coinPuff(gh.g, bxp, gh.L.BY + 0.2, 0.25, 8); } if (gh.own) { floatText(gh.g, plkFmt(mult), bxp, gh.L.BY + 0.3, 0.2, mult >= 1 ? "#ffd23f" : "#ff9aa8", 0.18); var pay = Math.round(gh.own.bet * mult), net = pay - gh.own.bet; if (pay > 0) casApply(pay); plkHallMsg((net >= 0 ? "+" : "") + net.toLocaleString() + " · " + plkFmt(mult), net > 0 ? "win" : "lose"); if (net > 0 && mult >= 3) winFx(net, gh.own.bet, "plinko"); else if (net > 0) pling(1320, 0.08); } } if (gh.b.done) { gh.done = (gh.done || 0) + dt; if (gh.done > 0.6) { gh.g.parent && gh.g.parent.remove(gh.g); PLK_GHOSTS.splice(PLK_GHOSTS.indexOf(gh), 1); } } });
+      PLK_GHOSTS.slice().forEach(function (gh) { var hits = []; gh.acc += dt; while (gh.acc >= PLK_DT && !gh.b.done) { gh.acc -= PLK_DT; plkStep(gh.L, gh.b, hits); } if (hits.length && gh.own && (!gh.lh || performance.now() - gh.lh > 90)) { gh.lh = performance.now(); pling(600 + Math.random() * 400, 0.03); } gh.m.position.set(gh.b.x, gh.b.y, 0.03); if (gh.b.done && !gh.paid) { gh.paid = 1; var mult = plkMult(gh.L.R, gh.own ? gh.own.risk : 1)[gh.b.k], bxp = (gh.b.k - gh.L.R / 2) * gh.L.SX; if (gh.own) { PLKH.hist.unshift(mult); PLKH.hist.length = Math.min(PLKH.hist.length, 8); setTimeout(plkHallSync, 0); } if (!gh.own && mult > 1) { sparks(gh.g, bxp, gh.L.BY + 0.1, 0.15, 16, "pw", "p", 0.8, 700, 2.2, 0.08); coinPuff(gh.g, bxp, gh.L.BY + 0.2, 0.25, 8); } if (gh.own) { floatText(gh.g, plkFmt(mult), bxp, gh.L.BY + 0.3, 0.2, mult >= 1 ? "#ffd23f" : "#ff9aa8", 0.18); var pay = Math.round(gh.own.bet * mult), net = pay - gh.own.bet; if (pay > 0) casApply(pay); plkHallMsg((net >= 0 ? "+" : "") + net.toLocaleString() + " · " + plkFmt(mult), net > 0 ? "win" : "lose"); if (net > 0 && mult >= 3) winFx(net, gh.own.bet, "plinko"); else if (net > 0) pling(1320, 0.08); } } if (gh.b.done) { gh.done = (gh.done || 0) + dt; if (gh.done > 0.6) { gh.g.parent && gh.g.parent.remove(gh.g); PLK_GHOSTS.splice(PLK_GHOSTS.indexOf(gh), 1); } } });
       plkGhostRaf = PLK_GHOSTS.length ? requestAnimationFrame(step) : 0;
     }); }
   }
@@ -9206,7 +9276,7 @@ body.inlobby { padding-block: 0; }
   }
   function whPanelClose(K) {
     if (!K.panel) return; K.panel.el.remove(); K.panel = null;
-    setTimeout(function () { window.__kioFree = false; }, 300);
+    setTimeout(function () { window.__kioFree = false; }, 300); if (window.tryLock) tryLock();
   }
   function whSpin(K) {
     var W = K.W, sec = Math.PI / 12, idx, tgt, phi0, d;
@@ -9239,7 +9309,8 @@ body.inlobby { padding-block: 0; }
       WHL.ctl.forEach(function (c) { K.button({ parent: dk, act: c.act, px: c.px, py: 0.112, h: 0.056, pz: c.pz, w: c.w, d: c.d, c: c.c, t: c.t }); });
       WH_CHIPS.forEach(function (v, q) { var d = Math.abs(v - (casBet || 1000)); if (d < cd) { cd = d; ci = q; } });
       K.chip = WH_CHIPS[ci]; casBet = K.chip; K.bets = {}; K.free = false; K.lastWin = 0; K.last = null; K.spinning = false; K.sp = null; K.flick = 0; K.flashKey = null;
-      whRefresh(K); K.panel = null; K.hud("E או לחיצה על הגלגל פותחים את לוח ההימורים");
+      whRefresh(K); K.panel = null; K.hud("בוחרים סכום בלוח ומסובבים");
+      setTimeout(function () { if (K.alive && !K.panel && $("settings").hidden && !casOpen) whPanelOpen(K); }, 0);   // v135: the panel opens by itself when you walk up
     },
     press: function (K, act) {
       var i, k, t, pv;
