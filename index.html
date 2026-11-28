@@ -6384,6 +6384,12 @@ body.inlobby { padding-block: 0; }
           if (kn0 && kn1) { kn0.rotation.x = kn0.rotation.x * la + (-1.15 * up - 0.12 * dn) * air; kn1.rotation.x = kn1.rotation.x * la + (-0.7 * up - 0.08 * dn) * air; }
           if (!carrying && emo !== "cheer" && emo !== "shock") { av.arms[0].rotation.x = av.arms[0].rotation.x * la + (0.7 * up + 0.25 * dn) * air; av.arms[1].rotation.x = av.arms[1].rotation.x * la + (0.7 * up + 0.25 * dn) * air; av.arms[0].rotation.z -= 0.55 * air; av.arms[1].rotation.z += 0.55 * air; }
         }
+        if (c.sit) {
+          root.position.y = c.y - 0.13; root.rotation.x = 0.06; root.rotation.z = 0;
+          av.legs[0].rotation.set(1.5, 0, -0.06); av.legs[1].rotation.set(1.5, 0, 0.06);
+          if (kn0 && kn1) { kn0.rotation.x = -1.5; kn1.rotation.x = -1.5; }
+          if (!carrying && emo !== "cheer" && emo !== "shock") { av.arms[0].rotation.set(0.95, 0, -0.18); av.arms[1].rotation.set(0.95, 0, 0.18); }
+        }
         var dead = fall > 0.04;
         av.xeyes.visible = dead; av.eyes[0].visible = av.eyes[1].visible = av.pupils[0].visible = av.pupils[1].visible = !dead;
         if (dead) { av.smile.visible = false; av.frown.visible = false; av.oh.visible = true; }
@@ -6756,7 +6762,7 @@ body.inlobby { padding-block: 0; }
       if (skey !== other.sk) {
         other.dur = clamp(other.lastAt ? t - other.lastAt : 120, 60, 420); other.lastAt = t; other.t0 = t; other.sk = skey;
         other.fx = other.x; other.fz = other.z; other.fyaw = other.yaw; other.tx = px; other.tz = pz; other.tyaw = other.yaw + angDiff(pyaw, other.yaw);
-        other.tj = Number(peer.j) || 0; other.tcr = Number(peer.cr) || 0;
+        other.tj = Number(peer.j) || 0; other.tcr = Number(peer.cr) || 0; other.sit = peer.s ? 1 : 0;
         if (Math.hypot(px - other.x, pz - other.z) > 8) { other.fx = px; other.fz = pz; }
       }
       var ox2 = other.x, oz2 = other.z, pr = clamp((t - other.t0) / other.dur, 0, 1);
@@ -6865,10 +6871,10 @@ body.inlobby { padding-block: 0; }
 
     // presence
     if (roomNs && t - lastSend > 50) {
-      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig() + "," + slSig() + "," + tbSig();
+      var myLk = lookKey(curLook()), snap = me.x.toFixed(2) + "," + me.z.toFixed(2) + "," + me.yaw.toFixed(2) + "," + me.carry + "," + myLk + "," + me.jy.toFixed(2) + "," + me.cr.toFixed(1) + "," + plkSig() + "," + slSig() + "," + tbSig() + "," + (me.sit ? 1 : 0);
       if (snap !== lastSent || t - lastSend > 2000) {
         lastSent = snap; lastSend = t;
-        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut(), sl: slOut(), tb: tbOut() }).catch(function () { /* drop */ });
+        roomNs.presence({ cl: clientId, role: role, x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100, c: me.carry, lk: myLk, j: Math.round(me.jy * 100) / 100, cr: Math.round(me.cr * 10) / 10, pk: plkOut(), sl: slOut(), tb: tbOut(), s: me.sit ? 1 : 0 }).catch(function () { /* drop */ });
       }
     }
     if (code !== "solo" && ref && t - lastFbWrite > 130 && t - lastPeerAt > 2500) {
@@ -7383,7 +7389,8 @@ body.inlobby { padding-block: 0; }
   function camHook(cam) {
     if (!tcOn) return;
     if (!tcP) { tcP = cam.position.clone(); tcL = new V3(); cam.getWorldDirection(tcL); tcL.multiplyScalar(3).add(cam.position); }
-    var now = performance.now(), dt = Math.min(0.5, (now - (tcT || now)) / 1000); tcT = now; var k = 1 - Math.exp(-dt * 4.5); tcP.lerp(tcPos, k); tcL.lerp(tcLook, k); cam.position.copy(tcP); cam.lookAt(tcL); if (TS && TS.onFrame) TS.onFrame(cam);
+    var now = performance.now(), dt = Math.min(0.5, (now - (tcT || now)) / 1000); tcT = now; var k = 1 - Math.exp(-dt * 4.5), sitP = TS && TS.seatEye && now - TS.sitT < 900;   // first sink onto the stool, then the view settles over the table
+    if (sitP) { var ks = 1 - Math.exp(-dt * 7); tcP.lerp(TS.seatEye, ks); tcL.lerp(TS.seatLook, ks); } else { tcP.lerp(tcPos, k); tcL.lerp(tcLook, k); } cam.position.copy(tcP); cam.lookAt(tcL); if (TS && TS.onFrame) TS.onFrame(cam);
   }
   function setEye(S, lx, ly, lz, tx, ty, tz) { S.tg.updateWorldMatrix(true, false); tcPos.copy(S.tg.localToWorld(new V3(lx, ly, lz))); tcLook.copy(S.tg.localToWorld(new V3(tx, ty, tz))); }
   function hudBuild() {
@@ -7402,7 +7409,7 @@ body.inlobby { padding-block: 0; }
   function botsOfTable(id) { var H = world.casApi(); return H.bots.filter(function (b) { return b.tbl === id; }); }
   function sitDown(a) {
     if (casOpen) return; var H = world.casApi(), tb = H.tables[a.tbl], maker = PHYS[a.g]; if (!tb || !maker) { btoast("המשחק הזה עוד לא פתוח.", false); return; }
-    var stand = a.g !== "billiards" && a.g !== "tony";   // every table but pool (it needs the top view) is played from your own eyes, standing at it
+    var stand = false;   // you always sit down at a table
     hudBuild(); casOpen = true; $("game").classList.add("seated"); $("game").classList.toggle("stand", stand); if (!stand) keys = {}; casBusy = false; cgCur = { title: a.g, close: leaveTable };
     var tg = new T.Group(); tg.position.set(tb.x, 0, tb.z); tg.rotation.y = tb.a; tg.scale.setScalar(tb.s || 1); H.hall.add(tg);
     var seatBots = botsOfTable(a.tbl).filter(function (b) { return b.kind === "seat"; }), dealerBot = botsOfTable(a.tbl).filter(function (b) { return b.kind === "dealer"; })[0] || null;
@@ -7410,6 +7417,12 @@ body.inlobby { padding-block: 0; }
     // which stool is nearest to the player?
     var cam = world.cameraPos(), best = 0, bd = 1e9; tb.seats.forEach(function (s, i) { var w = tg.localToWorld(new V3(s[0], 0.6, s[1])), d = w.distanceTo(cam); if (d < bd) { bd = d; best = i; } });
     TS.mySeat = best; var c = Math.cos(tb.a), sn = Math.sin(tb.a);
+    if (tb.seats[best] && me) {
+      tg.updateWorldMatrix(true, false); var sw = tg.localToWorld(new V3(tb.seats[best][0], 0, tb.seats[best][1])), ctr = tg.localToWorld(new V3(0, 0, 0));
+      TS.from = { x: me.x, z: me.z, yaw: me.yaw }; me.x = sw.x; me.z = sw.z; me.yaw = Math.atan2(-(ctr.x - sw.x), -(ctr.z - sw.z)); me.sit = 1;
+      TS.seatEye = new V3(sw.x, 1.22 * (tb.s || 1), sw.z).lerp(new V3(ctr.x, 1.22 * (tb.s || 1), ctr.z), 0.12); TS.seatLook = new V3(ctr.x, 0.95 * (tb.s || 1), ctr.z); TS.sitT = performance.now();
+      sndStep && sndStep(false, true);
+    }
     // the dealer turns his torso toward the player's stool and stays attentive for as long as you sit here
     if (dealerBot) { dealerBot.hold = true; dealerBot.gs = null; dealerBot.face = 0; var f0 = dealerFrame(TS), s0 = tb.seats[best]; if (f0 && s0) { var pf = Math.atan2(s0[0] - f0.x, s0[1] - f0.z) - f0.hd; pf = Math.atan2(Math.sin(pf), Math.cos(pf)); dealerBot.face = Math.max(-0.6, Math.min(0.6, pf * 0.5)); } }
     tb.seats.forEach(function (s, i) {
@@ -7424,7 +7437,7 @@ body.inlobby { padding-block: 0; }
     sfx("chip"); maker(TS).then(function () { }, function (e) { if (window.console) console.error(e); });
   }
   function leaveTable() {
-    if (!TS) return; var S = TS; S.alive = false; clearInterval(S.walkT); $("game").classList.remove("stand"); if (S.tb) { S.tb.inUse = false; if (S.tb.boardG) S.tb.boardG.visible = true; } if (S.cancelWait) S.cancelWait(); clearInterval(S.balT); tcOn = false; world.setCamFn(null); tcP = null; world.setHands(true);
+    if (!TS) return; var S = TS; S.alive = false; clearInterval(S.walkT); if (me && me.sit) { me.sit = 0; if (S.seatLook) { var bx = me.x - S.seatLook.x, bz = me.z - S.seatLook.z, bl = Math.hypot(bx, bz) || 1; me.x += bx / bl * 0.75; me.z += bz / bl * 0.75; } } $("game").classList.remove("stand"); if (S.tb) { S.tb.inUse = false; if (S.tb.boardG) S.tb.boardG.visible = true; } if (S.cancelWait) S.cancelWait(); clearInterval(S.balT); tcOn = false; world.setCamFn(null); tcP = null; world.setHands(true);
     S.hall.children.forEach(function (o) { if (o.userData && o.userData.shaft) o.visible = true; }); if (S.cleanup) S.cleanup(); cardPool.slice().forEach(freeCard); S.tg.traverse(function (o) { if (o.userData && o.userData.di != null) chipFree[o.userData.di].push(o); }); if (S.tg.parent) S.tg.parent.remove(S.tg);
     S.hidden.forEach(function (b) { b.hide = false; }); if (S.dealer) { S.dealer.hold = false; S.dealer.gs = null; S.dealer.face = 0; S.dealer.talk = false; } if ($("tg")) $("tg").hidden = true; $("game").classList.remove("seated"); TS = null; casOpen = false; cgCur = null;
   }
