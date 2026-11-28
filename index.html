@@ -1015,7 +1015,18 @@ body.inlobby { padding-block: 0; }
 .plkp-last span { padding: 1px 7px; border-radius: 999px; font-size: .75rem; font-weight: 900; background: rgba(255, 255, 255, .1); }
 .plkp-last span.w { background: rgba(63, 214, 138, .25); color: #9ff0c4; } .plkp-last span.l { background: rgba(255, 90, 110, .2); color: #ffb0ba; }
 .plkp-err { color: #ff9aa8; font-size: .78rem; font-weight: 800; min-height: 1em; }
+/* v133 · the wheel uses the same panel in gold */
+.whp { border-color: rgba(255, 210, 63, .5); box-shadow: 0 20px 50px rgba(0, 0, 0, .6), 0 0 28px rgba(255, 210, 63, .2); }
+.whp .plkp-h { color: #ffe27a; }
+.whp .plkp-go { background: linear-gradient(180deg, #ffe89a, #f3c24f 60%, #e3a92c); color: #2b1b00; box-shadow: 0 5px 0 #9b7424, 0 0 24px rgba(243, 194, 79, .45); }
+.whp .plkp-go:active { box-shadow: 0 2px 0 #9b7424; }
+.whp-odds { display: flex; flex-wrap: wrap; gap: 5px; direction: ltr; }
+.whp-odds span { padding: 3px 8px; border-radius: 999px; border: 2px solid; background: rgba(255, 255, 255, .06); font-size: .78rem; color: var(--mute); font-weight: 700; }
+.whp-odds b { color: #fff; font-weight: 900; }
+.whp-leave { border: 1.5px solid rgba(255, 255, 255, .2); background: transparent; color: var(--mute); border-radius: 10px; padding: 7px; font-weight: 800; font-size: .88rem; }
+.whp-leave:hover { color: #fff; border-color: rgba(255, 255, 255, .4); }
 @media (max-width: 760px) {
+  .whp-odds, .whp-leave { grid-column: 1 / -1; }
   .plkp { right: 8px; left: 8px; top: auto; bottom: 8px; transform: none; width: auto; gap: 8px; padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; }
   .plkp-h, .plkp-go, .plkp-info, .plkp-last, .plkp-err { grid-column: 1 / -1; }
   .plkp-chips { display: none; } .plkp-go { padding: 10px; font-size: 1.2rem; }
@@ -3026,13 +3037,14 @@ body.inlobby { padding-block: 0; }
   // =====================================================================
   //  BIG WHEEL: sector table + the console layout, shared by the hall (static look) and the live kiosk
   // =====================================================================
-  // the money wheel: 24 sectors of multipliers. x0.1 x14 · x0.5 x5 · x2 x2 · x5 · x10 · R (free spin again). Pays about 1:1 on average (plus the casino's win bonus)
-  var BW_SEC = ["0.1", "2", "0.1", "0.5", "0.1", "5", "0.1", "0.5", "0.1", "R", "0.1", "0.1", "2", "0.1", "0.5", "0.1", "10", "0.1", "0.5", "0.1", "0.1", "0.5", "0.1", "0.1"],
-      BW_PAY = { "0.1": 0.1, "0.5": 0.5, "2": 2, "5": 5, "10": 10, "R": 0 }, BW_COL = { "0.1": "#4a1a2e", "0.5": "#7a3a8a", "2": "#2a6bff", "5": "#12a050", "10": "#ffb020", "R": "#ff3fb4" };
+  // the money wheel (v133, easier to win): 24 sectors. x0.2 x9 · x0.5 x3 · x1.5 x7 · x2 x2 · x3 · x5 · R (free spin again).
+  // You come out ahead on 11 of 24 sectors (about 46%, plus the free spin); it pays a little over 1:1 on average.
+  var BW_SEC = ["1.5", "0.2", "2", "0.2", "1.5", "0.5", "1.5", "0.2", "5", "0.2", "1.5", "0.5", "1.5", "0.2", "3", "0.2", "1.5", "0.5", "1.5", "0.2", "2", "0.2", "R", "0.2"],
+      BW_PAY = { "0.2": 0.2, "0.5": 0.5, "1.5": 1.5, "2": 2, "3": 3, "5": 5, "R": 0 }, BW_COL = { "0.2": "#4a1a2e", "0.5": "#7a3a8a", "1.5": "#1d8fb8", "2": "#2a6bff", "3": "#12a050", "5": "#ffb020", "R": "#ff3fb4" };
   function bwSecName(k) { return k === "R" ? "SPIN AGAIN" : "x" + k; }
   // counter-local metres (origin: middle of the counter top, +z toward the player): a slanted console with six sector pads (back row) and the controls (front row)
   var WHL = { th: 0.3, dy: 1.2236, dz: -0.0236, pads: [], ctl: [] };
-  ["0.1", "0.5", "2", "5", "10", "R"].forEach(function (k, i) { WHL.pads.push({ act: "s" + k, key: k, px: -1.45 + i * 0.58, pz: -0.2, w: 0.52, d: 0.34, col: parseInt(BW_COL[k].slice(1), 16) }); });
+  ["0.2", "0.5", "1.5", "2", "3", "5", "R"].forEach(function (k, i) { WHL.pads.push({ act: "s" + k, key: k, px: -1.5 + i * 0.5, pz: -0.2, w: 0.45, d: 0.34, col: parseInt(BW_COL[k].slice(1), 16) }); });
   [["down", -1.28, 0.42, "BET -", 0xc01828], ["up", -0.8, 0.42, "BET +", 0x1f5fb0], ["clear", -0.265, 0.55, "MIN", 0x8a3a1a], ["rebet", 0.345, 0.55, "MAX", 0x1f7a8a], ["spin", 1.08, 0.8, "SPIN", 0x1f9a3a]].forEach(function (c) { WHL.ctl.push({ act: c[0], px: c[1], pz: 0.22, w: c[2], d: 0.2, t: c[3], c: c[4] }); });
   function whDeck(px, py, pz) { var c = Math.cos(WHL.th), s = Math.sin(WHL.th); return [px, WHL.dy + py * c - pz * s, WHL.dz + py * s + pz * c]; }
 
@@ -4529,7 +4541,7 @@ body.inlobby { padding-block: 0; }
             for (var i = 0; i < 24; i++) {
               var a0 = i / 24 * Math.PI * 2 - Math.PI / 2 - Math.PI / 24, a1 = a0 + Math.PI / 12, k = BW_SEC[i];
               g.fillStyle = BW_COL[k]; g.beginPath(); g.moveTo(256, 256); g.arc(256, 256, 248, a0, a1); g.closePath(); g.fill(); g.strokeStyle = "#fff"; g.lineWidth = 3; g.stroke();
-              g.save(); g.translate(256, 256); g.rotate((a0 + a1) / 2); g.fillStyle = k === "10" ? "#2a1c00" : "#fff"; g.font = "900 " + (k === "R" ? 24 : 28) + "px Fredoka, Arial, sans-serif"; g.textAlign = "right"; g.textBaseline = "middle"; g.fillText(k === "R" ? "↻" : "x" + k, 228, 0); g.restore();
+              g.save(); g.translate(256, 256); g.rotate((a0 + a1) / 2); g.fillStyle = k === "5" ? "#2a1c00" : "#fff"; g.font = "900 " + (k === "R" ? 24 : 28) + "px Fredoka, Arial, sans-serif"; g.textAlign = "right"; g.textBaseline = "middle"; g.fillText(k === "R" ? "↻" : "x" + k, 228, 0); g.restore();
               g.fillStyle = "#fff"; g.beginPath(); g.arc(256 + 241 * Math.cos(a0), 256 + 241 * Math.sin(a0), 5, 0, 6.3); g.fill();
             }
             g.fillStyle = "#222"; g.beginPath(); g.arc(256, 256, 36, 0, 6.3); g.fill(); g.strokeStyle = "#ffd23f"; g.lineWidth = 6; g.stroke(); g.strokeStyle = "#ffd23f"; g.lineWidth = 10; g.beginPath(); g.arc(256, 256, 250, 0, 6.3); g.stroke();
@@ -7053,7 +7065,7 @@ body.inlobby { padding-block: 0; }
     var was = pLocked; pLocked = document.pointerLockElement === els.cv;
     els.game.classList.toggle("locked", pLocked);
     if (pLocked) autoLock = false;
-    if (was && !pLocked && me && $("settings").hidden && !casOpen) openSettings();
+    if (was && !pLocked && me && $("settings").hidden && !casOpen && !window.__kioFree) openSettings();   // freeing the mouse for the wheel panel is not a pause
   });
   document.addEventListener("pointerlockerror", function () { if (autoLock) { autoLock = false; return; } lockFailed = true; els.game.classList.add("nolock"); });
   // hide the mouse and steer the view with it, without needing an extra click on the stage, whenever the browser still counts the last click/key as fresh
@@ -9066,7 +9078,7 @@ body.inlobby { padding-block: 0; }
   function kioFit(g, t, maxW, px, pre) { var f = px; do { g.font = pre + Math.round(f) + "px Fredoka, Arial, sans-serif"; if (g.measureText(t).width <= maxW) break; f -= 2; } while (f > 8); return f; }
   function whTotal(K) { var t = 0, k; for (k in K.bets) t += K.bets[k]; return t; }
   function whPadLabel(L, key, amt) {
-    var g = L.g, w = L.cv.width, h = L.cv.height, dark = key === "10", nm = key === "R" ? "↻ AGAIN" : "x" + key, pay = key === "R" ? "free spin" : (BW_SEC.filter(function (q) { return q === key; }).length + " / 24"), t2;
+    var g = L.g, w = L.cv.width, h = L.cv.height, dark = key === "5", nm = key === "R" ? "↻ AGAIN" : "x" + key, pay = key === "R" ? "free spin" : (BW_SEC.filter(function (q) { return q === key; }).length + " / 24"), t2;
     g.clearRect(0, 0, w, h); g.textAlign = "center"; g.textBaseline = "middle"; g.shadowColor = "#000"; g.shadowBlur = dark ? 0 : 5; g.fillStyle = dark ? "#2a1c00" : "#fff";
     if (!amt) { kioFit(g, nm, w * 0.88, h * 0.42, "italic 900 "); g.fillText(nm, w / 2, h * 0.37); g.font = "800 " + Math.round(h * 0.21) + "px Fredoka, Arial, sans-serif"; g.fillText(pay, w / 2, h * 0.77); }
     else {
@@ -9080,18 +9092,69 @@ body.inlobby { padding-block: 0; }
     g.fillStyle = "#08070d"; g.fillRect(0, 0, 1024, 256); g.strokeStyle = "#ffe27a"; g.lineWidth = 8; g.shadowColor = "#ffa000"; g.shadowBlur = 14; g.strokeRect(8, 8, 1008, 240); g.shadowBlur = 0; g.textAlign = "center"; g.textBaseline = "middle";
     [["BET", "₪" + K.chip.toLocaleString("en-US"), 190, "#ffffff"], ["LAST WIN", "₪" + Math.round(K.lastWin || 0).toLocaleString("en-US"), 512, K.lastWin > K.chip ? "#3dff9a" : "#ffffff"]].forEach(function (c) { g.fillStyle = "#9fc4ff"; g.font = "700 34px Fredoka, Arial, sans-serif"; g.fillText(c[0], c[2], 70); g.fillStyle = c[3]; kioFit(g, c[1], 300, 84, "900 "); g.fillText(c[1], c[2], 160); });
     g.fillStyle = "#9fc4ff"; g.font = "700 34px Fredoka, Arial, sans-serif"; g.fillText("LAST", 850, 70);
-    if (last) { g.fillStyle = BW_COL[last]; g.beginPath(); g.arc(850, 158, 58, 0, 6.3); g.fill(); g.strokeStyle = "#fff"; g.lineWidth = 5; g.stroke(); g.fillStyle = last === "10" ? "#2a1c00" : "#fff"; g.font = "900 " + (last.length > 2 ? 40 : 52) + "px Fredoka, Arial, sans-serif"; g.fillText(last === "R" ? "↻" : "x" + last, 850, 162); }
+    if (last) { g.fillStyle = BW_COL[last]; g.beginPath(); g.arc(850, 158, 58, 0, 6.3); g.fill(); g.strokeStyle = "#fff"; g.lineWidth = 5; g.stroke(); g.fillStyle = last === "5" ? "#2a1c00" : "#fff"; g.font = "900 " + (last.length > 2 ? 40 : 52) + "px Fredoka, Arial, sans-serif"; g.fillText(last === "R" ? "↻" : "x" + last, 850, 162); }
     else { g.fillStyle = "#555"; g.font = "900 70px Fredoka, Arial, sans-serif"; g.fillText("—", 850, 160); }
-    K.P.tex.needsUpdate = true;
+    K.P.tex.needsUpdate = true; whPanelSync(K);
   }
   function whRefresh(K) {
     WHL.pads.forEach(function (p) { K.byAct[p.act].userData.setText(p.key, 0); });
     WHL.ctl.forEach(function (c) { var b = K.byAct[c.act]; b.material.color.setHex(c.c); if (K.spinning) b.material.color.multiplyScalar(0.3); });
-    whInfo(K);
+    whInfo(K); whPanelSync(K);
+  }
+  // ---- v133: the wheel's side panel (same look as plinko). You stand at the wheel, so E / a click on the wheel opens it and frees the mouse;
+  // walking away or "leave" closes it and hands the mouse back to looking around ----
+  function whPanelSync(K) {
+    var P = K.panel; if (!P) return;
+    P.bal.textContent = money(casBal);
+    if (document.activeElement !== P.inp) P.inp.value = String(K.chip);
+    P.go.disabled = K.spinning || (!K.free && casBal < K.chip);
+    P.go.textContent = K.spinning ? "מסתובב..." : K.free ? "↻ סיבוב חינם" : "סובבו";
+    P.last.innerHTML = ""; (K.hist || []).slice(0, 8).forEach(function (k) { var m = BW_PAY[k], s = cge("span", k === "R" ? "" : m > 1 ? "w" : "l", k === "R" ? "↻" : "x" + k); P.last.appendChild(s); });
+  }
+  function whSetBet(K, v) {
+    v = Math.floor(Number(v) || 0); var err = "";
+    if (v < 10) { err = "ההימור המינימלי הוא 10"; v = 10; }
+    if (v > 1000000) { err = "ההימור המקסימלי הוא 1,000,000"; v = 1000000; }
+    K.chip = v; casBet = v; if (K.panel) { K.panel.err.textContent = err; K.panel.inp.value = String(v); } whInfo(K); whPanelSync(K);
+  }
+  function whPanelOpen(K) {
+    if (K.panel) return;
+    var p = cge("div", "plkp whp", ""), odds = ["5", "3", "2", "1.5", "0.5", "0.2", "R"].map(function (k) { var n = BW_SEC.filter(function (q) { return q === k; }).length; return '<span style="border-color:' + BW_COL[k] + '"><b>' + (k === "R" ? "↻" : "x" + k) + '</b> ' + n + '/24</span>'; }).join("");
+    p.setAttribute("role", "group"); p.setAttribute("aria-label", "לוח ההימורים של הגלגל");
+    p.innerHTML = '<div class="plkp-h"><span>🎡 גלגל המזל</span><small class="money" data-r="bal"></small></div>'
+      + '<div><div class="plkp-lab"><span>סכום הימור</span></div><div class="plkp-bet"><button type="button" data-a="half">½</button><input type="text" inputmode="numeric" aria-label="סכום הימור" data-r="inp"><button type="button" data-a="dbl">2×</button><button type="button" data-a="max">MAX</button></div>'
+      + '<div class="plkp-chips"><button type="button" data-c="100">100</button><button type="button" data-c="1000">1K</button><button type="button" data-c="10000">10K</button><button type="button" data-c="100000">100K</button></div><div class="plkp-err" data-r="err"></div></div>'
+      + '<div><div class="plkp-lab"><span>על הגלגל</span><span>זוכים ב-11 מתוך 24</span></div><div class="whp-odds">' + odds + '</div></div>'
+      + '<button type="button" class="plkp-go" data-r="go">סובבו</button>'
+      + '<button type="button" class="whp-leave" data-a="leave">עזיבת הגלגל</button>'
+      + '<div class="plkp-info">E = סיבוב</div><div class="plkp-last" data-r="last" aria-label="תוצאות אחרונות"></div>';
+    $("game").appendChild(p);
+    function q(s) { return p.querySelector(s); }
+    var P = K.panel = { el: p, bal: q('[data-r="bal"]'), inp: q('[data-r="inp"]'), err: q('[data-r="err"]'), go: q('[data-r="go"]'), last: q('[data-r="last"]') };
+    p.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
+    p.addEventListener("keydown", function (e) { if (e.target === P.inp) { e.stopPropagation(); if (e.key === "Enter") { whSetBet(K, P.inp.value); P.inp.blur(); } } });
+    P.inp.addEventListener("input", function () { var d = P.inp.value.replace(/[^0-9]/g, ""); if (d !== P.inp.value) P.inp.value = d; P.err.textContent = d ? "" : "הקלידו סכום"; });
+    P.inp.addEventListener("change", function () { whSetBet(K, P.inp.value); });
+    p.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b || b.disabled) return; var a = b.dataset.a, c = b.dataset.c;
+      if (K.spinning && b !== P.go && a !== "leave") return;
+      if (a === "half") whSetBet(K, K.chip / 2); else if (a === "dbl") whSetBet(K, K.chip * 2); else if (a === "max") whSetBet(K, Math.min(1000000, casBal));
+      else if (c) whSetBet(K, +c);
+      else if (a === "leave") { whPanelClose(K); if (window.tryLock) tryLock(); return; }
+      else if (b === P.go) { whSpin(K); return; }
+      sfx("chip");
+    });
+    window.__kioFree = true; try { if (document.pointerLockElement) document.exitPointerLock(); } catch (x) { /* already free */ }
+    K.hud("בוחרים סכום בלוח ומסובבים");
+    whPanelSync(K);
+  }
+  function whPanelClose(K) {
+    if (!K.panel) return; K.panel.el.remove(); K.panel = null;
+    setTimeout(function () { window.__kioFree = false; }, 300);
   }
   function whSpin(K) {
     var W = K.W, sec = Math.PI / 12, idx, tgt, phi0, d;
-    if (!K.free) { if (casBal < K.chip) { K.hud("אין מספיק כסף להימור הזה – הורידו את ההימור (BET -).", "lose"); tone(200, 0.15, 0, "sawtooth", 0.08); return; } casApply(-K.chip); K.bets = { s: K.chip }; }
+    if (!K.free) { if (casBal < K.chip) { K.hud("אין מספיק כסף להימור הזה – הורידו את ההימור.", "lose"); if (K.panel) K.panel.err.textContent = "אין מספיק כסף להימור הזה"; tone(200, 0.15, 0, "sawtooth", 0.08); return; } casApply(-K.chip); K.bets = { s: K.chip }; }
     K.free = false; K.spinning = true; K.flashKey = null;
     idx = Math.floor(Math.random() * 24); K.idx = idx; tgt = idx * sec + (Math.random() - 0.5) * sec * 0.7;
     phi0 = W.m.rotation.z; d = (tgt - phi0) % (Math.PI * 2); if (d < 0) d += Math.PI * 2; d += Math.PI * 2 * (5 + Math.floor(Math.random() * 3));
@@ -9102,8 +9165,8 @@ body.inlobby { padding-block: 0; }
   // the wheel has stopped (or you walked away while it ran): pay the winning sector
   function whFinish(K, away) {
     var key = BW_SEC[K.idx], tot = whTotal(K), nm = bwSecName(key);
-    K.spinning = false; K.sp = null; K.last = key;
-    if (key === "R") { K.free = true; K.lastWin = 0; if (away) { var w2 = Math.round(tot * BW_PAY[BW_SEC[Math.floor(Math.random() * 24)] || "0.1"] || 0); K.bets = {}; if (w2 > 0) casApply(w2); btoast("עזבתם באמצע – הסיבוב הנוסף נתן " + money(w2), w2 > tot); return; } K.hud("↻ סיבוב נוסף בחינם!", "win"); sfx("win"); K.flashKey = key; K.flashT = performance.now() + 1400; whRefresh(K); K.later(1300, function () { whSpin(K); }); return; }
+    K.spinning = false; K.sp = null; K.last = key; K.hist = [key].concat(K.hist || []).slice(0, 8);
+    if (key === "R") { K.free = true; K.lastWin = 0; if (away) { var w2 = Math.round(tot * BW_PAY[BW_SEC[Math.floor(Math.random() * 24)] || "0.2"] || 0); K.bets = {}; if (w2 > 0) casApply(w2); btoast("עזבתם באמצע – הסיבוב הנוסף נתן " + money(w2), w2 > tot); return; } K.hud("↻ סיבוב נוסף בחינם!", "win"); sfx("win"); K.flashKey = key; K.flashT = performance.now() + 1400; whRefresh(K); K.later(1300, function () { whSpin(K); }); return; }
     var win = Math.round(tot * BW_PAY[key]), net = win - tot; K.bets = {}; K.lastWin = win; if (win > 0) casApply(win); if (!away && net > 0) winFx(net, tot, "wheel");
     if (away) { btoast("עזבתם באמצע סיבוב – הגלגל עצר על " + nm + (win > 0 ? " · קיבלתם " + money(win) : " · בלי זכייה"), win > 0); return; }
     if (net > 0) { K.hud(nm + "! זכיתם " + money(net) + " 🎉", "win"); if (win >= tot * 5 && K.dealer) K.H.cue(K.dealer, "cheer"); }
@@ -9120,12 +9183,13 @@ body.inlobby { padding-block: 0; }
       WHL.ctl.forEach(function (c) { K.button({ parent: dk, act: c.act, px: c.px, py: 0.112, h: 0.056, pz: c.pz, w: c.w, d: c.d, c: c.c, t: c.t }); });
       WH_CHIPS.forEach(function (v, q) { var d = Math.abs(v - (casBet || 1000)); if (d < cd) { cd = d; ci = q; } });
       K.chip = WH_CHIPS[ci]; casBet = K.chip; K.bets = {}; K.free = false; K.lastWin = 0; K.last = null; K.spinning = false; K.sp = null; K.flick = 0; K.flashKey = null;
-      whRefresh(K); K.hud("בוחרים הימור (BET + / -) ומסובבים · E = סיבוב");
+      whRefresh(K); K.panel = null; K.hud("E או לחיצה על הגלגל פותחים את לוח ההימורים");
     },
     press: function (K, act) {
       var i, k, t, pv;
       if (K.spinning) return;
       if (act === "down" || act === "up") { tone(760, 0.05, 0, "square", 0.07); i = WH_CHIPS.indexOf(K.chip); i = Math.max(0, Math.min(WH_CHIPS.length - 1, i + (act === "up" ? 1 : -1))); K.chip = WH_CHIPS[i]; casBet = K.chip; whInfo(K); }
+      else if ((act === "spin" || (act.charAt(0) === "s" && BW_PAY[act.slice(1)] != null)) && !K.panel) { whPanelOpen(K); return; }   // the first E / click opens the betting panel
       else if (act === "spin") whSpin(K);
       else if (act.charAt(0) === "s" && BW_PAY[act.slice(1)] != null) whSpin(K);   // any sector pad spins too
       else if (act === "clear") { K.chip = WH_CHIPS[0]; casBet = K.chip; sfx("chip"); whInfo(K); }
@@ -9146,7 +9210,7 @@ body.inlobby { padding-block: 0; }
       var W = K.W, t;
       if (K.sp) { W.m.rotation.z = K.sp.phi0 + K.sp.delta; whFinish(K, true); }
       else if (K.free && (t = whTotal(K)) > 0) { K.free = false; K.spinning = true; K.idx = Math.floor(Math.random() * 24); whFinish(K, true); }
-      W.sp.s = 0.35; W.ptr.rotation.z = 0;
+      W.sp.s = 0.35; W.ptr.rotation.z = 0; whPanelClose(K);
     }
   };
 
