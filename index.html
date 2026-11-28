@@ -918,6 +918,15 @@ body.inlobby { padding-block: 0; }
 #pzRoom { color: var(--mute); line-height: 1.55; font-weight: 700; }
 #pzRoom .code { display: block; font-family: var(--font-display); font-size: 2.2rem; letter-spacing: .25em; color: var(--gold-1); direction: ltr; text-align: center; }
 @media (max-width: 720px) { .pz { flex-direction: column; justify-content: center; gap: 30px; } .pz-side { width: min(360px, 100%); } }
+
+/* v126 · no mouse arrow while walking around in first person: the gold dot in the middle is the aim.
+   (At a table you sit down and the cursor comes back for clicking chips and cards.) */
+#game:not(.seated) .stage canvas, #game:not(.seated) .stage canvas:active { cursor: none !important; }
+.lockhint { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); z-index: 6; padding: 7px 16px; border-radius: 999px; background: rgba(10, 6, 20, .78); border: 1px solid rgba(243, 210, 127, .55); color: var(--gold-1); font-weight: 800; font-size: .92rem; white-space: nowrap; pointer-events: none; animation: lhPulse 1.8s ease-in-out infinite; }
+@keyframes lhPulse { 50% { opacity: .55; } }
+#game.locked .lockhint, #game.nolock .lockhint, #game.seated .lockhint { display: none; }
+@media (hover: none), (pointer: coarse) { .lockhint { display: none; } }
+@media (prefers-reduced-motion: reduce) { .lockhint { animation: none; } }
 </style>
 
 <div id="app" dir="rtl" lang="he">
@@ -1138,6 +1147,7 @@ body.inlobby { padding-block: 0; }
       <div class="gonepill" id="gonePill" hidden></div>
       <div class="prompt" id="prompt" hidden></div>
       <div class="xhair" id="xhair"></div>
+      <div class="lockhint" aria-hidden="true">🖱️ לחצו על המסך כדי להסתכל עם העכבר</div>
       <div class="gatetip" id="gateTip" hidden></div>
       <div class="btoast" id="btoast" hidden></div>
       <div class="cashpill money" id="cashPill">💰 </div>
@@ -2440,7 +2450,10 @@ body.inlobby { padding-block: 0; }
     document.body.classList.toggle("inlobby", which === "lobby");
     if (which !== "game") stopLoop();
     if (window.MM) MM.onShow(which === "lobby");
+    if (which === "game" && shownWas !== "game" && window.tryLock) setTimeout(tryLock, 0);   // entering the stage: grab the mouse right away when the browser allows it
+    shownWas = which;
   }
+  var shownWas = "";
 
   // ---------- write queue ----------
   var chain = Promise.resolve();
@@ -6897,11 +6910,23 @@ body.inlobby { padding-block: 0; }
   // ---------- input ----------
   var lookId = null, lookLast = null, joyId = null, joyCenter = null;
   var lockFailed = false, pLocked = false, canLock = !!(els.cv.requestPointerLock);
+  var autoLock = false;   // a lock we asked for by ourselves (not from a click on the stage): if the browser refuses it, that is no reason to give up on locking
   document.addEventListener("pointerlockchange", function () {
     var was = pLocked; pLocked = document.pointerLockElement === els.cv;
+    els.game.classList.toggle("locked", pLocked);
+    if (pLocked) autoLock = false;
     if (was && !pLocked && me && $("settings").hidden && !casOpen) openSettings();
   });
-  document.addEventListener("pointerlockerror", function () { lockFailed = true; });
+  document.addEventListener("pointerlockerror", function () { if (autoLock) { autoLock = false; return; } lockFailed = true; els.game.classList.add("nolock"); });
+  // hide the mouse and steer the view with it, without needing an extra click on the stage, whenever the browser still counts the last click/key as fresh
+  window.tryLock = function () {
+    try {
+      if (!canLock || lockFailed || pLocked || els.game.hidden || !$("settings").hidden || casOpen) return;
+      var ua = navigator.userActivation; if (ua && !ua.isActive) return;
+      autoLock = true;
+      var p = els.cv.requestPointerLock(); if (p && p.catch) p.catch(function () { autoLock = false; });
+    } catch (x) { autoLock = false; }
+  };
   document.addEventListener("mousemove", function (e) {
     if (!me) return;
     var hov = lockFailed && e.target === els.cv && $("settings").hidden;
@@ -10212,7 +10237,7 @@ body.inlobby { padding-block: 0; }
   });
   $("setLeave").addEventListener("click", function () { closeSettings(true); leaveRoom(""); });
   // pause menu buttons
-  $("pzResume").addEventListener("click", function () { closeSettings(true); });
+  $("pzResume").addEventListener("click", function () { closeSettings(true); if (window.tryLock) tryLock(); });
   $("pzSet").addEventListener("click", function () { openSettings("full"); pzFrom = true; });
   $("pzChar").addEventListener("click", function () { openSettings("char"); pzFrom = true; });
   $("pzLb").addEventListener("click", function () { openLeaderboard(); });
