@@ -3069,8 +3069,23 @@ body.inlobby { padding-block: 0; }
   function bwSecName(k) { return k === "R" ? "SPIN AGAIN" : "x" + k; }
   // counter-local metres (origin: middle of the counter top, +z toward the player): a slanted console with six sector pads (back row) and the controls (front row)
   var WHL = { th: 0.3, dy: 1.2236, dz: -0.0236, pads: [], ctl: [] };
-  ["0.2", "0.5", "1.5", "2", "3", "5", "R"].forEach(function (k, i) { WHL.pads.push({ act: "s" + k, key: k, px: -1.5 + i * 0.5, pz: -0.2, w: 0.45, d: 0.34, col: parseInt(BW_COL[k].slice(1), 16) }); });
-  [["down", -1.28, 0.42, "BET -", 0xc01828], ["up", -0.8, 0.42, "BET +", 0x1f5fb0], ["clear", -0.265, 0.55, "MIN", 0x8a3a1a], ["rebet", 0.345, 0.55, "MAX", 0x1f7a8a], ["spin", 1.08, 0.8, "SPIN", 0x1f9a3a]].forEach(function (c) { WHL.ctl.push({ act: c[0], px: c[1], pz: 0.22, w: c[2], d: 0.2, t: c[3], c: c[4] }); });
+  // v136: a physical keypad console on the counter. Left: number keys (1-9, C, 0, 000) and the gold quick keys (MIN ¼ ½ ALL);
+  // right: the seven odds pads (back row) and a big SPIN (front row). A little screen stands above the keypad (built live, see KIOS.wheel)
+  ["0.2", "0.5", "1.5", "2", "3", "5", "R"].forEach(function (k, i) { WHL.pads.push({ act: "s" + k, key: k, px: 0.0 + i * 0.27, pz: -0.22, w: 0.25, d: 0.3, col: parseInt(BW_COL[k].slice(1), 16) }); });
+  var PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "000"], PAD_CREAM = 0xf0e6d2, PAD_RED = 0xd42a20, PAD_GOLD = 0xf0a81c;
+  PAD_KEYS.forEach(function (k, i) { WHL.ctl.push({ act: "k" + k, px: -1.66 + (i % 3) * 0.23, pz: -0.3 + Math.floor(i / 3) * 0.17, w: 0.21, d: 0.15, t: k, c: k === "C" ? PAD_RED : PAD_CREAM, ink: k === "C" ? "#fff" : "#2a1f14" }); });
+  [["qmin", "MIN"], ["q4", "¼"], ["q2", "½"], ["qall", "ALL"]].forEach(function (q, i) { WHL.ctl.push({ act: q[0], px: -0.88 + (i % 2) * 0.27, pz: -0.22 + Math.floor(i / 2) * 0.22, w: 0.25, d: 0.19, t: q[1], c: PAD_GOLD, ink: "#3a2200" }); });
+  WHL.ctl.push({ act: "spin", px: 0.81, pz: 0.2, w: 1.6, d: 0.22, t: "SPIN", c: 0x1f9a3a });
+  // v136: the plinko machine's betting stand: a pedestal PLC.Z m in front of the board with a slanted deck. Left: keypad + quick keys,
+  // middle: risk / rows / balls (one row each, the picked one lit), right: a big DROP; a little screen stands on the back edge
+  var PLC = { th: 0.34, dy: 1.0, Z: 2.15, btns: [] };
+  PAD_KEYS.forEach(function (k, i) { PLC.btns.push({ act: "k" + k, px: -0.82 + (i % 3) * 0.15, pz: -0.21 + Math.floor(i / 3) * 0.13, w: 0.135, d: 0.115, t: k, c: k === "C" ? PAD_RED : PAD_CREAM, ink: k === "C" ? "#fff" : "#2a1f14" }); });
+  [["qmin", "MIN"], ["q4", "¼"], ["q2", "½"], ["qall", "ALL"]].forEach(function (q, i) { PLC.btns.push({ act: q[0], px: -0.33 + (i % 2) * 0.16, pz: -0.17 + Math.floor(i / 2) * 0.17, w: 0.145, d: 0.15, t: q[1], c: PAD_GOLD, ink: "#3a2200" }); });
+  [["r0", "LOW", 0x17905a], ["r1", "MEDIUM", 0xe08f17], ["r2", "HIGH", 0xc4122e]].forEach(function (q, i) { PLC.btns.push({ act: q[0], px: 0.03 + i * 0.165, pz: -0.21, w: 0.155, d: 0.11, t: q[1], c: q[2], opt: "risk", v: i }); });
+  [8, 12, 16].forEach(function (n, i) { PLC.btns.push({ act: "w" + n, px: 0.03 + i * 0.165, pz: -0.08, w: 0.155, d: 0.11, t: n + " ROWS", c: 0x8a2a9a, opt: "rows", v: n }); });
+  [1, 5, 10].forEach(function (n, i) { PLC.btns.push({ act: "b" + n, px: 0.03 + i * 0.165, pz: 0.05, w: 0.155, d: 0.11, t: "×" + n + " BALL" + (n > 1 ? "S" : ""), c: 0x2a6bff, opt: "balls", v: n }); });
+  PLC.btns.push({ act: "drop", px: 0.7, pz: -0.08, w: 0.3, d: 0.37, t: "DROP", c: 0xe0338f });
+  function plcDeck(px, py, pz) { var c = Math.cos(PLC.th), s = Math.sin(PLC.th); return [px, PLC.dy + py * c - pz * s, PLC.Z + py * s + pz * c]; }
   function whDeck(px, py, pz) { var c = Math.cos(WHL.th), s = Math.sin(WHL.th); return [px, WHL.dy + py * c - pz * s, WHL.dz + py * s + pz * c]; }
 
   // =====================================================================
@@ -3304,7 +3319,7 @@ body.inlobby { padding-block: 0; }
     var a = takeAction();
     if (a && world && world.poke) world.poke(1);   // the hands only reach out when there is really something to take or press
     if (!a) { if (canAct()) setHint(me.carry > 0 ? "יש לכם כסף בידיים. הניחו אותו עם " + keyLabel(settings.keys.drop) + " או כפתור ההנחה." : "התקרבו לקופה כדי לקחת כסף, או עמדו על פודיום שהנחתם עליו כדי לקחת בחזרה."); return; }
-    if (a.k === "casino") { if (a.g === "plinko" && a.tbl != null) { if (world && world.casApi()) { var tb0 = world.casApi().tables[a.tbl]; if (tb0) world.poke(1, new T.Vector3(tb0.x, PLKB.YC + 1.2, tb0.z)); } if (!PLKH.P) { PLKH.dismissed = null; plkHallOpen(a.tbl); } else plkHallDropMany(); } else if (a.g === "juke") jukePress(); else if (a.g === "slots" && a.m) { if (SLV) SLV.press("spin"); } else if (KIOS[a.g] && a.m) { if (KIO && KIO.mk === a.m) KIO.press(KIOS[a.g].act); } else if (a.tbl != null && PHYS[a.g]) sitDown(a); else btoast("המשחק הזה עוד לא פתוח.", false); } else if (a.k === "door") openKeypad(a.s); else if (a.k === "start") startGo(); else if (a.k === "lock") onLockClick(); else if (a.k === "bank") pickUp(); else takeBack(a.i);
+    if (a.k === "casino") { if (a.g === "plinko" && a.tbl != null && !a.m) { plkHallDrop(a.tbl); } else if (a.g === "juke") jukePress(); else if (a.g === "slots" && a.m) { if (SLV) SLV.press("spin"); } else if (KIOS[a.g] && a.m) { if (KIO && KIO.mk === a.m) KIO.press(KIOS[a.g].act); } else if (a.tbl != null && PHYS[a.g]) sitDown(a); else btoast("המשחק הזה עוד לא פתוח.", false); } else if (a.k === "door") openKeypad(a.s); else if (a.k === "start") startGo(); else if (a.k === "lock") onLockClick(); else if (a.k === "bank") pickUp(); else takeBack(a.i);
   }
   function dropHere() {
     var a = dropAction();
@@ -4994,8 +5009,14 @@ body.inlobby { padding-block: 0; }
             box(0xffd23f, 0, yT + 1.07, -0.06, W + 0.44, 0.04, 0.05, 0, true); box(0xffd23f, 0, yT + 0.03, 0.08, W + 0.44, 0.04, 0.05, 0, true);
             box(0x3df2ff, 0, yB - 0.01, 0.69, W + 0.66, 0.025, 0.02, 0, true); box(0xff3fb4, 0, yB * 0.55, 0.665, W + 0.2, 0.02, 0.01, 0, true);
             solidLocal(-(W / 2 + 0.4), W / 2 + 0.4, -0.62, 0.7);
-            var c = BW(0, 3.2); pool(c[0], z0 - c[1], 4.6, 0x5a1a4a);
-            STS.push({ g: "plinko", tbl: tableId, label: "🔺 פלינקו", x: c[0], u: z0 - c[1], r: 3.2 }); clearBase();
+            // v136: the betting stand in front of the machine (the live buttons and screen are added by KIOS.plinko when you walk up)
+            box(0x1a0d2e, 0, (PLC.dy - 0.08) / 2, PLC.Z + 0.03, 1.6, PLC.dy - 0.08, 0.44); box(0xff3fb4, 0, 0.03, PLC.Z + 0.26, 1.62, 0.03, 0.02, 0, true);
+            var q0 = plcDeck(0, 0, 0); box(0x1b1b2c, q0[0], q0[1], q0[2], 1.95, 0.12, 0.66, 0, false, PLC.th);
+            var q1 = plcDeck(0, 0.062, 0.33); box(0xffd23f, q1[0], q1[1], q1[2], 1.97, 0.02, 0.02, 0, true, PLC.th);
+            PLC.btns.forEach(function (b) { var q = plcDeck(b.px, 0.085, b.pz); box(b.c, q[0], q[1], q[2], b.w, 0.045, b.d, 0, false, PLC.th); });
+            solidLocal(-0.98, 0.98, PLC.Z - 0.34, PLC.Z + 0.34);
+            var c = BW(0, 3.2), cm = BW(0, PLC.Z); pool(c[0], z0 - c[1], 4.6, 0x5a1a4a);
+            STS.push({ g: "plinko", tbl: tableId, label: "🔺 פלינקו", x: c[0], u: z0 - c[1], r: 3.2, m: { x: cm[0], z: cm[1], a: a || 0, s: 1, tbl: tableId } }); clearBase();
           });
           var minesT = vivid(function (x, u, a) {
             tableId++; setBase(x, Zu(u), a, 1); regT("mines");
@@ -7451,7 +7472,7 @@ body.inlobby { padding-block: 0; }
   function plkHallBetStep() { var i = PLK_BETS.indexOf(plkHallBet); plkHallBet = PLK_BETS[(i + 1) % PLK_BETS.length]; sfx("chip"); plkHallMsg("🔺 Plinko · BET " + plkHallBet.toLocaleString()); }
   // walk up and press: the ball drops on the hall machine itself (rows and risk as painted on it) and pays where it lands
   function plkHallDrop(tbl) {
-    if (casBal < plkHallBet) { plkHallMsg("אין מספיק כסף · BET " + plkHallBet.toLocaleString(), "lose"); if (PLKH.P) PLKH.P.err.textContent = "אין מספיק כסף להימור הזה"; sfx("lose"); return false; }
+    if (casBal < plkHallBet) { plkHallMsg("אין מספיק כסף · BET " + plkHallBet.toLocaleString(), "lose"); sfx("lose"); return false; }
     var mine = PLK_GHOSTS.filter(function (g) { return g.own; }).length; if (mine >= 20) return false;
     casApply(-plkHallBet); sfx("chip"); var seed = (Math.random() * 4294967296) >>> 0;
     PLK_OUT.push({ id: clientId + ":" + seed, tbl: tbl, R: PLKH.R, seed: seed, at: Date.now() });
@@ -7459,9 +7480,9 @@ body.inlobby { padding-block: 0; }
     plkHallMsg("🔺 BET " + plkHallBet.toLocaleString()); plkHallSync();
     return true;
   }
-  // ---- v135: the panel at the hall plinko machine. It opens by itself when you walk up (and frees the mouse for clicking),
-  // closes when you walk away (the mouse goes back to looking around). Risk and rows repaint the machine so its cups show the right multipliers ----
-  var PLKH = { P: null, tbl: null, risk: 1, R: 12, n: 1, queued: 0, dismissed: null, hist: [], texs: null };
+  // ---- hall plinko state (v136: set on the physical stand in front of the machine, see KIOS.plinko). Risk and rows repaint the machine
+  // so its cups show the right multipliers ----
+  var PLKH = { tbl: null, risk: 1, R: 12, n: 1, queued: 0, hist: [], texs: null };
   plkHallBet = parseInt(store("local", "dd-plk-bet") || "", 10) || plkHallBet;
   function plkHallMine() { return PLK_GHOSTS.filter(function (g) { return g.own && !g.b.done; }).length; }
   function plkHallRepaint() {
@@ -7471,63 +7492,11 @@ body.inlobby { padding-block: 0; }
       PLKH.texs.forEach(function (tx) { var c = tx.image, g = c.getContext("2d"); g.clearRect(0, 0, c.width, c.height); plkPaint(g, c.width, c.height, PLKH.risk, PLKH.R, true); tx.needsUpdate = true; });
     } catch (e) { /* the machine keeps its old paint */ }
   }
-  function plkHallSync() {
-    var P = PLKH.P; if (!P) return; var busy = plkHallMine() > 0;
-    P.bal.textContent = money(casBal); if (P.pad) P.pad.render();
-    P.risk.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === PLKH.risk)); b.disabled = busy; });
-    P.rows.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === PLKH.R)); b.disabled = busy; });
-    P.balls.forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === PLKH.n)); });
-    P.lock.textContent = busy ? "אפשר לשנות סיכון ושורות כשכל הכדורים נחתו" : "";
-    P.go.textContent = PLKH.n > 1 ? "הפל ×" + PLKH.n : "הפל"; P.go.disabled = casBal < plkHallBet;
-    P.last.innerHTML = ""; PLKH.hist.slice(0, 8).forEach(function (m) { P.last.appendChild(cge("span", m > 1 ? "w" : m < 1 ? "l" : "", plkFmt(m))); });
-  }
+  function plkHallSync() { if (KIO && KIO.g === "plinko" && KIOS.plinko.refresh) KIOS.plinko.refresh(KIO); }
   function plkHallDropMany() {
-    if (PLKH.queued || PLKH.tbl == null) return; var n = Math.max(1, PLKH.n), i = 0, tbl = PLKH.tbl; if (PLKH.P && PLKH.P.pad) PLKH.P.pad.done();
+    if (PLKH.queued || PLKH.tbl == null) return; var n = Math.max(1, PLKH.n), i = 0, tbl = PLKH.tbl;
     PLKH.queued = n; (function one() { if (i >= n || !plkHallDrop(tbl)) { PLKH.queued = 0; plkHallSync(); return; } i++; if (i < n) setTimeout(one, 160); else { PLKH.queued = 0; plkHallSync(); } })();
   }
-  function plkHallOpen(tbl) {
-    if (PLKH.P) return; PLKH.tbl = tbl;
-    var p = cge("div", "plkp", ""); p.setAttribute("role", "group"); p.setAttribute("aria-label", "הגדרות פלינקו");
-    p.innerHTML = '<div class="plkp-h"><span>🔺 פלינקו</span><small class="money" data-r="bal"></small></div>'
-      + '<div class="plkp-betwrap"><div class="plkp-lab"><span>סכום הימור</span></div>' + betPadHTML() + '<div class="plkp-err" data-r="err"></div></div>'
-      + '<div><div class="plkp-lab"><span>סיכון</span></div><div class="plkp-seg risk"><button type="button" data-k="risk" data-v="0">נמוך</button><button type="button" data-k="risk" data-v="1">בינוני</button><button type="button" data-k="risk" data-v="2">גבוה</button></div></div>'
-      + '<div><div class="plkp-lab"><span>שורות</span></div><div class="plkp-seg"><button type="button" data-k="rows" data-v="8">8</button><button type="button" data-k="rows" data-v="12">12</button><button type="button" data-k="rows" data-v="16">16</button></div></div>'
-      + '<div><div class="plkp-lab"><span>כדורים בכל הפלה</span></div><div class="plkp-seg"><button type="button" data-k="balls" data-v="1">1</button><button type="button" data-k="balls" data-v="5">5</button><button type="button" data-k="balls" data-v="10">10</button></div></div>'
-      + '<button type="button" class="plkp-go" data-r="go">הפל</button><button type="button" class="whp-leave" data-a="leave">סגירת הלוח</button>'
-      + '<div class="plkp-info" data-r="lock"></div><div class="plkp-last" data-r="last" aria-label="תוצאות אחרונות"></div>';
-    $("game").appendChild(p);
-    function q(s) { return p.querySelector(s); }
-    var P = PLKH.P = { el: p, bal: q('[data-r="bal"]'), err: q('[data-r="err"]'), go: q('[data-r="go"]'), lock: q('[data-r="lock"]'), last: q('[data-r="last"]'),
-      risk: [].slice.call(p.querySelectorAll('[data-k="risk"]')), rows: [].slice.call(p.querySelectorAll('[data-k="rows"]')), balls: [].slice.call(p.querySelectorAll('[data-k="balls"]')) };
-    p.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
-    P.pad = betPadWire(p.querySelector(".bp"), function () { return plkHallBet; }, function (v) { plkHallBet = v; store("local", "dd-plk-bet", String(v)); plkHallSync(); }, P.err);
-    p.addEventListener("click", function (e) {
-      var b = e.target.closest("button"); if (!b || b.disabled) return;
-      if (b.dataset.pk != null || b.dataset.pq) { sfx("chip"); return; }
-      var k = b.dataset.k, v = +b.dataset.v;
-      if (b.dataset.a === "leave") { PLKH.dismissed = PLKH.tbl; plkHallClose(); return; }
-      if (k === "risk" && v !== PLKH.risk) { PLKH.risk = v; plkHallRepaint(); }
-      else if (k === "rows" && v !== PLKH.R) { PLKH.R = v; plkHallRepaint(); }
-      else if (k === "balls") PLKH.n = v;
-      else if (b === P.go) { plkHallDropMany(); return; }
-      sfx("chip"); plkHallSync();
-    });
-    window.__kioFree = true; try { if (document.pointerLockElement) document.exitPointerLock(); } catch (x) { /* already free */ }
-    plkHallSync();
-  }
-  function plkHallClose() {
-    if (!PLKH.P) return; PLKH.P.el.remove(); PLKH.P = null; PLKH.tbl = null;
-    setTimeout(function () { window.__kioFree = false; }, 300); if (window.tryLock) tryLock();
-  }
-  setInterval(function () {
-    try {
-      var a = casOpen ? null : casinoAction(), near = a && a.g === "plinko" && a.tbl != null ? a.tbl : null;
-      if (near == null) PLKH.dismissed = null;
-      if (near != null && !PLKH.P && PLKH.dismissed !== near && $("settings").hidden) plkHallOpen(near);
-      else if (PLKH.P && near !== PLKH.tbl) plkHallClose();
-      if (PLKH.P) plkHallSync();
-    } catch (e) { /* not in the hall */ }
-  }, 250);
   function plkRemote(list) {
     if (!Array.isArray(list) || !world || !world.casApi) return; var H = world.casApi(); if (!H || !H.tables) return;
     list.forEach(function (e) {
@@ -9189,12 +9158,12 @@ body.inlobby { padding-block: 0; }
     g.fillStyle = "#9fc4ff"; g.font = "700 34px Fredoka, Arial, sans-serif"; g.fillText("LAST", 850, 70);
     if (last) { g.fillStyle = BW_COL[last]; g.beginPath(); g.arc(850, 158, 58, 0, 6.3); g.fill(); g.strokeStyle = "#fff"; g.lineWidth = 5; g.stroke(); g.fillStyle = last === "5" ? "#2a1c00" : "#fff"; g.font = "900 " + (last.length > 2 ? 40 : 52) + "px Fredoka, Arial, sans-serif"; g.fillText(last === "R" ? "↻" : "x" + last, 850, 162); }
     else { g.fillStyle = "#555"; g.font = "900 70px Fredoka, Arial, sans-serif"; g.fillText("—", 850, 160); }
-    K.P.tex.needsUpdate = true; whPanelSync(K);
+    K.P.tex.needsUpdate = true; whMon(K);
   }
   function whRefresh(K) {
     WHL.pads.forEach(function (p) { K.byAct[p.act].userData.setText(p.key, 0); });
     WHL.ctl.forEach(function (c) { var b = K.byAct[c.act]; b.material.color.setHex(c.c); if (K.spinning) b.material.color.multiplyScalar(0.3); });
-    whInfo(K); whPanelSync(K);
+    whInfo(K);
   }
   // ---- v134: the bet keypad shared by the plinko and wheel panels: number keys, C and 000, a screen with the limits and the amount,
   // and quick MIN / ¼ / ½ / ALL buttons. Keys are typed into an entry; any amount from the minimum up is applied as the bet right away ----
@@ -9230,57 +9199,9 @@ body.inlobby { padding-block: 0; }
     render();
     return { render: render, done: function () { entry = null; render(); } };
   }
-  // ---- v133: the wheel's side panel (same look as plinko). You stand at the wheel, so E / a click on the wheel opens it and frees the mouse;
-  // walking away or "leave" closes it and hands the mouse back to looking around ----
-  function whPanelSync(K) {
-    var P = K.panel; if (!P) return;
-    P.bal.textContent = money(casBal);
-    if (P.pad) P.pad.render();
-    P.go.disabled = K.spinning || (!K.free && casBal < K.chip);
-    P.go.textContent = K.spinning ? "מסתובב..." : K.free ? "↻ סיבוב חינם" : "סובבו";
-    P.last.innerHTML = ""; (K.hist || []).slice(0, 8).forEach(function (k) { var m = BW_PAY[k], s = cge("span", k === "R" ? "" : m > 1 ? "w" : "l", k === "R" ? "↻" : "x" + k); P.last.appendChild(s); });
-  }
-  function whSetBet(K, v) {
-    v = Math.floor(Number(v) || 0); var err = "";
-    if (v < 10) { err = "ההימור המינימלי הוא 10"; v = 10; }
-    if (v > 1000000) { err = "ההימור המקסימלי הוא 1,000,000"; v = 1000000; }
-    K.chip = v; casBet = v; if (K.panel) { K.panel.err.textContent = err; } whInfo(K); whPanelSync(K);
-  }
-  function whPanelOpen(K) {
-    if (K.panel) return;
-    var p = cge("div", "plkp whp", ""), odds = ["5", "3", "2", "1.5", "0.5", "0.2", "R"].map(function (k) { var n = BW_SEC.filter(function (q) { return q === k; }).length; return '<span style="border-color:' + BW_COL[k] + '"><b>' + (k === "R" ? "↻" : "x" + k) + '</b> ' + n + '/24</span>'; }).join("");
-    p.setAttribute("role", "group"); p.setAttribute("aria-label", "לוח ההימורים של הגלגל");
-    p.innerHTML = '<div class="plkp-h"><span>🎡 גלגל המזל</span><small class="money" data-r="bal"></small></div>'
-      + '<div class="plkp-betwrap"><div class="plkp-lab"><span>סכום הימור</span></div>' + betPadHTML() + '<div class="plkp-err" data-r="err"></div></div>'
-      + '<div><div class="plkp-lab"><span>על הגלגל</span><span>זוכים ב-11 מתוך 24</span></div><div class="whp-odds">' + odds + '</div></div>'
-      + '<button type="button" class="plkp-go" data-r="go">סובבו</button>'
-      + '<button type="button" class="whp-leave" data-a="leave">עזיבת הגלגל</button>'
-      + '<div class="plkp-info">E = סיבוב</div><div class="plkp-last" data-r="last" aria-label="תוצאות אחרונות"></div>';
-    $("game").appendChild(p);
-    function q(s) { return p.querySelector(s); }
-    var P = K.panel = { el: p, bal: q('[data-r="bal"]'), err: q('[data-r="err"]'), go: q('[data-r="go"]'), last: q('[data-r="last"]') };
-    p.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
-    // no text box any more, so E still spins after you click the panel
-    P.pad = betPadWire(p.querySelector(".bp"), function () { return K.chip; }, function (v) { whSetBet(K, v); }, P.err);
-    p.addEventListener("click", function (e) {
-      var b = e.target.closest("button"); if (!b || b.disabled) return; var a = b.dataset.a;
-      if (b.dataset.pk != null || b.dataset.pq) { sfx("chip"); return; }   // keypad keys are handled by the keypad itself
-      if (K.spinning && b !== P.go && a !== "leave") return;
-      if (a === "leave") { whPanelClose(K); if (window.tryLock) tryLock(); return; }
-      else if (b === P.go) { whSpin(K); return; }
-      sfx("chip");
-    });
-    window.__kioFree = true; try { if (document.pointerLockElement) document.exitPointerLock(); } catch (x) { /* already free */ }
-    K.hud("בוחרים סכום בלוח ומסובבים");
-    whPanelSync(K);
-  }
-  function whPanelClose(K) {
-    if (!K.panel) return; K.panel.el.remove(); K.panel = null;
-    setTimeout(function () { window.__kioFree = false; }, 300); if (window.tryLock) tryLock();
-  }
   function whSpin(K) {
     var W = K.W, sec = Math.PI / 12, idx, tgt, phi0, d;
-    if (!K.free) { if (casBal < K.chip) { K.hud("אין מספיק כסף להימור הזה – הורידו את ההימור.", "lose"); if (K.panel) K.panel.err.textContent = "אין מספיק כסף להימור הזה"; tone(200, 0.15, 0, "sawtooth", 0.08); return; } casApply(-K.chip); K.bets = { s: K.chip }; }
+    if (!K.free) { if (casBal < K.chip) { K.hud("אין מספיק כסף להימור הזה – הקלידו סכום קטן יותר.", "lose"); tone(200, 0.15, 0, "sawtooth", 0.08); return; } casApply(-K.chip); K.bets = { s: K.chip }; }
     K.free = false; K.spinning = true; K.flashKey = null;
     idx = Math.floor(Math.random() * 24); K.idx = idx; tgt = idx * sec + (Math.random() - 0.5) * sec * 0.7;
     phi0 = W.m.rotation.z; d = (tgt - phi0) % (Math.PI * 2); if (d < 0) d += Math.PI * 2; d += Math.PI * 2 * (5 + Math.floor(Math.random() * 3));
@@ -9299,28 +9220,57 @@ body.inlobby { padding-block: 0; }
     else { K.hud(nm + " · קיבלתם בחזרה " + money(win) + " מתוך " + money(tot), "lose"); sfx("lose"); }
     K.flashKey = key; K.flashT = performance.now() + 2600; K.later(2300, function () { K.W.sp.s = 0.35; }); whRefresh(K);
   }
+  // ---- v136: physical keypad shared by the wheel console and the plinko stand: the keys type into K.entry; any amount from the minimum up is the bet ----
+  function padKey(K, key, get, set) {
+    if (key === "qmin" || key === "q4" || key === "q2" || key === "qall") {
+      K.entry = null; set(key === "qmin" ? BP_MIN : Math.max(BP_MIN, Math.min(BP_MAX, Math.floor(key === "q4" ? casBal / 4 : key === "q2" ? casBal / 2 : casBal)))); return;
+    }
+    if (key === "C") K.entry = "";
+    else { K.entry = ((K.entry == null ? "" : K.entry) + key).replace(/^0+/, ""); if (K.entry.length > 7) K.entry = K.entry.slice(0, 7); }
+    var v = +K.entry || 0; if (v > BP_MAX) { v = BP_MAX; K.entry = String(BP_MAX); }
+    if (v >= BP_MIN) set(v);
+  }
+  function padShown(K, bet) { return K.entry == null ? bet : (+K.entry || 0); }
+  // the little stand-up screen above a keypad: limits top-left, the amount in glowing green, and extra lines under it
+  function padPaint(C, amount, low, lines) {
+    var g = C.g, w = C.cv.width, h = C.cv.height, t = "₪" + amount.toLocaleString("en-US"), f = h * 0.38;
+    g.fillStyle = "#050407"; g.fillRect(0, 0, w, h); g.strokeStyle = "#2a2433"; g.lineWidth = 10; g.strokeRect(5, 5, w - 10, h - 10);
+    g.textAlign = "left"; g.textBaseline = "top"; g.fillStyle = "#e8e8e8"; g.font = "700 " + Math.round(h * 0.1) + "px 'Courier New', monospace";
+    g.fillText("Min: ₪" + BP_MIN, w * 0.06, h * 0.08); g.fillText("Max: ₪" + BP_MAX.toLocaleString("en-US"), w * 0.06, h * 0.2);
+    g.textAlign = "center"; g.textBaseline = "middle";
+    do { g.font = "900 " + Math.round(f) + "px 'Courier New', monospace"; if (g.measureText(t).width <= w * 0.86) break; f -= 4; } while (f > 14);
+    g.fillStyle = low ? "#ff5a6e" : "#3dff7a"; g.shadowColor = g.fillStyle; g.shadowBlur = 18; g.fillText(t, w / 2, h * 0.56); g.shadowBlur = 0;
+    g.fillStyle = "#9fc4ff"; g.font = "800 " + Math.round(h * 0.085) + "px Fredoka, Arial, sans-serif";
+    (lines || []).forEach(function (ln, i) { g.fillStyle = ln[1] || "#9fc4ff"; g.fillText(ln[0], w / 2, h * (0.8 + i * 0.1)); });
+    C.tex.needsUpdate = true;
+  }
+  function padScreen(K, parent, px, pz, w, hgt) {   // a small monitor standing on the back edge of a slanted deck, facing the player
+    var C = K.screen(640, 300, w, hgt, parent), fr = new T.Mesh(new T.BoxGeometry(w + 0.05, hgt + 0.05, 0.03), new T.MeshPhongMaterial({ color: 0x15121c, shininess: 60 })); K.disp.push(fr.geometry, fr.material);
+    var st = new T.Group(); st.position.set(px, 0.06, pz); st.rotation.x = -parent.rotation.x + 0.12; parent.add(st);
+    C.mesh.position.set(0, hgt / 2 + 0.04, 0.018); fr.position.set(0, hgt / 2 + 0.04, 0); st.add(fr); st.add(C.mesh); return C;
+  }
+  function whMon(K) { if (!K.M) return; var v = padShown(K, K.chip); padPaint(K.M, v, K.entry != null && v < BP_MIN, [[K.spinning ? "הגלגל מסתובב..." : K.free ? "↻ סיבוב חינם! לחצו SPIN" : "LAST WIN ₪" + Math.round(K.lastWin || 0).toLocaleString("en-US"), K.free ? "#ff8ad8" : "#9fc4ff"]]); }
   KIOS.wheel = {
     act: "spin", seatD: 0,
     build: function (K) {
       var dk = new T.Group(), P = K.screen(1024, 256, 2.4, 0.6, K.tg), ci = 0, cd = 1e9, ws = K.H.wheels;
       dk.position.set(0, WHL.dy, WHL.dz); dk.rotation.x = WHL.th; K.tg.add(dk); K.P = P; P.mesh.position.set(0, 0.58, 0.474);
       K.W = ws.filter(function (w) { return w.tbl === K.mk.tbl; })[0] || ws[0]; K.dealer = K.H.bots.filter(function (b) { return b.kind === "dealer" && b.tbl === K.mk.tbl; })[0];
-      WHL.pads.forEach(function (p) { K.button({ parent: dk, act: p.act, px: p.px, py: 0.112, h: 0.056, pz: p.pz, w: p.w, d: p.d, c: p.col, t: p.key, x: 0, cw: 320, draw: function (L, t, x) { whPadLabel(L, t, x || 0); } }); });
-      WHL.ctl.forEach(function (c) { K.button({ parent: dk, act: c.act, px: c.px, py: 0.112, h: 0.056, pz: c.pz, w: c.w, d: c.d, c: c.c, t: c.t }); });
-      WH_CHIPS.forEach(function (v, q) { var d = Math.abs(v - (casBet || 1000)); if (d < cd) { cd = d; ci = q; } });
-      K.chip = WH_CHIPS[ci]; casBet = K.chip; K.bets = {}; K.free = false; K.lastWin = 0; K.last = null; K.spinning = false; K.sp = null; K.flick = 0; K.flashKey = null;
-      whRefresh(K); K.panel = null; K.hud("בוחרים סכום בלוח ומסובבים");
-      setTimeout(function () { if (K.alive && !K.panel && $("settings").hidden && !casOpen) whPanelOpen(K); }, 0);   // v135: the panel opens by itself when you walk up
+      WHL.pads.forEach(function (p) { K.button({ parent: dk, act: p.act, px: p.px, py: 0.112, h: 0.056, pz: p.pz, w: p.w, d: p.d, c: p.col, t: p.key, x: 0, cw: 240, draw: function (L, t, x) { whPadLabel(L, t, x || 0); } }); });
+      WHL.ctl.forEach(function (c) { K.button({ parent: dk, act: c.act, px: c.px, py: 0.112, h: c.act === "spin" ? 0.07 : 0.06, pz: c.pz, w: c.w, d: c.d, c: c.c, t: c.t, x: c.ink }); });
+      K.M = padScreen(K, dk, -1.18, -0.44, 1.05, 0.46);
+      K.chip = parseInt(store("local", "dd-wh-bet") || "", 10) || casBet || 1000; if (K.chip < BP_MIN) K.chip = BP_MIN; casBet = K.chip;
+      K.entry = null; K.bets = {}; K.free = false; K.lastWin = 0; K.last = null; K.spinning = false; K.sp = null; K.flick = 0; K.flashKey = null;
+      whRefresh(K); K.hud("מקלידים סכום על המקלדת ולוחצים SPIN · E = סיבוב");
     },
     press: function (K, act) {
-      var i, k, t, pv;
       if (K.spinning) return;
-      if (act === "down" || act === "up") { tone(760, 0.05, 0, "square", 0.07); i = WH_CHIPS.indexOf(K.chip); i = Math.max(0, Math.min(WH_CHIPS.length - 1, i + (act === "up" ? 1 : -1))); K.chip = WH_CHIPS[i]; casBet = K.chip; whInfo(K); }
-      else if ((act === "spin" || (act.charAt(0) === "s" && BW_PAY[act.slice(1)] != null)) && !K.panel) { whPanelOpen(K); return; }   // the first E / click opens the betting panel
-      else if (act === "spin") whSpin(K);
-      else if (act.charAt(0) === "s" && BW_PAY[act.slice(1)] != null) whSpin(K);   // any sector pad spins too
-      else if (act === "clear") { K.chip = WH_CHIPS[0]; casBet = K.chip; sfx("chip"); whInfo(K); }
-      else if (act === "rebet") { i = 0; WH_CHIPS.forEach(function (v, q) { if (v <= casBal) i = q; }); K.chip = WH_CHIPS[i]; casBet = K.chip; sfx("chip"); whInfo(K); }
+      if (act.charAt(0) === "k" || act.charAt(0) === "q") {
+        tone(act.charAt(0) === "q" ? 700 : 820, 0.045, 0, "square", 0.06);
+        padKey(K, act.charAt(0) === "k" ? act.slice(1) : act, function () { return K.chip; }, function (v) { K.chip = v; casBet = v; store("local", "dd-wh-bet", String(v)); });
+        whInfo(K);
+      }
+      else if (act === "spin" || (act.charAt(0) === "s" && BW_PAY[act.slice(1)] != null)) { K.entry = null; whSpin(K); }
     },
     tick: function (K, dt, now) {
       var W = K.W, s = K.sp, sec = Math.PI / 12, k, e, phi, cur, fb;
@@ -9337,8 +9287,48 @@ body.inlobby { padding-block: 0; }
       var W = K.W, t;
       if (K.sp) { W.m.rotation.z = K.sp.phi0 + K.sp.delta; whFinish(K, true); }
       else if (K.free && (t = whTotal(K)) > 0) { K.free = false; K.spinning = true; K.idx = Math.floor(Math.random() * 24); whFinish(K, true); }
-      W.sp.s = 0.35; W.ptr.rotation.z = 0; whPanelClose(K);
+      W.sp.s = 0.35; W.ptr.rotation.z = 0;
     }
+  };
+
+  // ----- v136: the plinko betting stand: a keypad for the bet, risk / rows / balls, DROP; a little screen shows the bet and the last results -----
+  KIOS.plinko = {
+    act: "drop", seatD: 0,
+    build: function (K) {
+      var dk = new T.Group(); dk.position.set(0, PLC.dy, 0); dk.rotation.x = PLC.th; K.tg.add(dk);
+      PLC.btns.forEach(function (b) { K.button({ parent: dk, act: b.act, px: b.px, py: 0.09, h: b.act === "drop" ? 0.06 : 0.05, pz: b.pz, w: b.w, d: b.d, c: b.c, t: b.t, x: b.ink, cw: b.act === "drop" ? 160 : 192 }); });
+      K.M = padScreen(K, dk, -0.5, -0.31, 0.78, 0.36);
+      K.entry = null; PLKH.tbl = K.mk.tbl; K.rt = 0;
+      plkHallRepaint(); KIOS.plinko.refresh(K);
+      K.hud("מקלידים סכום, בוחרים סיכון ושורות ולוחצים DROP · E = הפלה");
+    },
+    refresh: function (K) {
+      var busy = plkHallMine() > 0;
+      PLC.btns.forEach(function (b) {
+        var bm = K.byAct[b.act]; if (!bm) return; bm.material.color.setHex(b.c);
+        if (b.opt) { var on = (b.opt === "risk" && b.v === PLKH.risk) || (b.opt === "rows" && b.v === PLKH.R) || (b.opt === "balls" && b.v === PLKH.n); if (!on) bm.material.color.multiplyScalar(busy && b.opt !== "balls" ? 0.22 : 0.38); else bm.material.color.lerp(new T.Color(0xffffff), 0.18); }
+      });
+      if (!K.M) return;
+      var v = padShown(K, plkHallBet), lines = [[PLK.RISKN[PLKH.risk] + " · " + PLKH.R + " ROWS · ×" + PLKH.n, "#ffb3e0"]];
+      lines.push([busy ? "כדורים באוויר..." : PLKH.hist.length ? "LAST  " + PLKH.hist.slice(0, 5).map(plkFmt).join("  ") : "", "#9fc4ff"]);
+      padPaint(K.M, v, K.entry != null && v < BP_MIN, lines);
+    },
+    press: function (K, act) {
+      var c0 = act.charAt(0), v = +act.slice(1);
+      if (c0 === "k" || c0 === "q") {
+        tone(c0 === "q" ? 700 : 820, 0.045, 0, "square", 0.06);
+        padKey(K, c0 === "k" ? act.slice(1) : act, function () { return plkHallBet; }, function (n) { plkHallBet = n; store("local", "dd-plk-bet", String(n)); });
+      } else if (c0 === "r" || c0 === "w") {
+        if (plkHallMine() > 0) { K.hud("אפשר לשנות סיכון ושורות כשכל הכדורים נחתו", "lose"); return; }
+        if (c0 === "r" && v !== PLKH.risk) PLKH.risk = v; else if (c0 === "w" && v !== PLKH.R) PLKH.R = v; else return;
+        sfx("chip"); plkHallRepaint();
+      } else if (c0 === "b") { PLKH.n = v; sfx("chip"); }
+      else if (act === "drop") { K.entry = null; PLKH.tbl = K.mk.tbl; plkHallDropMany(); }
+      KIOS.plinko.refresh(K);
+    },
+    tick: function (K, dt, now) { if (now - K.rt > 300) { K.rt = now; KIOS.plinko.refresh(K); } },
+    key: function (K, n) { return false; },
+    end: function (K) { }
   };
 
   // ----- the bar: a menu board with four real drink buttons; the bartender pours, the glass slides along the counter onto the coaster, you click it (or press E) to take it -----
