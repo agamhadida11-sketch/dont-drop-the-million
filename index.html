@@ -9394,11 +9394,12 @@ body.inlobby { padding-block: 0; }
       $("game").addEventListener("pointermove", S.onMove); S.cleanup = function () { cl0(); $("game").removeEventListener("pointermove", S.onMove); };
       // two camera poses, both from your side of the table: BET (the whole layout and the wheel) and SPIN (leaning in over the wheel)
       S.pose = "bet";
-      S.refit = function () {
-        var por = (world.cam().aspect || innerWidth / innerHeight) < 1, sx = S.seats && S.seats[S.mySeat] ? S.seats[S.mySeat].lx : 0;
-        if (S.pose === "spin") frameCam(S, [WCN.x, WCN.y, WCN.z + 0.05], [[WCN.x - 0.86, WCN.y, WCN.z], [WCN.x + 0.86, WCN.y, WCN.z], [WCN.x, WCN.y, WCN.z - 0.86], [WCN.x, WCN.y, WCN.z + 0.86], [WCN.x, WCN.y + 0.28, WCN.z]], por ? 0.95 : 0.72, -0.32, 0.92);
-        else if (por) frameCam(S, [-0.2, 0.96, 0.02], [[-1.88, 0.96, -0.74], [-1.88, 0.96, 0.74], [1.2, 0.96, -0.74], [1.2, 0.96, 0.74]], 1.1, 0, 0.98);   // phone held upright: the layout fills the width, the wheel peeks in at the side
-        else frameCam(S, [0.35, 0.96, 0.02], [[-1.88, 0.96, -0.74], [-1.88, 0.96, 0.74], [2.95, 1.17, 0], [2.05, 1.17, -0.95], [2.05, 1.17, 0.95], [1.15, 0.96, 0.74], [2.05, 1.48, 0]], 0.84, Math.max(-0.22, Math.min(0.22, sx * 0.12)), 0.97);
+      S.refit = function () {   // you sit on your stool: the view comes from your seat, raised a little so the wheel and the whole layout read clearly
+        var por = (world.cam().aspect || innerWidth / innerHeight) < 1, me0 = S.seats && S.seats[S.mySeat], sx = me0 ? me0.lx : 0, sz = me0 ? me0.lz : 1.35;
+        function azTo(x, z) { return Math.max(-0.95, Math.min(0.95, Math.atan2(sx - x, sz - z))); }
+        if (S.pose === "spin") frameCam(S, [WCN.x, WCN.y, WCN.z + 0.05], [[WCN.x - 0.86, WCN.y, WCN.z], [WCN.x + 0.86, WCN.y, WCN.z], [WCN.x, WCN.y, WCN.z - 0.86], [WCN.x, WCN.y, WCN.z + 0.86], [WCN.x, WCN.y + 0.28, WCN.z]], por ? 0.9 : 0.66, azTo(WCN.x, WCN.z), 0.92);
+        else if (por) frameCam(S, [-0.2, 0.96, 0.02], [[-1.88, 0.96, -0.74], [-1.88, 0.96, 0.74], [1.2, 0.96, -0.74], [1.2, 0.96, 0.74]], 0.95, azTo(-0.2, 0.02) * 0.6, 0.98);
+        else frameCam(S, [0.35, 0.96, 0.02], [[-1.88, 0.96, -0.74], [-1.88, 0.96, 0.74], [2.6, 1.17, 0], [2.05, 1.17, -0.6], [2.05, 1.17, 0.6], [1.15, 0.96, 0.74], [1.15, 0.96, -0.74]], 1.02, azTo(0.35, 0.02) * 0.3, 1.04);
       };
       S.refit();
       function botsBet() { botSp.forEach(function (s) { setSpot(s, 0); }); botSp = []; S.seats.forEach(function (s) { if (!s.bot) return; for (var q = 0; q < 2; q++) { var c = rpick(cells), p = cpos(c), sp = newSpot(tg, p.x + rnd(-0.06, 0.06), p.z + rnd(-0.05, 0.05), PL.y + 0.003); setSpot(sp, rpick([500, 1000, 2000, 5000, 10000])); botSp.push(sp); } }); }
